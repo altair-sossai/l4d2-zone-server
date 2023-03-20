@@ -16,6 +16,10 @@
 #define IS_VALID_CASTER(%1)     (IS_VALID_INGAME(%1) && casterSystemAvailable && IsClientCaster(%1))
 
 ArrayList h_whosHadTank;
+ArrayList h_tankVotes;
+ArrayList h_tankVoteSteamIds;
+ArrayList h_whosVoted;
+
 char queuedTankSteamId[64];
 ConVar hTankPrint, hTankDebug;
 bool casterSystemAvailable;
@@ -73,7 +77,10 @@ public void OnPluginStart()
     
     // Initialise the tank arrays/data values
     h_whosHadTank = new ArrayList(ByteCountToCells(64));
-    
+    h_tankVotes = CreateArray(64);
+    h_whosVoted = CreateArray(64);
+    h_tankVoteSteamIds = CreateArray(64);
+
     // Admin commands
     RegAdminCmd("sm_tankshuffle", TankShuffle_Cmd, ADMFLAG_SLAY, "Re-picks at random someone to become tank.");
     RegAdminCmd("sm_givetank", GiveTank_Cmd, ADMFLAG_SLAY, "Gives the tank to a selected player");
@@ -82,6 +89,7 @@ public void OnPluginStart()
     RegConsoleCmd("sm_tank", Tank_Cmd, "Shows who is becoming the tank.");
     RegConsoleCmd("sm_boss", Tank_Cmd, "Shows who is becoming the tank.");
     RegConsoleCmd("sm_witch", Tank_Cmd, "Shows who is becoming the tank.");
+    RegConsoleCmd("sm_votetank", Tank_Vote, "Vote on who becomes the tank");
     
     // Cvars
     hTankPrint = CreateConVar("tankcontrol_print_all", "0", "Who gets to see who will become the tank? (0 = Infected, 1 = Everyone)");
@@ -125,6 +133,7 @@ public void OnLibraryRemoved(const char[] name)
 public void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
     CreateTimer(10.0, newGame);
+    CreateTimer(5.0, ShowCommandMessage);
 }
 
 public Action newGame(Handle timer)
@@ -140,6 +149,12 @@ public Action newGame(Handle timer)
 	}
 
 	return Plugin_Stop;
+}
+
+public Action ShowCommandMessage(Handle timer)
+{
+    PrintToChatAll("Use \x04!votetank \x01para escolher quem será o tank");
+    return Plugin_Continue;
 }
 
 /**
@@ -251,6 +266,108 @@ public Action Tank_Cmd(int client, int args)
 }
 
 /**
+ * Allow players to vote on who should become tank
+ */
+ 
+public Action Tank_Vote(int client, int args)
+{
+    // If not in ready up, unable to vote
+    if (IsInReady() == false)
+    {
+        CPrintToChat(client, "{red}[Tank Vote] {default}You are only able to vote during ready-up");
+        return Plugin_Handled;
+    }
+        
+     // Who are we targetting?
+    char arg1[32];
+    GetCmdArg(1, arg1, sizeof(arg1));
+    
+    // If no argument passed through, show the menu
+    if (arg1[0] == EOS)
+    {
+        displayVoteMenu(client);
+        return Plugin_Handled;
+    }
+
+    // Try and find a matching player
+    int target = FindTarget(0, arg1);
+    if (target == -1)
+    {
+        CPrintToChat(client, "{red}[Tank Control] {default}The selected player was not found.");
+        return Plugin_Handled;
+    }
+    
+    // Try to register the vote
+    registerClientVote(client, target);
+    return Plugin_Handled;
+}
+
+/**
+ * Handler for the vote menu.
+ *
+ * @param Handle:menu
+ *  The menu instantiating the handler.
+ * @param MenuAction:action
+ *  The menu action (i.e. Select/Cancel etc.)
+ * @param param1
+ *  The client id for user who made a selection.
+ * @param param2
+ *  The value for the menu choice (i.e. our case steam id)
+ */
+ 
+public int VoteMenuHandler(Handle menu, MenuAction action, int param1, int param2)
+{
+    switch(action)
+    {
+        case MenuAction_Select:
+        {
+            // Retrieve the target client id
+            char targetSteamId[64];
+            GetMenuItem(menu, param2, targetSteamId, sizeof(targetSteamId));
+            int target = getInfectedPlayerBySteamId(targetSteamId);
+            
+            // Register the client vote
+            registerClientVote(param1, target);
+        }
+ 
+        case MenuAction_End:
+        {
+            CloseHandle(menu);
+        }
+     }
+ 
+    return 0;
+}
+
+/**
+ * Tells you whether a target steam id is in the tank pool
+ * 
+ * @param Handle:sourceHandle
+ *     The pool of potential steam ids to become tank.
+ * @param String:searchString
+ *     The steam ids of player you are looking for.
+ * 
+ * @return
+ *     TRUE is player is in pool, FALSE if not
+ */
+ 
+public bool inHandle(Handle sourceHandle, const char[] searchString)
+{
+    char arrayString[64];
+    
+    for (int i = 0; i < GetArraySize(sourceHandle); i++)
+    {
+        GetArrayString(sourceHandle, i, arrayString, sizeof(arrayString));
+        if (strcmp(arrayString, searchString) == 0)
+        {
+            return true;
+        }
+    }
+    
+    return false;
+}
+
+/**
  * Shuffle the tank (randomly give to another player in
  * the pool.
  */
@@ -349,6 +466,264 @@ public void chooseTank(any data)
     int rndIndex = GetRandomInt(0, GetArraySize(infectedPool) - 1);
     GetArrayString(infectedPool, rndIndex, queuedTankSteamId, sizeof(queuedTankSteamId));
     delete infectedPool;
+}
+
+/**
+ * Set the tank.
+ *
+ * Iterates through the handles to look for the player who has received the
+ * most votes, and instructs l4d_tank_control to mark them as tank.
+ */
+ 
+public void setTank() 
+{
+    // If nobody has voted on someone to become tank, nothing to do
+    if (GetArraySize(h_tankVoteSteamIds) == 0)
+    {
+        clearHandles();
+        return;
+    }
+    
+    char steamId[64];
+    int mostVotes = 0;
+    int mostVotesIndex = -1;
+    int votes;
+    
+    // Iterate through tank votes and retrieve most voted player
+    for (int i = 0; i < GetArraySize(h_tankVoteSteamIds); i++)
+    {
+        GetArrayString(h_tankVoteSteamIds, i, steamId, sizeof(steamId));
+        votes = GetArrayCell(h_tankVotes, i);
+        
+        // If we have a new leader
+        if (votes > mostVotes)
+        {
+            mostVotes = votes;
+            mostVotesIndex = i;
+        }
+    }
+    
+    // Instruct l4d_tank_control who the tank is
+    GetArrayString(h_tankVoteSteamIds, mostVotesIndex, steamId, sizeof(steamId));
+    
+    strcopy(queuedTankSteamId, sizeof(queuedTankSteamId), steamId);
+    outputTankToAll(0);
+    
+    // Reset the handles
+    clearHandles();
+}
+
+/**
+ * Initialise the handles (also used to reset handles)
+ */
+ public void clearHandles()
+{
+    ClearArray(h_tankVotes);
+    ClearArray(h_whosVoted);
+    ClearArray(h_tankVoteSteamIds);
+}
+
+/**
+ * Code which actually display the vote menu.
+ *
+ * @param client
+ *  The client who the vote menu is being rendered for.
+ */
+
+ public void displayVoteMenu(int client)
+ {
+    // Variable declaration to hold our menu/client information
+    int clientId;
+    char steamId[64];
+    char targetName[64];  
+
+    ArrayList infectedPool = new ArrayList(ByteCountToCells(64));
+    addTeamSteamIdsToArray(infectedPool, L4D2Team_Infected);
+    
+    // If there is nobody on the infected team, return (otherwise we'd be stuck trying to select forever)
+    if (GetArraySize(infectedPool) == 0)
+    {
+        delete infectedPool;
+        return;
+    }
+
+    // Remove players who've already had tank from the pool.
+    removeTanksFromPool(infectedPool, h_whosHadTank);
+
+    Handle menu = CreateMenu(VoteMenuHandler, MENU_ACTIONS_DEFAULT);
+    
+    SetMenuTitle(menu, "Select a player to become tank");
+   
+    // Add menu items (players in tank pool)
+    for (int i = 0; i < GetArraySize(infectedPool); i++)
+    {
+        GetArrayString(infectedPool, i, steamId, sizeof(steamId));
+        clientId = getInfectedPlayerBySteamId(steamId);
+        GetClientName(clientId, targetName, sizeof(targetName));
+        
+        AddMenuItem(menu, steamId, targetName);
+    }
+
+    SetMenuExitButton(menu, false);
+    DisplayMenu(menu, client, 20);
+}
+
+
+/**
+ * Registers a client vote.
+ *
+ * @param client
+ *  The client casting the vote.
+ * @param target
+ *  The client id of the target player (player voted to become tank)
+ */
+ 
+public void registerClientVote(int client, int target)
+{
+    // Retrieve players in the infected pool
+    char steamId[64];
+
+    ArrayList infectedPool = new ArrayList(ByteCountToCells(64));
+    addTeamSteamIdsToArray(infectedPool, L4D2Team_Infected);
+    
+    // If there is nobody on the infected team, return (otherwise we'd be stuck trying to select forever)
+    if (GetArraySize(infectedPool) == 0)
+    {
+        delete infectedPool;
+        return;
+    }
+
+    // Remove players who've already had tank from the pool.
+    removeTanksFromPool(infectedPool, h_whosHadTank);
+    
+    // Get the targetted player's name
+    char targetName[64];
+    GetClientName(target, targetName, sizeof(targetName));
+    
+    // Get the client name
+    char clientName[64];
+    GetClientName(client, clientName, sizeof(clientName));
+    
+    // Set the tank
+    if (IS_VALID_INFECTED(target))
+    {
+        GetClientAuthId(target, AuthId_Steam2, steamId, sizeof(steamId));
+        if (inHandle(infectedPool, steamId))
+        {
+            if (hasVoted(client) == false)
+            {
+                registerTankVote(client, steamId);
+                PrintToInfected("{red}[Tank Vote] {default}{olive}%s {default}has voted for {olive}%s", clientName, targetName);
+            }
+            else
+            {
+                CPrintToChat(client, "{red}[Tank Vote] {default}You have already voted this round.");
+            }
+        }
+        else
+        {
+            CPrintToChat(client, "{red}[Tank Vote] {olive}%s {default}is not in the tank pool", targetName);
+        }
+    }
+    
+    // Player not on infected
+    else
+    {
+        CPrintToChat(client, "{red}[Tank Control] {default}{olive}%s {default}is not available to become tank", targetName);
+    }
+    
+    CloseHandle(infectedPool);
+}
+
+/**
+ * Registers a tank vote
+ *
+ * @param client
+ *     The client registering the vote.
+ * @param String:targetSteamId[]
+ *     The player the vote is being casted for to become tank.
+ */
+ 
+public void registerTankVote(int client, const char[] targetSteamId)
+{    
+    // Retrieve the steam id of the client
+    char steamId[64];
+    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
+    
+    // Retrieve the client of the target steam id
+    
+    
+    // If the client has already voted, do nothing (can not vote twice)
+    if (hasVoted(client))
+    {
+        return;
+    }
+    
+    // If a player has already received a vote, update it
+    if (inHandle(h_tankVoteSteamIds, targetSteamId))
+    {
+        int targetClientId = getInfectedPlayerBySteamId(targetSteamId);
+        int index = getVotePlayerIndex(targetClientId);
+        Handle currentVotes = GetArrayCell(h_tankVotes, index);
+
+        SetArrayCell(h_tankVotes, index, ++currentVotes);
+    }
+    
+    // If its the initial vote for a player
+    else 
+    {
+        PushArrayString(h_tankVoteSteamIds, targetSteamId);
+        PushArrayCell(h_tankVotes, 1);
+    }
+    
+    // Mark the client as having voted
+    PushArrayString(h_whosVoted, steamId);
+}
+
+/**
+ * Whether or not a player has already voted for the round.
+ 
+ * @param client
+ *    The client whos being checked.
+ *
+ * @return
+ *    TRUE if the player has voted, FALSE if not
+ */
+ 
+public bool hasVoted(int client)
+{
+    return getVotePlayerIndex(client) >= 0;
+}
+
+/**
+ * The index in the handle of the player whos trying to be voted on
+ 
+ * @param client
+ *    The client whos being checked.
+ *
+ * @return
+ *    The index (-1 if not found)
+ */
+ 
+public int getVotePlayerIndex(int client)
+{
+    // Retrieve the steam id of the client
+    char steamId[64];
+    char targetSteamId[64];
+    
+    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
+
+    // Has the client voted
+    for (int i = 0; i < GetArraySize(h_tankVoteSteamIds); i++)
+    {
+        GetArrayString(h_tankVoteSteamIds, i, steamId, sizeof(steamId));
+        if (strcmp(steamId, targetSteamId) == 0)
+        {
+            return i;
+        }
+    }
+    
+    return -1;
 }
 
 /**
