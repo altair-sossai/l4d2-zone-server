@@ -23,6 +23,7 @@ ArrayList h_whosVoted;
 char queuedTankSteamId[64];
 ConVar hTankPrint, hTankDebug;
 bool casterSystemAvailable;
+bool messageWasDisplayed;
 
 public APLRes AskPluginLoad2(Handle myself, bool late, char[] error, int err_max)
 {
@@ -132,6 +133,8 @@ public void OnLibraryRemoved(const char[] name)
  
 public void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
+    messageWasDisplayed = false;
+
     CreateTimer(10.0, newGame);
     CreateTimer(5.0, showVoteTankMessage);
 }
@@ -153,8 +156,26 @@ public Action newGame(Handle timer)
 
 public Action showVoteTankMessage(Handle timer)
 {
-    CPrintToChatAll("{default}Use {red}!votetank {default}to choose who will be the tank");
+    if(GetInGameInfectedClient() != 0 && !messageWasDisplayed)
+    {
+        CPrintToChatAll("{default}Use {red}!votetank {default}to choose who will be the tank");
+        
+        messageWasDisplayed = true;
+    }
+    else if(!messageWasDisplayed) 
+        CreateTimer(2.0, showVoteTankMessage);
+
     return Plugin_Continue;
+}
+
+int GetInGameInfectedClient()
+{
+    int count = GetClientCount(true);
+    for(int client = 1; client <= count; client++ )
+        if(IsClientInGame(client) && GetClientTeam(client) == 3)
+            return client;
+
+    return 0;
 }
 
 /**
