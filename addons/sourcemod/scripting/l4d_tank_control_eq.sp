@@ -583,8 +583,8 @@ public bool chooseTankBasedOnVotes()
         AddMenuItem(menu, steamId, targetName);
     }
 
-    SetMenuExitButton(menu, false);
-    DisplayMenu(menu, client, 20);
+    SetMenuExitButton(menu, true);
+    DisplayMenu(menu, client, 30);
 }
 
 
