@@ -153,7 +153,7 @@ public Action newGame(Handle timer)
 
 public Action showVoteTankMessage(Handle timer)
 {
-    PrintToChatAll("\x01Use \x04!votetank \x01to choose who will be the tank");
+    CPrintToChatAll("{default}Use {red}!votetank {default}to choose who will be the tank");
     return Plugin_Continue;
 }
 
