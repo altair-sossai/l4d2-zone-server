@@ -149,6 +149,7 @@ public Action newGame(Handle timer)
 	{
 		h_whosHadTank.Clear();
 		queuedTankSteamId = "";
+		clearHandles();
 	}
 
 	return Plugin_Stop;
@@ -158,7 +159,7 @@ public Action showVoteTankMessage(Handle timer)
 {
     if(GetInGameInfectedClient() != 0 && !messageWasDisplayed)
     {
-        CPrintToChatAll("{default}Use {red}!votetank {default}to choose who will be the tank");
+        CPrintToChatAll("{default}Use \x04!votetank {default}to choose who will be the tank");
         
         messageWasDisplayed = true;
     }
@@ -447,6 +448,9 @@ public Action GiveTank_Cmd(int client, int args)
  
 public void chooseTank(any data)
 {
+    if(chooseTankBasedOnVotes())
+        return;
+
     // Create our pool of players to choose from
     ArrayList infectedPool = new ArrayList(ByteCountToCells(64));
     addTeamSteamIdsToArray(infectedPool, L4D2Team_Infected);
@@ -494,13 +498,13 @@ public void chooseTank(any data)
  * most votes, and instructs l4d_tank_control to mark them as tank.
  */
  
-public void setTank() 
+public bool chooseTankBasedOnVotes() 
 {
     // If nobody has voted on someone to become tank, nothing to do
     if (GetArraySize(h_tankVoteSteamIds) == 0)
     {
         clearHandles();
-        return;
+        return false;
     }
     
     char steamId[64];
@@ -522,14 +526,11 @@ public void setTank()
         }
     }
     
-    // Instruct l4d_tank_control who the tank is
     GetArrayString(h_tankVoteSteamIds, mostVotesIndex, steamId, sizeof(steamId));
-    
     strcopy(queuedTankSteamId, sizeof(queuedTankSteamId), steamId);
-    outputTankToAll(0);
-    
-    // Reset the handles
     clearHandles();
+
+    return true;
 }
 
 /**
@@ -571,9 +572,8 @@ public void setTank()
 
     Handle menu = CreateMenu(VoteMenuHandler, MENU_ACTIONS_DEFAULT);
     
-    SetMenuTitle(menu, "Select a player to become tank");
+    SetMenuTitle(menu, "Who should be the tank?");
    
-    // Add menu items (players in tank pool)
     for (int i = 0; i < GetArraySize(infectedPool); i++)
     {
         GetArrayString(infectedPool, i, steamId, sizeof(steamId));
@@ -629,7 +629,7 @@ public void registerClientVote(int client, int target)
         GetClientAuthId(target, AuthId_Steam2, steamId, sizeof(steamId));
         if (inHandle(infectedPool, steamId))
         {
-            if (hasVoted(client) == false)
+            if (!hasVoted(client))
             {
                 registerTankVote(client, steamId);
                 PrintToInfected("{red}[Tank Vote] {default}{olive}%s {default}has voted for {olive}%s", clientName, targetName);
