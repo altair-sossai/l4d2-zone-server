@@ -204,7 +204,7 @@ public void PlayerLeftStartArea_Event(Event hEvent, const char[] eName, bool don
  
 public void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast)
 {
-    L4D2Team oldTeam = view_as<L4D2Team>(hEvent.GetInt("oldteam"));
+	L4D2Team oldTeam = view_as<L4D2Team>(hEvent.GetInt("oldteam"));
 	int client = GetClientOfUserId(hEvent.GetInt("userid"));
 	char tmpSteamId[64];
 
@@ -223,7 +223,7 @@ public void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast
     {
         clearHandles();
         if (IsInReady())
-            PrintToInfected("{red}[Tank Vote] {default}Tank votes have been reset, use \x04!votetank {default}to choose the next tank", clientName, targetName);
+            PrintToInfected("{red}[Tank Vote] {default}Tank votes have been reset, use \x04!votetank {default}to choose the next tank");
     }
 }
 
