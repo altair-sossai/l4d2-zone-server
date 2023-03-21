@@ -540,16 +540,14 @@ public bool chooseTankBasedOnVotes()
         return false;
     }
     
-    char steamId[64];
-    int mostVotes = 0;
-    int mostVotesIndex = -1;
-    int votes;
-    
+    int mostVotes = -1;
+    int mostVotesIndex = 0;
+    int size = GetArraySize(h_tankVoteSteamIds);
+
     // Iterate through tank votes and retrieve most voted player
-    for (int i = 0; i < GetArraySize(h_tankVoteSteamIds); i++)
+    for (int i = 0; i < size; i++)
     {
-        GetArrayString(h_tankVoteSteamIds, i, steamId, sizeof(steamId));
-        votes = GetArrayCell(h_tankVotes, i);
+        int votes = GetArrayCell(h_tankVotes, i);
         
         // If we have a new leader
         if (votes > mostVotes)
@@ -559,6 +557,7 @@ public bool chooseTankBasedOnVotes()
         }
     }
     
+    char steamId[64];
     GetArrayString(h_tankVoteSteamIds, mostVotesIndex, steamId, sizeof(steamId));
     strcopy(queuedTankSteamId, sizeof(queuedTankSteamId), steamId);
     clearHandles();
