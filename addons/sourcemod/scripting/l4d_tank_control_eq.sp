@@ -83,13 +83,13 @@ public void OnPluginStart()
     h_tankVoteSteamIds = CreateArray(64);
 
     // Admin commands
-    RegAdminCmd("sm_tankshuffle", TankShuffle_Cmd, ADMFLAG_SLAY, "Re-picks at random someone to become tank.");
+    RegAdminCmd("sm_tankshuffle", TankShuffle_Cmd, ADMFLAG_SLAY, "Re-picks at random someone to become tank");
     RegAdminCmd("sm_givetank", GiveTank_Cmd, ADMFLAG_SLAY, "Gives the tank to a selected player");
 
     // Register the boss commands
-    RegConsoleCmd("sm_tank", Tank_Cmd, "Shows who is becoming the tank.");
-    RegConsoleCmd("sm_boss", Tank_Cmd, "Shows who is becoming the tank.");
-    RegConsoleCmd("sm_witch", Tank_Cmd, "Shows who is becoming the tank.");
+    RegConsoleCmd("sm_tank", Tank_Cmd, "Shows who is becoming the tank");
+    RegConsoleCmd("sm_boss", Tank_Cmd, "Shows who is becoming the tank");
+    RegConsoleCmd("sm_witch", Tank_Cmd, "Shows who is becoming the tank");
     RegConsoleCmd("sm_votetank", VoteTank_Cmd, "Vote on who becomes the tank");
     
     // Cvars
@@ -222,7 +222,7 @@ public void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast
 	if (team == view_as<L4D2Team>(L4D2Team_Infected) || oldTeam == view_as<L4D2Team>(L4D2Team_Infected))
     {
         clearHandles();
-        if (IsInReady())
+        if (IsInReady() && NumberOfPlayersInTeams() == 8)
             PrintToInfected("{red}[Tank Vote] {default}Tank votes have been reset, use \x04!votetank {default}to choose the next tank");
     }
 }
@@ -301,12 +301,27 @@ public Action Tank_Cmd(int client, int args)
 public Action VoteTank_Cmd(int client, int args)
 {
     if (!IS_VALID_INFECTED(client))
+    {
+        CPrintToChat(client, "{red}[Tank Vote] {default}Only infected can choose who will be the tank");
         return Plugin_Handled;
+    }
 
     // If not in ready up, unable to vote
     if (!IsInReady())
     {
         CPrintToChat(client, "{red}[Tank Vote] {default}You are only able to vote during ready-up");
+        return Plugin_Handled;
+    }
+
+    if (NumberOfPlayersInTeams() != 8)
+    {
+        CPrintToChat(client, "{red}[Tank Vote] {default}8 players are required to choose a tank");
+        return Plugin_Handled;
+    }
+
+    if (hasVoted(client))
+    {
+        CPrintToChat(client, "{red}[Tank Vote] {default}You have already voted this round");
         return Plugin_Handled;
     }
         
@@ -325,7 +340,7 @@ public Action VoteTank_Cmd(int client, int args)
     int target = FindTarget(0, arg1);
     if (target == -1)
     {
-        CPrintToChat(client, "{red}[Tank Control] {default}The selected player was not found.");
+        CPrintToChat(client, "{red}[Tank Control] {default}The selected player was not found");
         return Plugin_Handled;
     }
     
@@ -396,6 +411,28 @@ public bool inHandle(Handle sourceHandle, const char[] searchString)
     }
     
     return false;
+}
+
+public int NumberOfPlayersInTeams()
+{
+	int count = 0;
+		
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (!IsClientInGame(client) || IsFakeClient(client) || !SurvivorOrInfected(client))
+			continue;
+
+		count++;
+	}
+
+	return count;
+}
+
+public bool SurvivorOrInfected(int client)
+{
+	int clientTeam = GetClientTeam(client);
+	
+	return clientTeam == 2 || clientTeam == 3;
 }
 
 /**
@@ -646,7 +683,7 @@ public void registerClientVote(int client, int target)
                 PrintToInfected("{red}[Tank Vote] {default}{olive}%s {default}has voted for {olive}%s", clientName, targetName);
             }
             else
-                CPrintToChat(client, "{red}[Tank Vote] {default}You have already voted this round.");
+                CPrintToChat(client, "{red}[Tank Vote] {default}You have already voted this round");
         }
         else
             CPrintToChat(client, "{red}[Tank Vote] {olive}%s {default}is not in the tank pool", targetName);
