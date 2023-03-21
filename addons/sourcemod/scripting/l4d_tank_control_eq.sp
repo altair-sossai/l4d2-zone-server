@@ -292,6 +292,9 @@ public Action Tank_Cmd(int client, int args)
  */
 public Action VoteTank_Cmd(int client, int args)
 {
+    if (!IS_VALID_INFECTED(client))
+        return Plugin_Handled;
+
     // If not in ready up, unable to vote
     if (!IsInReady())
     {
