@@ -316,12 +316,12 @@ public Action VoteTank_Cmd(int client, int args)
     if (NumberOfPlayersInTeams() != 8)
     {
         CPrintToChat(client, "{red}[Tank Vote] {default}8 players are required to choose a tank");
-        return Plugin_Handled;
+        //return Plugin_Handled;
     }
 
     if (hasVoted(client))
     {
-        CPrintToChat(client, "{red}[Tank Vote] {default}You have already voted this round");
+        CPrintToChat(client, "{red}[Tank Vote] {default}You have already voted this round, move to spectator to reset votes");
         return Plugin_Handled;
     }
         
@@ -705,14 +705,14 @@ public void registerClientVote(int client, int target)
  
 public void registerTankVote(int client, const char[] targetSteamId)
 {    
-    // Retrieve the steam id of the client
-    char steamId[64];
-    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
-    
     // Retrieve the client of the target steam id
     // If the client has already voted, do nothing (can not vote twice)
     if (hasVoted(client))
         return;
+
+    // Retrieve the steam id of the client
+    char steamId[64];
+    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
     
     // If a player has already received a vote, update it
     if (inHandle(h_tankVoteSteamIds, targetSteamId))
@@ -745,7 +745,9 @@ public void registerTankVote(int client, const char[] targetSteamId)
  */
 public bool hasVoted(int client)
 {
-    return getVotePlayerIndex(client) >= 0;
+    int index = getVotePlayerIndex(client);
+
+    return index >= 0;
 }
 
 /**
@@ -769,7 +771,7 @@ public int getVotePlayerIndex(int client)
     // Has the client voted
     for (int i = 0; i < GetArraySize(h_tankVoteSteamIds); i++)
     {
-        GetArrayString(h_tankVoteSteamIds, i, steamId, sizeof(steamId));
+        GetArrayString(h_tankVoteSteamIds, i, targetSteamId, sizeof(targetSteamId));
         if (strcmp(steamId, targetSteamId) == 0)
             return i;
     }
