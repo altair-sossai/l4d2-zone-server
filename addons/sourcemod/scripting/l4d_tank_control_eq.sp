@@ -112,21 +112,6 @@ public void OnLibraryRemoved(const char[] name)
 	if (StrEqual(name, "caster_system")) casterSystemAvailable = false;
 }
 
-/*public void OnClientDisconnect(int client) 
-{
-    char tmpSteamId[64];
-    
-    if (client)
-    {
-        GetClientAuthId(client, AuthId_Steam2, tmpSteamId, sizeof(tmpSteamId));
-        if (strcmp(queuedTankSteamId, tmpSteamId) == 0)
-        {
-            chooseTank(0);
-            outputTankToAll(0);
-        }
-    }
-}*/
-
 /**
  * When a new game starts, reset the tank pool.
  */
@@ -316,7 +301,7 @@ public Action VoteTank_Cmd(int client, int args)
     if (NumberOfPlayersInTeams() != 8)
     {
         CPrintToChat(client, "{red}[Tank Vote] {default}8 players are required to choose a tank");
-        //return Plugin_Handled;
+        return Plugin_Handled;
     }
 
     if (hasVoted(client))
