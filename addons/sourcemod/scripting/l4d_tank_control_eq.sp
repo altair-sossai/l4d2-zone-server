@@ -122,6 +122,8 @@ public void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcas
 
     CreateTimer(10.0, newGame);
     CreateTimer(5.0, showVoteTankMessage);
+
+    clearHandles();
 }
 
 public Action newGame(Handle timer)
@@ -134,7 +136,6 @@ public Action newGame(Handle timer)
 	{
 		h_whosHadTank.Clear();
 		queuedTankSteamId = "";
-		clearHandles();
 	}
 
 	return Plugin_Stop;
@@ -181,6 +182,7 @@ public void PlayerLeftStartArea_Event(Event hEvent, const char[] eName, bool don
 {
     chooseTank(0);
     outputTankToAll(0);
+    clearHandles();
 }
 
 /**
@@ -207,9 +209,17 @@ public void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast
 	if (team == view_as<L4D2Team>(L4D2Team_Infected) || oldTeam == view_as<L4D2Team>(L4D2Team_Infected))
     {
         clearHandles();
+
         if (IsInReady() && NumberOfPlayersInTeams() == 8)
-            PrintToInfected("{red}[Tank Vote] {default}Tank votes have been reset, use \x04!votetank {default}to choose the next tank");
+            CreateTimer(2.0, showMessageVotesHaveBeenReset);
     }
+}
+
+public Action showMessageVotesHaveBeenReset(Handle timer)
+{
+    PrintToInfected("{red}[Tank Vote] {default}Tank votes have been reset, use \x04!votetank {default}to choose the next tank");
+
+    return Plugin_Continue;
 }
 
 /**
@@ -388,7 +398,8 @@ public bool inHandle(Handle sourceHandle, const char[] searchString)
 {
     char arrayString[64];
     
-    for (int i = 0; i < GetArraySize(sourceHandle); i++)
+    int size = GetArraySize(sourceHandle);
+    for (int i = 0; i < size; i++)
     {
         GetArrayString(sourceHandle, i, arrayString, sizeof(arrayString));
         if (strcmp(arrayString, searchString) == 0)
@@ -534,7 +545,8 @@ public void chooseTank(any data)
 public bool chooseTankBasedOnVotes() 
 {
     // If nobody has voted on someone to become tank, nothing to do
-    if (GetArraySize(h_tankVoteSteamIds) == 0)
+    int size = GetArraySize(h_tankVoteSteamIds);
+    if (size == 0)
     {
         clearHandles();
         return false;
@@ -542,8 +554,7 @@ public bool chooseTankBasedOnVotes()
     
     int mostVotes = -1;
     int mostVotesIndex = 0;
-    int size = GetArraySize(h_tankVoteSteamIds);
-
+    
     // Iterate through tank votes and retrieve most voted player
     for (int i = 0; i < size; i++)
     {
@@ -560,7 +571,12 @@ public bool chooseTankBasedOnVotes()
     char steamId[64];
     GetArrayString(h_tankVoteSteamIds, mostVotesIndex, steamId, sizeof(steamId));
     strcopy(queuedTankSteamId, sizeof(queuedTankSteamId), steamId);
-    clearHandles();
+
+    char tankClientName[MAX_NAME_LENGTH];
+    int tankClientId = getInfectedPlayerBySteamId(queuedTankSteamId);
+    GetClientName(tankClientId, tankClientName, sizeof(tankClientName));
+
+    PrintToInfected("{red}[Tank Vote] {olive}%s {default}will be the tank by \x04%d votes", tankClientName, mostVotes);
 
     return true;
 }
@@ -570,9 +586,9 @@ public bool chooseTankBasedOnVotes()
  */
  public void clearHandles()
 {
-    ClearArray(h_tankVotes);
-    ClearArray(h_whosVoted);
-    ClearArray(h_tankVoteSteamIds);
+    h_tankVotes.Clear();
+    h_whosVoted.Clear();
+    h_tankVoteSteamIds.Clear();
 }
 
 /**
@@ -694,10 +710,6 @@ public void registerTankVote(int client, const char[] targetSteamId)
     if (hasVoted(client))
         return;
 
-    // Retrieve the steam id of the client
-    char steamId[64];
-    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
-    
     // If a player has already received a vote, update it
     if (inHandle(h_tankVoteSteamIds, targetSteamId))
     {
@@ -715,7 +727,11 @@ public void registerTankVote(int client, const char[] targetSteamId)
     }
     
     // Mark the client as having voted
+    char steamId[64];
+    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
     PushArrayString(h_whosVoted, steamId);
+
+    chooseTankBasedOnVotes();
 }
 
 /**
@@ -748,12 +764,12 @@ public int getVotePlayerIndex(int client)
 {
     // Retrieve the steam id of the client
     char steamId[64];
-    char targetSteamId[64];
-    
     GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
 
     // Has the client voted
-    for (int i = 0; i < GetArraySize(h_tankVoteSteamIds); i++)
+    int size = GetArraySize(h_tankVoteSteamIds);
+    char targetSteamId[64];
+    for (int i = 0; i < size; i++)
     {
         GetArrayString(h_tankVoteSteamIds, i, targetSteamId, sizeof(targetSteamId));
         if (strcmp(steamId, targetSteamId) == 0)
