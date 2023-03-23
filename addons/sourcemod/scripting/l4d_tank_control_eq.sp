@@ -211,7 +211,7 @@ public void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast
         clearHandles();
 
         if (IsInReady() && NumberOfPlayersInTeams() == 8)
-            CreateTimer(2.0, showMessageVotesHaveBeenReset);
+            CreateTimer(1.0, showMessageVotesHaveBeenReset);
     }
 }
 
@@ -576,7 +576,7 @@ public bool chooseTankBasedOnVotes()
     int tankClientId = getInfectedPlayerBySteamId(queuedTankSteamId);
     GetClientName(tankClientId, tankClientName, sizeof(tankClientName));
 
-    PrintToInfected("{red}[Tank Vote] {olive}%s {default}will be the tank by \x04%d votes", tankClientName, mostVotes);
+    PrintToInfected("{red}[Tank Vote] {olive}%s {default}will be the tank by \x04%d {default}vote(s)", tankClientName, mostVotes);
 
     return true;
 }
@@ -679,8 +679,8 @@ public void registerClientVote(int client, int target)
         {
             if (!hasVoted(client))
             {
-                registerTankVote(client, steamId);
                 PrintToInfected("{red}[Tank Vote] {default}{olive}%s {default}has voted for {olive}%s", clientName, targetName);
+                registerTankVote(client, steamId);
             }
             else
                 CPrintToChat(client, "{red}[Tank Vote] {default}You have already voted this round");
