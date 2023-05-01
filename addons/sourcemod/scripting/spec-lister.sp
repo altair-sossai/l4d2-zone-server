@@ -7,6 +7,7 @@
 #define VOICE_LISTENALL 4
 
 #define TEAM_SPEC 5
+#define PLUGIN_VERSION "1.0"
 
 public Plugin:myinfo = 
 {
