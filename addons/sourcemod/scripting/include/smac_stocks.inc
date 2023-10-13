@@ -312,10 +312,9 @@ stock void BfWriteSBitLong(Handle bf,int data,int numBits)
     }
 }
 
-stock int BfReadSBitLong(Handle bf,int numBits)
+stock void BfReadSBitLong(Handle bf,int numBits)
 {
-    int[] bits = new int[numBits];
-    int ret, i;
+    int bits[numBits], ret, i;
 
     for (i = 0; i < numBits; i++)
     {
