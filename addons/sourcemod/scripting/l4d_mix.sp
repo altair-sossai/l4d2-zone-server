@@ -43,6 +43,7 @@
 #include <sdktools>
 #include <left4dhooks>
 #include <colors>
+#include <readyup>
 
 #define TEAM_SPECTATOR 1
 #define TEAM_SURVIVOR 2
@@ -236,6 +237,12 @@ public void CaptainVote_ConVarChange_MixStatus(Handle convar, char[] oldValue, c
 
 public Action Command_Captainvote(int client, int args)
 {
+	if (!IsInReady() || L4D2Direct_GetVSCampaignScore(0) != 0 || L4D2Direct_GetVSCampaignScore(1) != 0)
+	{
+		CPrintToChat(client, "{default}[{olive}Mix{default}] Not allowed in ongoing games.");
+		return Plugin_Handled;
+	}
+
 	char CommandArgs[128];
 	GetCmdArgString(CommandArgs, 128);
 	
@@ -337,6 +344,11 @@ public Action Command_Captainvote(int client, int args)
 
 public Action Command_ForceCaptainvote (int client, int args)
 {
+	if (!IsInReady() || L4D2Direct_GetVSCampaignScore(0) != 0 || L4D2Direct_GetVSCampaignScore(1) != 0)
+	{
+		CPrintToChat(client, "{default}[{olive}Mix{default}] Not allowed in ongoing games.");
+		return Plugin_Handled;
+	}
 	
 	int surfreeslots = GetTeamMaxHumans(2);
 	int inffreeslots = GetTeamMaxHumans(3);
