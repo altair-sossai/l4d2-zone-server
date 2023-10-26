@@ -92,13 +92,15 @@ public void OnClientDisconnect(int client)
 
 void OnTankFrustrated(Event event, const char[] name, bool dontBroadcast)
 {
-	RemoveInfectedModelGlow(GetClientOfUserId(event.GetInt("userid"))); // Tank玩家變成AI
+	RemoveAllModelGlow();
+	CreateAllModelGlow();
 }
 
 // Fix Tank missing glow in 2nd control (by Mart)
 public void L4D_OnReplaceTank(int tank, int newtank)
 {
-	RequestFrame(OnNextFrame, GetClientUserId(newtank));
+	RemoveAllModelGlow();
+	CreateAllModelGlow();
 }
 
 public void L4D_OnEnterGhostState(int client)
