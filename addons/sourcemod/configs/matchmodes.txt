@@ -23,6 +23,13 @@
 			"name" "1v1 ZoneMod"
 		}
 	}
+	"VanillaMod Configs"
+	{
+		"vanillamod"
+		{
+			"name" "VanillaMod 2.8.7"
+		}
+	}
 	"NeoMod Configs"
 	{
 		"neomod"
