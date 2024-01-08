@@ -27,7 +27,7 @@
 	{
 		"vanillamod"
 		{
-			"name" "VanillaMod 2.8.7"
+			"name" "VanillaMod 2.8.8"
 		}
 	}
 	"NeoMod Configs"
