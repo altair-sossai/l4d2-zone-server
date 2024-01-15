@@ -13,7 +13,7 @@ In its current state it allows anyone to host their own up to date competitive L
 This project is **Actively Developed**.
 
 > **Included Matchmodes:**
-* **Zonemod 2.8.8**
+* **Zonemod 2.8.9**
 * **Zonemod Hunters**
 * **Zonemod Retro**
 * **NeoMod 0.4a** 
@@ -128,6 +128,7 @@ After running the container, the Left 4 Dead 2 Zone Server should be accessible 
 
 
 > **Competitive Mapping Rework:**
+* Aiden
 * Derpduck
 
 > **Testing/Issue Reporting:**
