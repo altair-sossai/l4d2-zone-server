@@ -71,14 +71,6 @@
 	{
 		"es"	"Has alcanzado tu límite de pausa."
 	}
-	"PauseLimitPerTeam"
-	{
-		"es"	"Has alcanzado tu límite de pausa de su equipo."
-	}
-	"PausesUsed"
-	{
-		"es"	"Pausas utilizadas: {red}%d / %d"
-	}
 	// AttemptPause
 	"PauseDeferred"
 	{

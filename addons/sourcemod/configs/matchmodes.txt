@@ -1,12 +1,5 @@
 "MatchModes"
 {
-	"VanillaMod Configs"
-	{
-		"vanillamod"
-		{
-			"name" "VanillaMod 2.8.9"
-		}
-	}
 	"ZoneMod Configs"
 	{
 		"zonemod"
@@ -28,6 +21,13 @@
 		"zm1v1"
 		{
 			"name" "1v1 ZoneMod"
+		}
+	}
+	"VanillaMod Configs"
+	{
+		"vanillamod"
+		{
+			"name" "VanillaMod 2.8.9b"
 		}
 	}
 	"NeoMod Configs"

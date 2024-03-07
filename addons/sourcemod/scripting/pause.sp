@@ -29,14 +29,13 @@
 #include <l4d2util>
 #undef REQUIRE_PLUGIN
 #include <readyup>
-#include <left4dhooks>
 
 public Plugin myinfo =
 {
     name = "Pause plugin",
     author = "CanadaRox, Sir, Forgetest",
     description = "Adds pause functionality without breaking pauses, also prevents SI from spawning because of the Pause.",
-    version = "6.7",
+    version = "6.7.1",
     url = "https://github.com/SirPlease/L4D2-Competitive-Rework"
 };
 
@@ -54,10 +53,9 @@ Handle
 ConVar
     onlyEnableForce,
     pauseDelayCvar,
+    unpauseDelayCvar,
     initiatorReadyCvar,
-    l4d_ready_delay,
     pauseLimitCvar,
-    pauseLimitPerTeamCvar,
     serverNamerCvar;
 
 // Pause Handle
@@ -65,8 +63,8 @@ Handle
     readyCountdownTimer,
     deferredPauseTimer;
 int
-    readyDelay,
-    pauseDelay;
+    pauseDelay,
+    unpauseDelay;
 bool
     isPaused,
     RoundEnd,
@@ -112,10 +110,9 @@ public void OnPluginStart()
     LoadTranslations("pause.phrases");
     onlyEnableForce = CreateConVar("sm_onlyforce", "0", "Only allow for force pause and unpause functionality");
     pauseDelayCvar = CreateConVar("sm_pausedelay", "0", "Delay to apply before a pause happens.  Could be used to prevent Tactical Pauses", FCVAR_NONE, true, 0.0);
+    unpauseDelayCvar = CreateConVar("sm_unpausedelay", "3", "Delay to apply before an unpause happens.", FCVAR_NONE, true, 0.0);
     initiatorReadyCvar = CreateConVar("sm_initiatorready", "0", "Require or not the pause initiator should ready before unpausing the game", FCVAR_NONE, true, 0.0);
     pauseLimitCvar = CreateConVar("sm_pauselimit", "0", "Limits the amount of pauses a player can do in a single game. Set to 0 to disable.", FCVAR_NONE, true, 0.0);
-    pauseLimitPerTeamCvar = CreateConVar("sm_pauselimit_per_team", "0", "Limits the amount of pauses a team can do in a single game. Set to 0 to disable.", FCVAR_NONE, true, 0.0);
-    l4d_ready_delay = FindConVar("l4d_ready_delay");
 	
     playerPauseCount = new StringMap();
 
@@ -215,16 +212,6 @@ public void RoundStart_Event(Event event, const char[] name, bool dontBroadcast)
 {
     RoundEnd = false;
     initiatorId = 0;
-
-    CreateTimer(3.0, RoundStart_Timer);
-}
-
-public Action RoundStart_Timer(Handle timer)
-{
-    if (IsNewGame())
-        playerPauseCount.Clear();
-
-    return Plugin_Continue;
 }
 
 // ======================================
@@ -256,14 +243,6 @@ public Action Pause_Cmd(int client, int args)
 		
         CPrintToChatAll("%t %t", "Tag", "PauseCommand", client);
 		
-        int pauseLimitPerTeam = pauseLimitPerTeamCvar.IntValue;
-        if (pauseLimitPerTeam > 0)
-        {
-            int team = GetClientTeam(client);
-            int totalTeamPauses = TotalTeamPauses(team);
-            CPrintToChatAll("%t %t", "Tag", "PausesUsed", totalTeamPauses, pauseLimitPerTeam);
-        }
-
         pauseDelay = pauseDelayCvar.IntValue;
         if (pauseDelay == 0)
         {
@@ -446,14 +425,6 @@ bool AddPauseCount(int client)
     if (pauseLimit > 0 && pauseCount >= pauseLimit)
     {
         CPrintToChat(client, "%t %t", "Tag", "PauseLimit");
-        return false;
-    }
-
-    int pauseLimitPerTeam = pauseLimitPerTeamCvar.IntValue;
-    int team = GetClientTeam(client);
-    if (pauseLimitPerTeam > 0 && TotalTeamPauses(team) >= pauseLimitPerTeam)
-    {
-        CPrintToChat(client, "%t %t", "Tag", "PauseLimitPerTeam");
         return false;
     }
 
@@ -719,14 +690,14 @@ void InitiateLiveCountdown()
     if (readyCountdownTimer == null)
     {
         CPrintToChatAll("%t %t", "Tag", "CountdownCancelNotify");
-        readyDelay = l4d_ready_delay.IntValue;
+        unpauseDelay = unpauseDelayCvar.IntValue;
         readyCountdownTimer = CreateTimer(1.0, ReadyCountdownDelay_Timer, _, TIMER_REPEAT|TIMER_FLAG_NO_MAPCHANGE);
     }
 }
 
 public Action ReadyCountdownDelay_Timer(Handle timer)
 {
-    if (readyDelay == 0)
+    if (unpauseDelay == 0)
     {
         Unpause();
         PrintHintTextToAll("%t", "GameisLive");
@@ -734,8 +705,8 @@ public Action ReadyCountdownDelay_Timer(Handle timer)
     }
     else
     {
-        CPrintToChatAll("%t %t", "Tag", "CountdownReadyDelay", readyDelay);
-        readyDelay--;
+        CPrintToChatAll("%t %t", "Tag", "CountdownReadyDelay", unpauseDelay);
+        unpauseDelay--;
     }
     return Plugin_Continue;
 }
@@ -1047,35 +1018,4 @@ stock char[] InitiatorPaused()
     char buffer[64];
     Format(buffer, sizeof(buffer), "%T", "InitiatorPaused", LANG_SERVER);
     return buffer;
-}
-
-stock bool IsNewGame()
-{
-	int teamAScore = L4D2Direct_GetVSCampaignScore(0);
-	int teamBScore = L4D2Direct_GetVSCampaignScore(1);
-
-	return teamAScore == 0 && teamBScore == 0;
-}
-
-stock int TotalTeamPauses(int team)
-{
-    int total = 0;
-    char authId[18];
-
-    for (int client = 1; client <= MaxClients; client++)
-    {
-        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != team)
-            continue;
-
-        GetClientAuthId(client, AuthId_SteamID64, authId, 18, false);
-
-        int count = 0;
-
-        if (!playerPauseCount.GetValue(authId, count))
-            continue;
-
-        total += count;
-    }
-
-    return total;
 }
