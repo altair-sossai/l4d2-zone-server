@@ -189,7 +189,7 @@ public void ShowTankVoteMenu()
             AddMenuItem(menu, steamId, name);
         }
 
-        SetMenuExitButton(menu, false);
+        SetMenuExitButton(menu, true);
         DisplayMenu(menu, client, TANK_VOTE_TIMEOUT);
 
         tankVoteInProgress = true;
