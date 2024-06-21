@@ -21,8 +21,6 @@ $RECYCLE.BIN/
 # =========================
 # Operating System Files
 # =========================
-.vscode
-.local
-cfg/server_secret.cfg
-addons/sourcemod/logs/
-cvars_secret.cfg
+
+# Visual Studio Code files
+/.vscode
