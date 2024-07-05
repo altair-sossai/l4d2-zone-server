@@ -87,11 +87,7 @@ public Action DisplayStatsUrlTick(Handle timer)
 	if (!IsInReady())
 		return Plugin_Continue;
 
-	new String:server[100];
-	GetConVarString(cvar_playstats_server, server, sizeof(server));
-
-	PrintToChatAll("Estatísticas/ranking disponível em:");
-	PrintToChatAll("\x03https://l4d2-playstats.azurewebsites.net/server/%s", server);
+	PrintToChatAll("\x03l4d2.com.br");
 	PrintToChatAll("\x01Use \x04!ranking \x01para consultar sua posição");
 
 	return Plugin_Continue;
