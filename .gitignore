@@ -24,3 +24,6 @@ $RECYCLE.BIN/
 
 # Visual Studio Code files
 /.vscode
+
+# Ignore secrets file
+cfg/server_secrets.cfg
