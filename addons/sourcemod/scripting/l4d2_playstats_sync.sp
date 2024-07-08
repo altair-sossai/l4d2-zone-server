@@ -84,7 +84,7 @@ public Action RankingMixCmd(int client, int args)
 
 public Action DisplayStatsUrlTick(Handle timer)
 {
-	if (!IsInReady())
+	if (!IsInReady() || GameInProgress())
 		return Plugin_Continue;
 
 	PrintToChatAll("\x03l4d2.com.br");
@@ -156,6 +156,8 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 
 public void ShowRanking(int client)
 {
+	ShowMOTDPanel(client, "Ranking do servidor", "http://zeatslauncherstorage.blob.core.windows.net/zone-server/ranking.html", MOTDPANEL_TYPE_URL);
+
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));
 
@@ -202,6 +204,8 @@ void PrintPlayerInfo(JSONObject player, int client)
 
 public void LastMatch(int client)
 {
+	ShowMOTDPanel(client, "Resultado do último jogo", "http://zeatslauncherstorage.blob.core.windows.net/zone-server/last-match.html", MOTDPANEL_TYPE_URL);
+
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));
 
@@ -220,7 +224,6 @@ void LastMatchResponse(HTTPResponse httpResponse, int client)
 	JSONObject response = view_as<JSONObject>(httpResponse.Data);
 	JSONObject match = view_as<JSONObject>(response.Get("match"));
 	JSONArray teams = view_as<JSONArray>(match.Get("teams"));
-	JSONArray players = view_as<JSONArray>(response.Get("players"));
 
 	char campaign[128];
 	match.GetString("campaign", campaign, sizeof(campaign));
@@ -281,19 +284,6 @@ void LastMatchResponse(HTTPResponse httpResponse, int client)
 
 			PrintToChat(client, "\x01[\x04%d\x03 | \x04%d\x03 | \x04%d\x01] - \x01%s", mvpSiDamage, mvpCommon, lvpFfGiven, name);
 		}
-	}
-
-	PrintDivider(client);
-	for (int i = 0; i < players.Length; i++)
-	{
-		JSONObject player = view_as<JSONObject>(players.Get(i));
-
-		int position = player.GetInt("position");
-
-		char name[256];
-		player.GetString("name", name, sizeof(name));
-
-		PrintToChat(client, "\x04%dº \x01%s", position, name);
 	}
 }
 
