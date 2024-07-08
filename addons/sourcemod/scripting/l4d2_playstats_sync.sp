@@ -156,7 +156,7 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 
 public void ShowRanking(int client)
 {
-	ShowMOTDPanel(client, "Ranking do servidor", "http://zeatslauncherstorage.blob.core.windows.net/zone-server/ranking.html", MOTDPANEL_TYPE_URL);
+	ShowMOTDPanel(client, "Ranking do servidor", "http://l4d2playstats.blob.core.windows.net/assets/ranking.html", MOTDPANEL_TYPE_URL);
 
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));
@@ -204,7 +204,7 @@ void PrintPlayerInfo(JSONObject player, int client)
 
 public void LastMatch(int client)
 {
-	ShowMOTDPanel(client, "Resultado do último jogo", "http://zeatslauncherstorage.blob.core.windows.net/zone-server/last-match.html", MOTDPANEL_TYPE_URL);
+	ShowMOTDPanel(client, "Resultado do último jogo", "http://l4d2playstats.blob.core.windows.net/assets/last-match.html", MOTDPANEL_TYPE_URL);
 
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));

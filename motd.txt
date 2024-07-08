@@ -1,1 +1,1 @@
-http://zeatslauncherstorage.blob.core.windows.net/zone-server/motd.html
+http://l4d2playstats.blob.core.windows.net/assets/motd.html
