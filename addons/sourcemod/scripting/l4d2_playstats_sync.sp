@@ -88,7 +88,7 @@ public Action DisplayStatsUrlTick(Handle timer)
 		return Plugin_Continue;
 
 	PrintToChatAll("\x03l4d2.com.br");
-	PrintToChatAll("\x01Use \x04!ranking \x01para consultar sua posição");
+	PrintToChatAll("\x01Use \x04!ranking \x01to check your position");
 
 	return Plugin_Continue;
 }
@@ -156,7 +156,7 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 
 public void ShowRanking(int client)
 {
-	ShowMOTDPanel(client, "Ranking do servidor", "http://l4d2playstats.blob.core.windows.net/assets/ranking.html", MOTDPANEL_TYPE_URL);
+	ShowMOTDPanel(client, "L4D2 | Players Ranking", "http://l4d2playstats.blob.core.windows.net/assets/ranking.html", MOTDPANEL_TYPE_URL);
 
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));
@@ -189,7 +189,7 @@ void ShowRankingResponse(HTTPResponse httpResponse, int client)
 	if (me.GetInt("position") >= 4)
 		PrintPlayerInfo(me, client);
 
-	PrintToChatAll("\x01Use \x04!lastmatch \x01para visualizar os resultados do último jogo");
+	PrintToChatAll("\x01Use \x04!lastmatch \x01to view the results of the last match");
 }
 
 void PrintPlayerInfo(JSONObject player, int client)
@@ -204,7 +204,7 @@ void PrintPlayerInfo(JSONObject player, int client)
 
 public void LastMatch(int client)
 {
-	ShowMOTDPanel(client, "Resultado do último jogo", "http://l4d2playstats.blob.core.windows.net/assets/last-match.html", MOTDPANEL_TYPE_URL);
+	ShowMOTDPanel(client, "Last match result", "http://l4d2playstats.blob.core.windows.net/assets/last-match.html", MOTDPANEL_TYPE_URL);
 
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));
@@ -232,8 +232,8 @@ void LastMatchResponse(HTTPResponse httpResponse, int client)
 	match.GetString("matchElapsed", matchElapsed, sizeof(matchElapsed));
 
 	PrintDivider(client);
-	PrintToChat(client, "\x01Campanha: \x04%s", campaign);
-	PrintToChat(client, "\x01Duração: \x04%s", matchElapsed);
+	PrintToChat(client, "\x01Campaign: \x04%s", campaign);
+	PrintToChat(client, "\x01Duration: \x04%s", matchElapsed);
 
 	if (teams.Length == 2)
 	{
@@ -244,17 +244,17 @@ void LastMatchResponse(HTTPResponse httpResponse, int client)
 		int scoreTeamB = teamB.GetInt("score");
 
 		if (scoreTeamA > scoreTeamB)
-			PrintToChat(client, "\x01Equipe A \x03%d \x01x \x04%d \x01Equipe B", scoreTeamA, scoreTeamB);
+			PrintToChat(client, "\x01Team A \x03%d \x01x \x04%d \x01Team B", scoreTeamA, scoreTeamB);
 		else if (scoreTeamB > scoreTeamA)
-			PrintToChat(client, "\x01Equipe A \x04%d \x01x \x03%d \x01Equipe B", scoreTeamA, scoreTeamB);
+			PrintToChat(client, "\x01Team A \x04%d \x01x \x03%d \x01Team B", scoreTeamA, scoreTeamB);
 		else
-			PrintToChat(client, "\x01Equipe A \x04%d \x01x \x04%d \x01Equipe B", scoreTeamA, scoreTeamB);
+			PrintToChat(client, "\x01Team A \x04%d \x01x \x04%d \x01Team B", scoreTeamA, scoreTeamB);
 
 		JSONArray playersTeamA = view_as<JSONArray>(teamA.Get("players"));
 		JSONArray playersTeamB = view_as<JSONArray>(teamB.Get("players"));
 
 		PrintDivider(client);
-		PrintToChat(client, "\x01Equipe A (\x04MVP SI\x03 | \x04MVP CM\x03 | \x04LVP FF\x01):");
+		PrintToChat(client, "\x01Team A (\x04MVP SI\x03 | \x04MVP CM\x03 | \x04LVP FF\x01):");
 		for (int i = 0; i < playersTeamA.Length; i++)
 		{
 			JSONObject player = view_as<JSONObject>(playersTeamA.Get(i));
@@ -270,7 +270,7 @@ void LastMatchResponse(HTTPResponse httpResponse, int client)
 		}
 
 		PrintDivider(client);
-		PrintToChat(client, "\x01Equipe B (\x04MVP SI\x03 | \x04MVP CM\x03 | \x04LVP FF\x01):");
+		PrintToChat(client, "\x01Team B (\x04MVP SI\x03 | \x04MVP CM\x03 | \x04LVP FF\x01):");
 		for (int i = 0; i < playersTeamB.Length; i++)
 		{
 			JSONObject player = view_as<JSONObject>(playersTeamB.Get(i));
@@ -299,7 +299,7 @@ void RankingMix(int client)
 
 	if (NumberOfPlayersInTeams() != 8)
 	{
-		PrintToChat(client, "\x01É necessário \x048 jogadores \x01para iniciar o mix");
+		PrintToChat(client, "\x01You need \x048 players \x01to start the mix");
 		return;
 	}
 
@@ -307,12 +307,12 @@ void RankingMix(int client)
 
 	if (!CanRunMix(client))
 	{
-		PrintToChatAll("\x03%N \x01quer iniciar um mix baseado no ranking, digite \x04!rmix \x01 para iniciar", client);
+		PrintToChatAll("\x03%N \x01wants to start a ranking-based mix, type \x04!rmix \x01 to start", client);
 		return;
 	}
 
 	ClearMixVotes();
-	PrintToChatAll("\x01Iniciando mix baseado no ranking...");
+	PrintToChatAll("\x01Starting ranking-based mix...");
 
 	JSONObject command = new JSONObject();
 
@@ -344,13 +344,13 @@ void RankingMixResponse(HTTPResponse httpResponse, int any)
 		new String:message[256];
 		response.GetString("message", message, sizeof(message));
 
-		PrintToChatAll("\x04Erro: \x01%s", message);
+		PrintToChatAll("\x04Error: \x01%s", message);
 		return;
 	}
 
 	if (httpResponse.Status != HTTPStatus_OK)
 	{
-		PrintToChatAll("\x04Erro ao gerar o mix");
+		PrintToChatAll("\x04Error generating the mix");
 		return;
 	}
 
