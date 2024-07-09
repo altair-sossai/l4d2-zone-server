@@ -39,7 +39,7 @@ public void OnPluginStart()
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 
 	CreateTimer(20.0, DisplayStatsUrlTick);
-	CreateTimer(100.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
+	CreateTimer(300.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
 }
 
 public void Event_RoundStart(Event hEvent, const char[] eName, bool dontBroadcast)
@@ -88,7 +88,8 @@ public Action DisplayStatsUrlTick(Handle timer)
 		return Plugin_Continue;
 
 	PrintToChatAll("\x03l4d2.com.br");
-	PrintToChatAll("\x01Use \x04!ranking \x01to check your position");
+	PrintToChatAll("\x04!ranking \x01to check your position");
+	PrintToChatAll("\x04!lastmatch \x01to see last match details");
 
 	return Plugin_Continue;
 }
@@ -156,140 +157,24 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 
 public void ShowRanking(int client)
 {
-	ShowMOTDPanel(client, "L4D2 | Players Ranking", "http://l4d2playstats.blob.core.windows.net/assets/ranking.html", MOTDPANEL_TYPE_URL);
-
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));
 
-	new String:communityId[25];
-	GetClientAuthId(client, AuthId_SteamID64, communityId, sizeof(communityId));
-
 	char path[128];
-	FormatEx(path, sizeof(path), "/api/ranking/%s/place/%s", server, communityId);
+	FormatEx(path, sizeof(path), "http://l4d2playstats.blob.core.windows.net/assets/%s-ranking.html", server);
 
-	HTTPRequest request = BuildHTTPRequest(path);
-	request.Get(ShowRankingResponse, client);
-}
-
-void ShowRankingResponse(HTTPResponse httpResponse, int client)
-{
-	if (httpResponse.Status != HTTPStatus_OK)
-		return;
-
-	JSONObject response = view_as<JSONObject>(httpResponse.Data);
-	JSONArray top3 = view_as<JSONArray>(response.Get("top3"));
-	JSONObject me = view_as<JSONObject>(response.Get("me"));
-
-	for (int i = 0; i < top3.Length; i++)
-	{
-		JSONObject player = view_as<JSONObject>(top3.Get(i));
-		PrintPlayerInfo(player, client);
-	}
-
-	if (me.GetInt("position") >= 4)
-		PrintPlayerInfo(me, client);
-
-	PrintToChatAll("\x01Use \x04!lastmatch \x01to view the results of the last match");
-}
-
-void PrintPlayerInfo(JSONObject player, int client)
-{
-	int position = player.GetInt("position");
-
-	char name[256];
-	player.GetString("name", name, sizeof(name));
-
-	PrintToChat(client, "\x04%dº \x01%s", position, name);
+	ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
 }
 
 public void LastMatch(int client)
 {
-	ShowMOTDPanel(client, "Last match result", "http://l4d2playstats.blob.core.windows.net/assets/last-match.html", MOTDPANEL_TYPE_URL);
-
 	new String:server[100];
 	GetConVarString(cvar_playstats_server, server, sizeof(server));
 
 	char path[128];
-	FormatEx(path, sizeof(path), "/api/ranking/%s/last-match", server);
+	FormatEx(path, sizeof(path), "http://l4d2playstats.blob.core.windows.net/assets/%s-last-match.html", server);
 
-	HTTPRequest request = BuildHTTPRequest(path);
-	request.Get(LastMatchResponse, client);
-}
-
-void LastMatchResponse(HTTPResponse httpResponse, int client)
-{
-	if (httpResponse.Status != HTTPStatus_OK)
-		return;
-
-	JSONObject response = view_as<JSONObject>(httpResponse.Data);
-	JSONObject match = view_as<JSONObject>(response.Get("match"));
-	JSONArray teams = view_as<JSONArray>(match.Get("teams"));
-
-	char campaign[128];
-	match.GetString("campaign", campaign, sizeof(campaign));
-
-	char matchElapsed[16];
-	match.GetString("matchElapsed", matchElapsed, sizeof(matchElapsed));
-
-	PrintDivider(client);
-	PrintToChat(client, "\x01Campaign: \x04%s", campaign);
-	PrintToChat(client, "\x01Duration: \x04%s", matchElapsed);
-
-	if (teams.Length == 2)
-	{
-		JSONObject teamA = view_as<JSONObject>(teams.Get(0));
-		JSONObject teamB = view_as<JSONObject>(teams.Get(1));
-
-		int scoreTeamA = teamA.GetInt("score");
-		int scoreTeamB = teamB.GetInt("score");
-
-		if (scoreTeamA > scoreTeamB)
-			PrintToChat(client, "\x01Team A \x03%d \x01x \x04%d \x01Team B", scoreTeamA, scoreTeamB);
-		else if (scoreTeamB > scoreTeamA)
-			PrintToChat(client, "\x01Team A \x04%d \x01x \x03%d \x01Team B", scoreTeamA, scoreTeamB);
-		else
-			PrintToChat(client, "\x01Team A \x04%d \x01x \x04%d \x01Team B", scoreTeamA, scoreTeamB);
-
-		JSONArray playersTeamA = view_as<JSONArray>(teamA.Get("players"));
-		JSONArray playersTeamB = view_as<JSONArray>(teamB.Get("players"));
-
-		PrintDivider(client);
-		PrintToChat(client, "\x01Team A (\x04MVP SI\x03 | \x04MVP CM\x03 | \x04LVP FF\x01):");
-		for (int i = 0; i < playersTeamA.Length; i++)
-		{
-			JSONObject player = view_as<JSONObject>(playersTeamA.Get(i));
-
-			char name[256];
-			player.GetString("name", name, sizeof(name));
-
-			int mvpSiDamage = player.GetInt("mvpSiDamage");
-			int mvpCommon = player.GetInt("mvpCommon");
-			int lvpFfGiven = player.GetInt("lvpFfGiven");
-
-			PrintToChat(client, "\x01[\x04%d\x03 | \x04%d\x03 | \x04%d\x01] - \x01%s", mvpSiDamage, mvpCommon, lvpFfGiven, name);
-		}
-
-		PrintDivider(client);
-		PrintToChat(client, "\x01Team B (\x04MVP SI\x03 | \x04MVP CM\x03 | \x04LVP FF\x01):");
-		for (int i = 0; i < playersTeamB.Length; i++)
-		{
-			JSONObject player = view_as<JSONObject>(playersTeamB.Get(i));
-
-			char name[256];
-			player.GetString("name", name, sizeof(name));
-
-			int mvpSiDamage = player.GetInt("mvpSiDamage");
-			int mvpCommon = player.GetInt("mvpCommon");
-			int lvpFfGiven = player.GetInt("lvpFfGiven");
-
-			PrintToChat(client, "\x01[\x04%d\x03 | \x04%d\x03 | \x04%d\x01] - \x01%s", mvpSiDamage, mvpCommon, lvpFfGiven, name);
-		}
-	}
-}
-
-void PrintDivider(int client)
-{
-	PrintToChat(client, "_________________");
+	ShowMOTDPanel(client, "Last match result", path, MOTDPANEL_TYPE_URL);
 }
 
 void RankingMix(int client)
