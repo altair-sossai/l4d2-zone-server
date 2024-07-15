@@ -19,8 +19,8 @@ public Plugin myinfo =
 };
 
 ConVar cvar_playstats_endpoint;
-ConVar cvar_playstats_server;
 ConVar cvar_playstats_access_token;
+ConVar cvar_playstats_web_url;
 
 int mixVotes = 0;
 bool mixBlocked = false;
@@ -28,8 +28,8 @@ bool mixBlocked = false;
 public void OnPluginStart()
 {
 	cvar_playstats_endpoint = CreateConVar("playstats_endpoint", "https://l4d2-playstats-api.azurewebsites.net", "Play Stats endpoint", FCVAR_PROTECTED);
-	cvar_playstats_server = CreateConVar("playstats_server", "", "l4d2-zone-server", FCVAR_PROTECTED);
 	cvar_playstats_access_token = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
+	cvar_playstats_web_url = CreateConVar("playstats_web_url", "http://104.234.63.254:5000", "Play Stats web URL", FCVAR_PROTECTED);
 
 	RegAdminCmd("sm_syncstats", SyncStatsCmd, ADMFLAG_BAN);
 	RegConsoleCmd("sm_ranking", ShowRankingCmd);
@@ -157,22 +157,22 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 
 public void ShowRanking(int client)
 {
-	new String:server[100];
-	GetConVarString(cvar_playstats_server, server, sizeof(server));
+	new String:web_url[100];
+	GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
 
 	char path[128];
-	FormatEx(path, sizeof(path), "http://l4d2playstats.blob.core.windows.net/assets/%s-ranking.html", server);
+	FormatEx(path, sizeof(path), "%s/ranking", web_url);
 
 	ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
 }
 
 public void LastMatch(int client)
 {
-	new String:server[100];
-	GetConVarString(cvar_playstats_server, server, sizeof(server));
+	new String:web_url[100];
+	GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
 
 	char path[128];
-	FormatEx(path, sizeof(path), "http://l4d2playstats.blob.core.windows.net/assets/%s-last-match.html", server);
+	FormatEx(path, sizeof(path), "%s/last-matches", web_url);
 
 	ShowMOTDPanel(client, "Last match result", path, MOTDPANEL_TYPE_URL);
 }
