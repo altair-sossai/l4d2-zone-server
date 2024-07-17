@@ -35,6 +35,7 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_ranking", ShowRankingCmd);
 	RegConsoleCmd("sm_lastmatch", LastMatchCmd);
 	RegConsoleCmd("sm_rmix", RankingMixCmd);
+	RegConsoleCmd("sm_localhost", LocalHostCmd);
 
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 
@@ -79,6 +80,12 @@ public Action LastMatchCmd(int client, int args)
 public Action RankingMixCmd(int client, int args)
 {
 	RankingMix(client);
+	return Plugin_Handled;
+}
+
+public Action LocalHostCmd(int client, int args)
+{
+	ShowMOTDPanel(client, "localhost", "http://localhost:5000", MOTDPANEL_TYPE_URL);
 	return Plugin_Handled;
 }
 
