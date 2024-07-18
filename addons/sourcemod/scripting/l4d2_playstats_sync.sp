@@ -146,6 +146,8 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 	if (httpResponse.Status != HTTPStatus_OK)
 		return;
 
+	ClearCache();
+
 	JSONObject response = view_as<JSONObject>(httpResponse.Data);
 
 	bool mustBeDeleted = response.GetBool("mustBeDeleted");
@@ -160,6 +162,24 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 	BuildPath(Path_SM, filePath, PLATFORM_MAX_PATH, filePath);
 
 	DeleteFile(filePath);
+}
+
+public void ClearCache()
+{
+	new String:web_url[100];
+	GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
+
+	char endpoint[128];
+	FormatEx(endpoint, sizeof(endpoint), "%s/api/cache/clear", web_url);
+
+	HTTPRequest request = new HTTPRequest(endpoint);
+	JSONObject command = new JSONObject();
+
+	request.Post(command, ClearCacheResponse);
+}
+
+void ClearCacheResponse(HTTPResponse httpResponse, any value)
+{
 }
 
 public void ShowRanking(int client)
