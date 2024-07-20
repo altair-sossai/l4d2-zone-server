@@ -39,8 +39,7 @@ public void OnPluginStart()
 
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 
-	CreateTimer(20.0, DisplayStatsUrlTick);
-	CreateTimer(300.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
+	CreateTimer(200.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
 }
 
 public void Event_RoundStart(Event hEvent, const char[] eName, bool dontBroadcast)
@@ -57,6 +56,11 @@ public void OnRoundIsLive()
 public void OnMapStart()
 {
 	ClearMixVotes();
+}
+
+public void OnClientPutInServer(int client)
+{
+	CreateTimer(20.0, ShowRankingTick, client);
 }
 
 public Action SyncStatsCmd(int client, int args)
@@ -99,6 +103,16 @@ public Action DisplayStatsUrlTick(Handle timer)
 	PrintToChatAll("\x04!lastmatch \x01to see last match details");
 
 	return Plugin_Continue;
+}
+
+public Action ShowRankingTick(Handle timer, int client)
+{
+	if (!IsInReady() || GameInProgress())
+		return Plugin_Continue;
+
+	ShowRanking(client);
+
+	return Plugin_Handled;
 }
 
 public void Sync()
