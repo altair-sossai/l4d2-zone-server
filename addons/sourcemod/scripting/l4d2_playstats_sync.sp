@@ -60,7 +60,7 @@ public void OnMapStart()
 
 public void OnClientPutInServer(int client)
 {
-	CreateTimer(20.0, ShowRankingTick, client);
+	CreateTimer(60.0, ShowRankingTick, client);
 }
 
 public Action SyncStatsCmd(int client, int args)
