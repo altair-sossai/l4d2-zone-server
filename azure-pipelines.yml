@@ -32,7 +32,7 @@ stages:
       inputs:
         sshEndpoint: $(sshServiceConnection)
         readyTimeout: '20000'
-        script: |
+        commands: |
           tar -xzf /home/devops/addons.tar.gz -C /home/test/addons
           tar -xzf /home/devops/cfg.tar.gz -C /home/test/cfg
           tar -xzf /home/devops/scripts.tar.gz -C /home/test/scripts
