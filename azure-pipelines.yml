@@ -1,33 +1,22 @@
-# Docker
-# Build a Docker image
-# https://docs.microsoft.com/azure/devops/pipelines/languages/docker
-
 trigger:
 - master
 
-resources:
-- repo: self
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  sshServiceConnection: 'L4D2'
 
 stages:
-- stage: Build
-  displayName: Build and Push image
+- stage: Deploy
   jobs:
-  - job: Build
-    displayName: Build
-    pool:
-      vmImage: ubuntu-latest
+  - job: UploadAddons
     steps:
-    - task: Docker@2
-      displayName: Build an image
+    - task: CopyFilesOverSSH@0
       inputs:
-        command: build
-        repository: 'altairsossai/l4d2-zone-server'
-        dockerfile: '$(Build.SourcesDirectory)/Dockerfile'
-        tags: 'latest'
-    - task: Docker@2
-      displayName: Push an image
-      inputs:
-        command: 'push'
-        containerRegistry: 'Docker Hub'
-        repository: 'altairsossai/l4d2-zone-server'
-        tags: 'latest'
+        sshEndpoint: $(sshServiceConnection)
+        sourceFolder: '$(Build.Repository.LocalPath)/cfg'
+        contents: '**'
+        targetFolder: '/home/devops'
+        cleanTargetFolder: false
+        overwrite: true
