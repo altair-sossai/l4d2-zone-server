@@ -38,6 +38,6 @@ stages:
           tar -xzf /home/devops/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
           tar -xzf /home/devops/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
           tar -xzf /home/devops/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
-          dos2unix /home/steam/l4d2/left4dead2/bash/*.sh || true
+          dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
           chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
           rm /home/devops/*.tar.gz
