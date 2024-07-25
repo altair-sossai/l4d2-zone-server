@@ -9,7 +9,8 @@
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
 
-#define ICON_ORIGIN {0.0, 0.0, 20.0}
+#define ICON_ORIGIN_SURVIVOR {0.0, 0.0, 20.0}
+#define ICON_ORIGIN_INFECTED {0.0, 0.0, 95.0}
 
 public Plugin myinfo =
 {
@@ -47,6 +48,7 @@ public void OnPluginStart()
     RegConsoleCmd("sm_localhost", LocalHostCmd);
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
+    HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 
     CreateTimer(200.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
     CreateTimer(1.0, PatentIconTick, _, TIMER_REPEAT);
@@ -111,6 +113,12 @@ void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
     ClearMixVotes();
     Sync();
+}
+
+void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(GetEventInt(event, "userid"));
+    RemovePatentIcon(client);
 }
 
 Action DisplayStatsUrlTick(Handle timer)
@@ -194,7 +202,13 @@ void SetPatentIcon(int client)
     SetVariantString("eyes");
     AcceptEntityInput(entity, "SetParentAttachment");
     
-    float origin[3] = ICON_ORIGIN;
+    float origin[3];
+    
+    if (GetClientTeam(client) == L4D2_TEAM_SURVIVOR)
+        origin = ICON_ORIGIN_SURVIVOR;
+    else
+        origin = ICON_ORIGIN_INFECTED;
+
     TeleportEntity(entity, origin, NULL_VECTOR, NULL_VECTOR);
 
     SDKUnhook(entity, SDKHook_SetTransmit, OnSetIconTransmit);
@@ -203,6 +217,15 @@ void SetPatentIcon(int client)
 
 Action OnSetIconTransmit(int entity, int client)
 {
+    if (GetClientTeam(client) == L4D2_TEAM_SURVIVOR)
+    {
+        int ref = EntIndexToEntRef(entity);
+        
+        for (int i = 1; i <= MaxClients; i++)
+            if (patentIconRef[i] == ref && GetClientTeam(i) != L4D2_TEAM_SURVIVOR)
+                return Plugin_Handled;
+    }
+
     return Plugin_Continue;
 }
 
