@@ -37,15 +37,9 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_rmix", RankingMixCmd);
 	RegConsoleCmd("sm_localhost", LocalHostCmd);
 
-	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
+	HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
 	CreateTimer(200.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
-}
-
-public void Event_RoundStart(Event hEvent, const char[] eName, bool dontBroadcast)
-{
-	ClearMixVotes();
-	Sync();
 }
 
 public void OnRoundIsLive()
@@ -63,37 +57,43 @@ public void OnClientPutInServer(int client)
 	CreateTimer(60.0, ShowRankingTick, client);
 }
 
-public Action SyncStatsCmd(int client, int args)
+Action SyncStatsCmd(int client, int args)
 {
 	Sync();
 	return Plugin_Handled;
 }
 
-public Action ShowRankingCmd(int client, int args)
+Action ShowRankingCmd(int client, int args)
 {
 	ShowRanking(client);
 	return Plugin_Handled;
 }
 
-public Action LastMatchCmd(int client, int args)
+Action LastMatchCmd(int client, int args)
 {
 	LastMatch(client);
 	return Plugin_Handled;
 }
 
-public Action RankingMixCmd(int client, int args)
+Action RankingMixCmd(int client, int args)
 {
 	RankingMix(client);
 	return Plugin_Handled;
 }
 
-public Action LocalHostCmd(int client, int args)
+Action LocalHostCmd(int client, int args)
 {
 	ShowMOTDPanel(client, "localhost", "http://localhost:5000", MOTDPANEL_TYPE_URL);
 	return Plugin_Handled;
 }
 
-public Action DisplayStatsUrlTick(Handle timer)
+void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
+{
+	ClearMixVotes();
+	Sync();
+}
+
+Action DisplayStatsUrlTick(Handle timer)
 {
 	if (!IsInReady() || GameInProgress())
 		return Plugin_Continue;
@@ -105,7 +105,7 @@ public Action DisplayStatsUrlTick(Handle timer)
 	return Plugin_Continue;
 }
 
-public Action ShowRankingTick(Handle timer, int client)
+Action ShowRankingTick(Handle timer, int client)
 {
 	if (!IsInReady() || GameInProgress())
 		return Plugin_Continue;
@@ -115,7 +115,7 @@ public Action ShowRankingTick(Handle timer, int client)
 	return Plugin_Handled;
 }
 
-public void Sync()
+void Sync()
 {
 	char logsPath[128] = "logs/";
 	BuildPath(Path_SM, logsPath, PLATFORM_MAX_PATH, logsPath);
@@ -133,7 +133,7 @@ public void Sync()
 	}
 }
 
-public void SyncFile(String:fileName[])
+void SyncFile(String:fileName[])
 {
 	char filePath[128];
 	FormatEx(filePath, sizeof(filePath), "%s%s", "logs/", fileName);
@@ -178,7 +178,7 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 	DeleteFile(filePath);
 }
 
-public void ClearCache()
+void ClearCache()
 {
 	new String:web_url[100];
 	GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
@@ -196,7 +196,7 @@ void ClearCacheResponse(HTTPResponse httpResponse, any value)
 {
 }
 
-public void ShowRanking(int client)
+void ShowRanking(int client)
 {
 	new String:web_url[100];
 	GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
@@ -207,7 +207,7 @@ public void ShowRanking(int client)
 	ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
 }
 
-public void LastMatch(int client)
+void LastMatch(int client)
 {
 	new String:web_url[100];
 	GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
@@ -364,7 +364,7 @@ void RankingMixResponse(HTTPResponse httpResponse, int any)
 	PrintToChatAll(infectedTeam);
 }
 
-public void MoveAllPlayersToSpectated()
+void MoveAllPlayersToSpectated()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -375,12 +375,12 @@ public void MoveAllPlayersToSpectated()
 	}
 }
 
-public void MovePlayerToSpectator(int client)
+void MovePlayerToSpectator(int client)
 {
 	ChangeClientTeam(client, L4D2_TEAM_SPECTATOR);
 }
 
-public void MovePlayerToSurvivor(int client)
+void MovePlayerToSurvivor(int client)
 {
 	int bot = FindSurvivorBot();
 	if (bot <= 0)
@@ -392,12 +392,12 @@ public void MovePlayerToSurvivor(int client)
 	SetCommandFlags("sb_takecontrol", flags);
 }
 
-public void MovePlayerToInfected(int client)
+void MovePlayerToInfected(int client)
 {
 	ChangeClientTeam(client, L4D2_TEAM_INFECTED);
 }
 
-public int FindSurvivorBot()
+int FindSurvivorBot()
 {
 	for (int client = 1; client <= MaxClients; client++)
 		if(IsClientInGame(client) && IsFakeClient(client) && GetClientTeam(client) == L4D2_TEAM_SURVIVOR)
@@ -406,14 +406,14 @@ public int FindSurvivorBot()
 	return -1;
 }
 
-public bool SurvivorOrInfected(int client)
+bool SurvivorOrInfected(int client)
 {
 	int clientTeam = GetClientTeam(client);
 	
 	return clientTeam == L4D2_TEAM_SURVIVOR || clientTeam == L4D2_TEAM_INFECTED;
 }
 
-public bool GameInProgress()
+bool GameInProgress()
 {
 	int teamAScore = L4D2Direct_GetVSCampaignScore(0);
 	int teamBScore = L4D2Direct_GetVSCampaignScore(1);
@@ -421,7 +421,7 @@ public bool GameInProgress()
 	return teamAScore != 0 || teamBScore != 0;
 }
 
-public int NumberOfPlayersInTeams()
+int NumberOfPlayersInTeams()
 {
 	int count = 0;
 		
@@ -436,7 +436,7 @@ public int NumberOfPlayersInTeams()
 	return count;
 }
 
-public bool CanRunMix(int client)
+bool CanRunMix(int client)
 {
 	bool admin = GetAdminFlag(GetUserAdmin(client), Admin_Changemap);
 	if (admin)
@@ -445,13 +445,13 @@ public bool CanRunMix(int client)
 	return mixVotes >= NEEDED_FOR_THE_MIX;
 }
 
-public void ClearMixVotes()
+void ClearMixVotes()
 {
 	mixVotes = 0;
 	mixBlocked = false;
 }
 
-public void BlockMixVotes()
+void BlockMixVotes()
 {
 	mixVotes = 0;
 	mixBlocked = true;
