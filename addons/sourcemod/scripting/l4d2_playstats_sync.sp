@@ -9,6 +9,8 @@
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
 
+#define ICON_ORIGIN {0.0, 0.0, 20.0}
+
 public Plugin myinfo =
 {
 	name		= "L4D2 - Player Statistics Sync",
@@ -25,11 +27,18 @@ ConVar cvar_playstats_web_url;
 int mixVotes = 0;
 bool mixBlocked = false;
 
+int	patentIconRef[MAXPLAYERS+1] = {-1, ...};
+int playersLevel[MAXPLAYERS+1] = {0, ...};
+
+StringMap PlayersPatent;
+
 public void OnPluginStart()
 {
 	cvar_playstats_endpoint = CreateConVar("playstats_endpoint", "https://l4d2-playstats-api.azurewebsites.net", "Play Stats endpoint", FCVAR_PROTECTED);
 	cvar_playstats_access_token = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
 	cvar_playstats_web_url = CreateConVar("playstats_web_url", "http://104.234.63.254:5000", "Play Stats web URL", FCVAR_PROTECTED);
+
+	PlayersPatent = new StringMap();
 
 	RegAdminCmd("sm_syncstats", SyncStatsCmd, ADMFLAG_BAN);
 	RegConsoleCmd("sm_ranking", ShowRankingCmd);
@@ -40,21 +49,32 @@ public void OnPluginStart()
 	HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
 	CreateTimer(200.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
+	CreateTimer(1.0, PatentIconTick, _, TIMER_REPEAT);
 }
 
 public void OnRoundIsLive()
 {
 	BlockMixVotes();
+	RemoveAllPatentIcons();
 }
 
 public void OnMapStart()
 {
 	ClearMixVotes();
+	PrecacheAllPatentFiles();
+	RefreshPlayersPatent();
 }
 
 public void OnClientPutInServer(int client)
 {
 	CreateTimer(60.0, ShowRankingTick, client);
+	RefreshPlayersLevel();
+}
+
+public void OnClientDisconnect(int client)
+{
+	RemovePatentIcon(client);
+	RefreshPlayersLevel();
 }
 
 Action SyncStatsCmd(int client, int args)
@@ -113,6 +133,77 @@ Action ShowRankingTick(Handle timer, int client)
 	ShowRanking(client);
 
 	return Plugin_Handled;
+}
+
+Action PatentIconTick(Handle timer)
+{
+	if (!IsInReady() || GameInProgress())
+		return Plugin_Continue;
+
+	int entity;
+	int team;
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (!IsClientInGame(i) || IsFakeClient(i) || playersLevel[i] == 0)
+		{
+			RemovePatentIcon(i);
+			continue;
+		}
+
+		team = GetClientTeam(i);
+		if (team != L4D2_TEAM_SURVIVOR && team != L4D2_TEAM_INFECTED)
+		{
+			RemovePatentIcon(i);
+			continue;
+		}
+
+		entity = EntRefToEntIndex(patentIconRef[i]);
+		if (entity <= MaxClients || !IsValidEntity(entity))
+			SetPatentIcon(i);
+	}
+
+	return Plugin_Continue;
+}
+
+void SetPatentIcon(int client)
+{
+	int entity = CreateEntityByName("env_sprite");
+	if (entity <= MaxClients)
+		return;
+
+	patentIconRef[client] = EntIndexToEntRef(entity);
+
+	char fileVMT[64];
+
+	Format(fileVMT, sizeof(fileVMT), "materials/sprites/patent_%02d.vmt", playersLevel[client]);
+
+	DispatchKeyValue(entity, "model", fileVMT);
+	DispatchKeyValueFloat(entity, "scale", 0.001);
+	DispatchSpawn(entity);
+
+	SetEntProp(entity, Prop_Send, "m_nSolidType", 0);
+	SetEntProp(entity, Prop_Send, "m_usSolidFlags", 4);
+	SetEntProp(entity, Prop_Send, "m_CollisionGroup", 0);
+	AcceptEntityInput(entity, "DisableCollision");
+
+	SetEntityRenderMode(entity, RENDER_WORLDGLOW);
+
+	SetVariantString("!activator");
+	AcceptEntityInput(entity, "SetParent", client);
+	SetVariantString("eyes");
+	AcceptEntityInput(entity, "SetParentAttachment");
+	
+	float origin[3] = ICON_ORIGIN;
+	TeleportEntity(entity, origin, NULL_VECTOR, NULL_VECTOR);
+
+	SDKUnhook(entity, SDKHook_SetTransmit, OnSetIconTransmit);
+	SDKHook(entity, SDKHook_SetTransmit, OnSetIconTransmit);
+}
+
+Action OnSetIconTransmit(int entity, int client)
+{
+	return Plugin_Continue;
 }
 
 void Sync()
@@ -194,6 +285,47 @@ void ClearCache()
 
 void ClearCacheResponse(HTTPResponse httpResponse, any value)
 {
+	if (httpResponse.Status != HTTPStatus_OK)
+		return;
+
+	RefreshPlayersPatent();
+}
+
+void RefreshPlayersPatent()
+{
+	new String:web_url[100];
+	GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
+
+	char endpoint[128];
+	FormatEx(endpoint, sizeof(endpoint), "%s/api/players/patents", web_url);
+
+	HTTPRequest request = new HTTPRequest(endpoint);
+
+	request.Get(RefreshPlayersPatentResponse);
+}
+
+void RefreshPlayersPatentResponse(HTTPResponse httpResponse, any value)
+{
+	if (httpResponse.Status != HTTPStatus_OK)
+		return;
+
+	PlayersPatent.Clear();
+
+	JSONArray response = view_as<JSONArray>(httpResponse.Data);
+
+	for (int i = 0; i < response.Length; i++)
+	{
+		JSONObject player = view_as<JSONObject>(response.Get(i));
+
+		new String:communityId[25];
+		player.GetString("communityId", communityId, sizeof(communityId));
+
+		int level = player.GetInt("level");
+
+		PlayersPatent.SetValue(communityId, level, true);
+	}
+
+	RefreshPlayersLevel();
 }
 
 void ShowRanking(int client)
@@ -455,6 +587,67 @@ void BlockMixVotes()
 {
 	mixVotes = 0;
 	mixBlocked = true;
+}
+
+void PrecacheAllPatentFiles()
+{
+	for (int i = 1; i <= 15; i++)
+	{
+		char fileVMT[64];
+		char fileVTF[64];
+
+		Format(fileVMT, sizeof(fileVMT), "materials/sprites/patent_%02d.vmt", i);
+		Format(fileVTF, sizeof(fileVTF), "materials/sprites/patent_%02d.vtf", i);
+
+		AddFileToDownloadsTable(fileVMT);
+		AddFileToDownloadsTable(fileVTF);
+
+		if (!IsModelPrecached(fileVMT))
+			PrecacheModel(fileVMT, true);
+
+		if (!IsModelPrecached(fileVTF))
+			PrecacheModel(fileVTF, true);
+	}
+}
+
+void RemoveAllPatentIcons()
+{
+	for (int i = 0; i <= MaxClients; i++)
+		RemovePatentIcon(i);
+}
+
+void RemovePatentIcon(int client)
+{
+	int ent = EntRefToEntIndex(patentIconRef[client]);
+	if (ent > MaxClients && IsValidEntity(ent))
+	{
+		SetEntProp(ent, Prop_Data, "m_fEffects", 32);
+		RemoveEntity(ent);
+	}
+	patentIconRef[client] = -1;
+}
+
+void RefreshPlayersLevel()
+{
+	RemoveAllPatentIcons();
+
+	for (int i = 1; i <= MaxClients; i++)
+	{
+		if (!IsClientInGame(i) || IsFakeClient(i))
+		{
+			playersLevel[i] = 0;
+			continue;
+		}
+
+		new String:communityId[25];
+		GetClientAuthId(i, AuthId_SteamID64, communityId, sizeof(communityId));
+
+		int level;
+		if (PlayersPatent.GetValue(communityId, level))
+			playersLevel[i] = level;
+		else
+			playersLevel[i] = 0;
+	}
 }
 
 HTTPRequest BuildHTTPRequest(char[] path)
