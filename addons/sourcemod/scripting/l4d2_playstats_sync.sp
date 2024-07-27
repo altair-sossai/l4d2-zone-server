@@ -1,3 +1,6 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <ripext>
 #include <regex>
 #include <sourcemod>
@@ -247,7 +250,7 @@ void Sync()
     }
 }
 
-void SyncFile(String:fileName[])
+void SyncFile(char[] fileName)
 {
     char filePath[128];
     FormatEx(filePath, sizeof(filePath), "%s%s", "logs/", fileName);
@@ -294,7 +297,7 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 
 void ClearCache()
 {
-    new String:web_url[100];
+    char web_url[100];
     GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
 
     char endpoint[128];
@@ -316,7 +319,7 @@ void ClearCacheResponse(HTTPResponse httpResponse, any value)
 
 void RefreshPlayersPatent()
 {
-    new String:web_url[100];
+    char web_url[100];
     GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
 
     char endpoint[128];
@@ -340,7 +343,7 @@ void RefreshPlayersPatentResponse(HTTPResponse httpResponse, any value)
     {
         JSONObject player = view_as<JSONObject>(response.Get(i));
 
-        new String:communityId[25];
+        char communityId[25];
         player.GetString("communityId", communityId, sizeof(communityId));
 
         int level = player.GetInt("level");
@@ -353,7 +356,7 @@ void RefreshPlayersPatentResponse(HTTPResponse httpResponse, any value)
 
 void ShowRanking(int client)
 {
-    new String:web_url[100];
+    char web_url[100];
     GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
 
     char path[128];
@@ -364,7 +367,7 @@ void ShowRanking(int client)
 
 void LastMatch(int client)
 {
-    new String:web_url[100];
+    char web_url[100];
     GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
 
     char path[128];
@@ -397,7 +400,7 @@ void RankingMix(int client)
 
     JSONObject command = new JSONObject();
 
-    int player = 1
+    int player = 1;
     for (int iClient = 1; iClient <= MaxClients; iClient++)
     {
         if (!IsClientInGame(iClient) || IsFakeClient(iClient) || !SurvivorOrInfected(iClient))
@@ -406,7 +409,7 @@ void RankingMix(int client)
         char property[8];
         FormatEx(property, sizeof(property), "player%d", player++);
 
-        new String:communityId[25];
+        char communityId[25];
         GetClientAuthId(iClient, AuthId_SteamID64, communityId, sizeof(communityId));
 
         command.SetString(property, communityId);
@@ -422,7 +425,7 @@ void RankingMixResponse(HTTPResponse httpResponse, int any)
     {
         JSONObject response = view_as<JSONObject>(httpResponse.Data);
         
-        new String:message[256];
+        char message[256];
         response.GetString("message", message, sizeof(message));
 
         PrintToChatAll("\x04Error: \x01%s", message);
@@ -446,7 +449,7 @@ void RankingMixResponse(HTTPResponse httpResponse, int any)
         if (!IsClientInGame(client) || IsFakeClient(client))
             continue;
 
-        new String:clientCommunityId[25];
+        char clientCommunityId[25];
         GetClientAuthId(client, AuthId_SteamID64, clientCommunityId, sizeof(clientCommunityId));
 
         bool found = false;
@@ -455,7 +458,7 @@ void RankingMixResponse(HTTPResponse httpResponse, int any)
         {
             JSONObject survivor = view_as<JSONObject>(survivors.Get(i));
 
-            new String:communityId[25];
+            char communityId[25];
             survivor.GetString("communityId", communityId, sizeof(communityId));
 
             if(!StrEqual(communityId, clientCommunityId))
@@ -469,7 +472,7 @@ void RankingMixResponse(HTTPResponse httpResponse, int any)
         {
             JSONObject infected = view_as<JSONObject>(infecteds.Get(i));
 
-            new String:communityId[25];
+            char communityId[25];
             infected.GetString("communityId", communityId, sizeof(communityId));
 
             if(!StrEqual(communityId, clientCommunityId))
@@ -662,7 +665,7 @@ void RefreshPlayersLevel()
             continue;
         }
 
-        new String:communityId[25];
+        char communityId[25];
         GetClientAuthId(i, AuthId_SteamID64, communityId, sizeof(communityId));
 
         int level;
@@ -675,11 +678,11 @@ void RefreshPlayersLevel()
 
 HTTPRequest BuildHTTPRequest(char[] path)
 {
-    new String:endpoint[255];
+    char endpoint[255];
     GetConVarString(cvar_playstats_endpoint, endpoint, sizeof(endpoint));
     StrCat(endpoint, sizeof(endpoint), path);
 
-    new String:access_token[100];
+    char access_token[100];
     GetConVarString(cvar_playstats_access_token, access_token, sizeof(access_token));
 
     HTTPRequest request = new HTTPRequest(endpoint);
