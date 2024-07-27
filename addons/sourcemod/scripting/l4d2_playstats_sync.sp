@@ -24,9 +24,11 @@ public Plugin myinfo =
     url         = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
-ConVar cvar_playstats_endpoint;
-ConVar cvar_playstats_access_token;
-ConVar cvar_playstats_web_url;
+ConVar
+    hEndPoint,
+    hAccessToken,
+    hWebSiteUrl,
+    hLocalHostUrl;
 
 int mixVotes = 0;
 bool mixBlocked = false;
@@ -38,9 +40,10 @@ StringMap PlayersPatent;
 
 public void OnPluginStart()
 {
-    cvar_playstats_endpoint = CreateConVar("playstats_endpoint", "https://l4d2-playstats-api.azurewebsites.net", "Play Stats endpoint", FCVAR_PROTECTED);
-    cvar_playstats_access_token = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
-    cvar_playstats_web_url = CreateConVar("playstats_web_url", "http://104.234.63.254:5000", "Play Stats web URL", FCVAR_PROTECTED);
+    hEndPoint = CreateConVar("playstats_endpoint", "", "Play Stats endpoint", FCVAR_PROTECTED);
+    hAccessToken = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
+    hWebSiteUrl = CreateConVar("playstats_web_url", "", "Play Stats web URL", FCVAR_PROTECTED);
+    hLocalHostUrl = CreateConVar("playstats_localhost_url", "", "URL used to perform local tests", FCVAR_PROTECTED);
 
     PlayersPatent = new StringMap();
 
@@ -108,7 +111,10 @@ Action RankingMixCmd(int client, int args)
 
 Action LocalHostCmd(int client, int args)
 {
-    ShowMOTDPanel(client, "localhost", "http://localhost:5000", MOTDPANEL_TYPE_URL);
+    char localHostUrl[100];
+    GetConVarString(hLocalHostUrl, localHostUrl, sizeof(localHostUrl));
+
+    ShowMOTDPanel(client, "localhost", localHostUrl, MOTDPANEL_TYPE_URL);
     return Plugin_Handled;
 }
 
@@ -297,11 +303,11 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
 
 void ClearCache()
 {
-    char web_url[100];
-    GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
+    char webSiteUrl[100];
+    GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
 
     char endpoint[128];
-    FormatEx(endpoint, sizeof(endpoint), "%s/api/cache/clear", web_url);
+    FormatEx(endpoint, sizeof(endpoint), "%s/api/cache/clear", webSiteUrl);
 
     HTTPRequest request = new HTTPRequest(endpoint);
     JSONObject command = new JSONObject();
@@ -319,11 +325,11 @@ void ClearCacheResponse(HTTPResponse httpResponse, any value)
 
 void RefreshPlayersPatent()
 {
-    char web_url[100];
-    GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
+    char webSiteUrl[100];
+    GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
 
     char endpoint[128];
-    FormatEx(endpoint, sizeof(endpoint), "%s/api/players/patents", web_url);
+    FormatEx(endpoint, sizeof(endpoint), "%s/api/players/patents", webSiteUrl);
 
     HTTPRequest request = new HTTPRequest(endpoint);
 
@@ -356,22 +362,22 @@ void RefreshPlayersPatentResponse(HTTPResponse httpResponse, any value)
 
 void ShowRanking(int client)
 {
-    char web_url[100];
-    GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
+    char webSiteUrl[100];
+    GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
 
     char path[128];
-    FormatEx(path, sizeof(path), "%s/ranking", web_url);
+    FormatEx(path, sizeof(path), "%s/ranking", webSiteUrl);
 
     ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
 }
 
 void LastMatch(int client)
 {
-    char web_url[100];
-    GetConVarString(cvar_playstats_web_url, web_url, sizeof(web_url));
+    char webSiteUrl[100];
+    GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
 
     char path[128];
-    FormatEx(path, sizeof(path), "%s/last-matches", web_url);
+    FormatEx(path, sizeof(path), "%s/last-matches", webSiteUrl);
 
     ShowMOTDPanel(client, "Last match result", path, MOTDPANEL_TYPE_URL);
 }
@@ -401,16 +407,16 @@ void RankingMix(int client)
     JSONObject command = new JSONObject();
 
     int player = 1;
-    for (int iClient = 1; iClient <= MaxClients; iClient++)
+    for (int i = 1; i <= MaxClients; i++)
     {
-        if (!IsClientInGame(iClient) || IsFakeClient(iClient) || !SurvivorOrInfected(iClient))
+        if (!IsClientInGame(i) || IsFakeClient(i) || !SurvivorOrInfected(i))
             continue;
 
         char property[8];
         FormatEx(property, sizeof(property), "player%d", player++);
 
         char communityId[25];
-        GetClientAuthId(iClient, AuthId_SteamID64, communityId, sizeof(communityId));
+        GetClientAuthId(i, AuthId_SteamID64, communityId, sizeof(communityId));
 
         command.SetString(property, communityId);
     }
@@ -679,14 +685,14 @@ void RefreshPlayersLevel()
 HTTPRequest BuildHTTPRequest(char[] path)
 {
     char endpoint[255];
-    GetConVarString(cvar_playstats_endpoint, endpoint, sizeof(endpoint));
+    GetConVarString(hEndPoint, endpoint, sizeof(endpoint));
     StrCat(endpoint, sizeof(endpoint), path);
 
-    char access_token[100];
-    GetConVarString(cvar_playstats_access_token, access_token, sizeof(access_token));
+    char accessToken[100];
+    GetConVarString(hAccessToken, accessToken, sizeof(accessToken));
 
     HTTPRequest request = new HTTPRequest(endpoint);
-    request.SetHeader("Authorization", access_token);
+    request.SetHeader("Authorization", accessToken);
 
     return request;
 }
