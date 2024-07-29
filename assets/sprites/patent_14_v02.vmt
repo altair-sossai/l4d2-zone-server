@@ -1,6 +1,6 @@
 UnlitGeneric
 {
-    $basetexture "sprites\patent_01"
+    $basetexture "sprites\patent_14_v02"
     $translucent 0
     $alpha 1
     $decal 1
