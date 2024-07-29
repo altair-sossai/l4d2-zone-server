@@ -28,7 +28,8 @@ ConVar
     hEndPoint,
     hAccessToken,
     hWebSiteUrl,
-    hLocalHostUrl;
+    hLocalHostUrl,
+    hPatentIconVersion;
 
 int mixVotes = 0;
 bool mixBlocked = false;
@@ -44,6 +45,7 @@ public void OnPluginStart()
     hAccessToken = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
     hWebSiteUrl = CreateConVar("playstats_web_url", "", "Play Stats web URL", FCVAR_PROTECTED);
     hLocalHostUrl = CreateConVar("playstats_localhost_url", "", "URL used to perform local tests", FCVAR_PROTECTED);
+    hPatentIconVersion = CreateConVar("playstats_patent_icon_version", "1", "Version of the patent icon", FCVAR_PROTECTED);
 
     PlayersPatent = new StringMap();
 
@@ -193,7 +195,7 @@ void SetPatentIcon(int client)
 
     char fileVMT[64];
 
-    Format(fileVMT, sizeof(fileVMT), "materials/sprites/patent_%02d.vmt", playersLevel[client]);
+    Format(fileVMT, sizeof(fileVMT), "materials/sprites/patent_%02d_v%02d.vmt", playersLevel[client], hPatentIconVersion.IntValue);
 
     DispatchKeyValue(entity, "model", fileVMT);
     DispatchKeyValueFloat(entity, "scale", 0.001);
@@ -623,13 +625,15 @@ void BlockMixVotes()
 
 void PrecacheAllPatentFiles()
 {
+    int patentIconVersion = hPatentIconVersion.IntValue;
+
     for (int i = 1; i <= 15; i++)
     {
         char fileVMT[64];
         char fileVTF[64];
 
-        Format(fileVMT, sizeof(fileVMT), "materials/sprites/patent_%02d.vmt", i);
-        Format(fileVTF, sizeof(fileVTF), "materials/sprites/patent_%02d.vtf", i);
+        Format(fileVMT, sizeof(fileVMT), "materials/sprites/patent_%02d_v%02d.vmt", i, patentIconVersion);
+        Format(fileVTF, sizeof(fileVTF), "materials/sprites/patent_%02d_v%02d.vtf", i, patentIconVersion);
 
         AddFileToDownloadsTable(fileVMT);
         AddFileToDownloadsTable(fileVTF);
