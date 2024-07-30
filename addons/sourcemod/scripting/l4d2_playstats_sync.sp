@@ -29,7 +29,8 @@ ConVar
     hAccessToken,
     hWebSiteUrl,
     hLocalHostUrl,
-    hPatentIconVersion;
+    hPatentIconVersion,
+    hMaxPatentLevel;
 
 int mixVotes = 0;
 bool mixBlocked = false;
@@ -46,6 +47,7 @@ public void OnPluginStart()
     hWebSiteUrl = CreateConVar("playstats_web_url", "", "Play Stats web URL", FCVAR_PROTECTED);
     hLocalHostUrl = CreateConVar("playstats_localhost_url", "", "URL used to perform local tests", FCVAR_PROTECTED);
     hPatentIconVersion = CreateConVar("playstats_patent_icon_version", "1", "Version of the patent icon", FCVAR_PROTECTED);
+    hMaxPatentLevel = CreateConVar("playstats_max_patent_level", "15", "Max level of the patent", FCVAR_PROTECTED);
 
     PlayersPatent = new StringMap();
 
@@ -139,7 +141,6 @@ Action DisplayStatsUrlTick(Handle timer)
 
     PrintToChatAll("\x03l4d2.com.br");
     PrintToChatAll("\x04!ranking \x01to check your position");
-    PrintToChatAll("\x04!lastmatch \x01to see last match details");
 
     return Plugin_Continue;
 }
@@ -626,8 +627,9 @@ void BlockMixVotes()
 void PrecacheAllPatentFiles()
 {
     int patentIconVersion = hPatentIconVersion.IntValue;
+    int maxPatentLevel = hMaxPatentLevel.IntValue;
 
-    for (int i = 1; i <= 15; i++)
+    for (int i = 1; i <= maxPatentLevel; i++)
     {
         char fileVMT[64];
         char fileVTF[64];
