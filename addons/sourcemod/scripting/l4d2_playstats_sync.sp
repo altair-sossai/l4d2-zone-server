@@ -24,8 +24,7 @@ public Plugin myinfo =
 ConVar
     hEndPoint,
     hAccessToken,
-    hWebSiteUrl,
-    hLocalHostUrl;
+    hWebSiteUrl;
 
 int mixVotes = 0;
 bool mixBlocked = false;
@@ -37,13 +36,11 @@ public void OnPluginStart()
     hEndPoint = CreateConVar("playstats_endpoint", "", "Play Stats endpoint", FCVAR_PROTECTED);
     hAccessToken = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
     hWebSiteUrl = CreateConVar("playstats_web_url", "", "Play Stats web URL", FCVAR_PROTECTED);
-    hLocalHostUrl = CreateConVar("playstats_localhost_url", "", "URL used to perform local tests", FCVAR_PROTECTED);
 
     RegAdminCmd("sm_syncstats", SyncStatsCmd, ADMFLAG_BAN);
     RegConsoleCmd("sm_ranking", ShowRankingCmd);
     RegConsoleCmd("sm_lastmatch", LastMatchCmd);
     RegConsoleCmd("sm_rmix", RankingMixCmd);
-    RegConsoleCmd("sm_localhost", LocalHostCmd);
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
@@ -89,15 +86,6 @@ Action LastMatchCmd(int client, int args)
 Action RankingMixCmd(int client, int args)
 {
     RankingMix(client);
-    return Plugin_Handled;
-}
-
-Action LocalHostCmd(int client, int args)
-{
-    char localHostUrl[100];
-    GetConVarString(hLocalHostUrl, localHostUrl, sizeof(localHostUrl));
-
-    ShowMOTDPanel(client, "localhost", localHostUrl, MOTDPANEL_TYPE_URL);
     return Plugin_Handled;
 }
 
