@@ -35,8 +35,9 @@ ConVar
 int mixVotes = 0;
 bool mixBlocked = false;
 
-int patentIconRef[MAXPLAYERS+1] = {-1, ...};
-int playersLevel[MAXPLAYERS+1] = {0, ...};
+int patentIconRef[MAXPLAYERS + 1] = { -1, ... };
+int playersLevel[MAXPLAYERS + 1] = { 0, ... };
+bool rankingDisplayed[MAXPLAYERS + 1] = { false, ... };
 
 StringMap PlayersPatent;
 
@@ -68,6 +69,7 @@ public void OnRoundIsLive()
 {
     BlockMixVotes();
     RemoveAllPatentIcons();
+    ResetRankingDisplayed();
 }
 
 public void OnMapStart()
@@ -147,7 +149,7 @@ Action DisplayStatsUrlTick(Handle timer)
 
 Action ShowRankingTick(Handle timer, int client)
 {
-    if (!IsInReady() || GameInProgress())
+    if (rankingDisplayed[client] || !IsInReady() || GameInProgress())
         return Plugin_Continue;
 
     ShowRanking(client);
@@ -365,6 +367,8 @@ void RefreshPlayersPatentResponse(HTTPResponse httpResponse, any value)
 
 void ShowRanking(int client)
 {
+    rankingDisplayed[client] = true;
+
     char webSiteUrl[100];
     GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
 
@@ -646,6 +650,12 @@ void PrecacheAllPatentFiles()
         if (!IsModelPrecached(fileVTF))
             PrecacheModel(fileVTF, true);
     }
+}
+
+void ResetRankingDisplayed()
+{
+    for (int i = 0; i <= MaxClients; i++)
+        rankingDisplayed[i] = false;
 }
 
 void RemoveAllPatentIcons()
