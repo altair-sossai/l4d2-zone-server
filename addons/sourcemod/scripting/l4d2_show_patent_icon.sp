@@ -40,6 +40,7 @@ public void OnPluginStart()
     PlayersPatent = new StringMap();
 
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
+    HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
     CreateTimer(1.0, PatentIconTick, _, TIMER_REPEAT);
 }
@@ -69,6 +70,11 @@ public void OnClientDisconnect(int client)
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
     RemovePatentIcon(GetClientOfUserId(GetEventInt(event, "userid")));
+}
+
+void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
+{
+    RefreshPlayersPatent();
 }
 
 Action PatentIconTick(Handle timer)
