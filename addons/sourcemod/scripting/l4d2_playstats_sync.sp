@@ -81,6 +81,8 @@ public void OnMapStart()
 
 public void OnClientPutInServer(int client)
 {
+    rankingDisplayed[client] = false;
+
     CreateTimer(60.0, ShowRankingTick, client);
     RefreshPlayersLevel();
 }
