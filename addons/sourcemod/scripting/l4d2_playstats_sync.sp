@@ -17,67 +17,20 @@ public Plugin myinfo =
 };
 
 ConVar
-    hEndPoint,
-    hAccessToken,
-    hWebSiteUrl;
-
-bool rankingDisplayed[MAXPLAYERS + 1] = { false, ... };
+    hUrl,
+    hAccessToken;
 
 public void OnPluginStart()
 {
-    hEndPoint = CreateConVar("playstats_endpoint", "", "Play Stats endpoint", FCVAR_PROTECTED);
+    hUrl = CreateConVar("playstats_url", "", "Play stats API URL", FCVAR_PROTECTED);
     hAccessToken = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
-    hWebSiteUrl = CreateConVar("playstats_web_url", "", "Play Stats web URL", FCVAR_PROTECTED);
-
-    RegConsoleCmd("sm_ranking", ShowRankingCmd);
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
-
-    CreateTimer(200.0, DisplayStatsUrlTick, _, TIMER_REPEAT);
-}
-
-public void OnRoundIsLive()
-{
-    ResetRankingDisplayed();
-}
-
-public void OnClientPutInServer(int client)
-{
-    rankingDisplayed[client] = false;
-
-    CreateTimer(60.0, ShowRankingTick, client);
-}
-
-Action ShowRankingCmd(int client, int args)
-{
-    ShowRanking(client);
-    return Plugin_Handled;
 }
 
 void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
     Sync();
-}
-
-Action DisplayStatsUrlTick(Handle timer)
-{
-    if (!IsInReady() || GameInProgress())
-        return Plugin_Continue;
-
-    PrintToChatAll("\x03l4d2.com.br");
-    PrintToChatAll("\x04!ranking \x01to check your position");
-
-    return Plugin_Continue;
-}
-
-Action ShowRankingTick(Handle timer, int client)
-{
-    if (rankingDisplayed[client] || !IsInReady() || GameInProgress())
-        return Plugin_Continue;
-
-    ShowRanking(client);
-
-    return Plugin_Handled;
 }
 
 void Sync()
@@ -125,7 +78,7 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
     if (httpResponse.Status != HTTPStatus_OK)
         return;
 
-    ClearCache();
+    ClearRankingCache();
 
     JSONObject response = view_as<JSONObject>(httpResponse.Data);
 
@@ -143,65 +96,34 @@ void SyncFileResponse(HTTPResponse httpResponse, any value)
     DeleteFile(filePath);
 }
 
-void ClearCache()
+void ClearRankingCache()
 {
-    char webSiteUrl[100];
-    GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
+    char rankingUrl[100];
+    GetConVarString(FindConVar("ranking_url"), rankingUrl, sizeof(rankingUrl));
 
     char endpoint[128];
-    FormatEx(endpoint, sizeof(endpoint), "%s/api/cache/clear", webSiteUrl);
+    FormatEx(endpoint, sizeof(endpoint), "%s/api/cache/clear", rankingUrl);
 
     HTTPRequest request = new HTTPRequest(endpoint);
     JSONObject command = new JSONObject();
 
-    request.Post(command, ClearCacheResponse);
+    request.Post(command, ClearRankingCacheResponse);
 }
 
-void ClearCacheResponse(HTTPResponse httpResponse, any value)
+void ClearRankingCacheResponse(HTTPResponse httpResponse, any value)
 {
-}
-
-void ShowRanking(int client)
-{
-    rankingDisplayed[client] = true;
-
-    char webSiteUrl[100];
-    GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
-
-    char path[128];
-    FormatEx(path, sizeof(path), "%s/ranking", webSiteUrl);
-
-    ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
-}
-
-
-
-
-
-bool GameInProgress()
-{
-    int teamAScore = L4D2Direct_GetVSCampaignScore(0);
-    int teamBScore = L4D2Direct_GetVSCampaignScore(1);
-    
-    return teamAScore != 0 || teamBScore != 0;
-}
-
-void ResetRankingDisplayed()
-{
-    for (int i = 0; i <= MaxClients; i++)
-        rankingDisplayed[i] = false;
 }
 
 HTTPRequest BuildHTTPRequest(char[] path)
 {
-    char endpoint[255];
-    GetConVarString(hEndPoint, endpoint, sizeof(endpoint));
-    StrCat(endpoint, sizeof(endpoint), path);
+    char url[255];
+    GetConVarString(hUrl, url, sizeof(url));
+    StrCat(url, sizeof(url), path);
 
     char accessToken[100];
     GetConVarString(hAccessToken, accessToken, sizeof(accessToken));
 
-    HTTPRequest request = new HTTPRequest(endpoint);
+    HTTPRequest request = new HTTPRequest(url);
     request.SetHeader("Authorization", accessToken);
 
     return request;
