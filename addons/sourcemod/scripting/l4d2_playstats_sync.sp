@@ -7,11 +7,6 @@
 #include <left4dhooks>
 #include <readyup>
 
-#define NEEDED_FOR_THE_MIX 2
-#define L4D2_TEAM_SPECTATOR 1
-#define L4D2_TEAM_SURVIVOR 2
-#define L4D2_TEAM_INFECTED 3
-
 public Plugin myinfo =
 {
     name        = "L4D2 - Player Statistics Sync",
@@ -26,9 +21,6 @@ ConVar
     hAccessToken,
     hWebSiteUrl;
 
-int mixVotes = 0;
-bool mixBlocked = false;
-
 bool rankingDisplayed[MAXPLAYERS + 1] = { false, ... };
 
 public void OnPluginStart()
@@ -37,10 +29,7 @@ public void OnPluginStart()
     hAccessToken = CreateConVar("playstats_access_token", "", "Play Stats Access Token", FCVAR_PROTECTED);
     hWebSiteUrl = CreateConVar("playstats_web_url", "", "Play Stats web URL", FCVAR_PROTECTED);
 
-    RegAdminCmd("sm_syncstats", SyncStatsCmd, ADMFLAG_BAN);
     RegConsoleCmd("sm_ranking", ShowRankingCmd);
-    RegConsoleCmd("sm_lastmatch", LastMatchCmd);
-    RegConsoleCmd("sm_rmix", RankingMixCmd);
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
@@ -49,13 +38,7 @@ public void OnPluginStart()
 
 public void OnRoundIsLive()
 {
-    BlockMixVotes();
     ResetRankingDisplayed();
-}
-
-public void OnMapStart()
-{
-    ClearMixVotes();
 }
 
 public void OnClientPutInServer(int client)
@@ -65,33 +48,14 @@ public void OnClientPutInServer(int client)
     CreateTimer(60.0, ShowRankingTick, client);
 }
 
-Action SyncStatsCmd(int client, int args)
-{
-    Sync();
-    return Plugin_Handled;
-}
-
 Action ShowRankingCmd(int client, int args)
 {
     ShowRanking(client);
     return Plugin_Handled;
 }
 
-Action LastMatchCmd(int client, int args)
-{
-    LastMatch(client);
-    return Plugin_Handled;
-}
-
-Action RankingMixCmd(int client, int args)
-{
-    RankingMix(client);
-    return Plugin_Handled;
-}
-
 void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
-    ClearMixVotes();
     Sync();
 }
 
@@ -210,211 +174,9 @@ void ShowRanking(int client)
     ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
 }
 
-void LastMatch(int client)
-{
-    char webSiteUrl[100];
-    GetConVarString(hWebSiteUrl, webSiteUrl, sizeof(webSiteUrl));
 
-    char path[128];
-    FormatEx(path, sizeof(path), "%s/last-matches", webSiteUrl);
 
-    ShowMOTDPanel(client, "Last match result", path, MOTDPANEL_TYPE_URL);
-}
 
-void RankingMix(int client)
-{
-    if (mixBlocked || !SurvivorOrInfected(client) || GameInProgress())
-        return;
-
-    if (NumberOfPlayersInTeams() != 8)
-    {
-        PrintToChat(client, "\x01You need \x048 players \x01to start the mix");
-        return;
-    }
-
-    mixVotes++;
-
-    if (!CanRunMix(client))
-    {
-        PrintToChatAll("\x03%N \x01wants to start a ranking-based mix, type \x04!rmix \x01 to start", client);
-        return;
-    }
-
-    ClearMixVotes();
-    PrintToChatAll("\x01Starting ranking-based mix...");
-
-    JSONObject command = new JSONObject();
-
-    int player = 1;
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (!IsClientInGame(i) || IsFakeClient(i) || !SurvivorOrInfected(i))
-            continue;
-
-        char property[8];
-        FormatEx(property, sizeof(property), "player%d", player++);
-
-        char communityId[25];
-        GetClientAuthId(i, AuthId_SteamID64, communityId, sizeof(communityId));
-
-        command.SetString(property, communityId);
-    }
-
-    HTTPRequest request = BuildHTTPRequest("/api/mix");
-    request.Post(command, RankingMixResponse);
-}
-
-void RankingMixResponse(HTTPResponse httpResponse, int any)
-{
-    if (httpResponse.Status == HTTPStatus_BadRequest)
-    {
-        JSONObject response = view_as<JSONObject>(httpResponse.Data);
-        
-        char message[256];
-        response.GetString("message", message, sizeof(message));
-
-        PrintToChatAll("\x04Error: \x01%s", message);
-        return;
-    }
-
-    if (httpResponse.Status != HTTPStatus_OK)
-    {
-        PrintToChatAll("\x04Error generating the mix");
-        return;
-    }
-
-    MoveAllPlayersToSpectated();
-
-    JSONObject response = view_as<JSONObject>(httpResponse.Data);
-    JSONArray survivors = view_as<JSONArray>(response.Get("survivors"));
-    JSONArray infecteds = view_as<JSONArray>(response.Get("infecteds"));
-
-    for (int client = 1; client <= MaxClients; client++)
-    {
-        if (!IsClientInGame(client) || IsFakeClient(client))
-            continue;
-
-        char clientCommunityId[25];
-        GetClientAuthId(client, AuthId_SteamID64, clientCommunityId, sizeof(clientCommunityId));
-
-        bool found = false;
-
-        for (int i = 0; !found && i < survivors.Length; i++)
-        {
-            JSONObject survivor = view_as<JSONObject>(survivors.Get(i));
-
-            char communityId[25];
-            survivor.GetString("communityId", communityId, sizeof(communityId));
-
-            if(!StrEqual(communityId, clientCommunityId))
-                continue;
-
-            MovePlayerToSurvivor(client);
-            found = true;
-        }
-
-        for (int i = 0; !found && i < infecteds.Length; i++)
-        {
-            JSONObject infected = view_as<JSONObject>(infecteds.Get(i));
-
-            char communityId[25];
-            infected.GetString("communityId", communityId, sizeof(communityId));
-
-            if(!StrEqual(communityId, clientCommunityId))
-                continue;
-
-            MovePlayerToInfected(client);
-            found = true;
-        }
-    }
-
-    char survivorTeam[256];
-
-    for (int i = 0; i < survivors.Length; i++)
-    {
-        JSONObject survivor = view_as<JSONObject>(survivors.Get(i));
-
-        int position = survivor.GetInt("position");
-
-        char name[256];
-        survivor.GetString("name", name, sizeof(name));
-
-        if(strlen(survivorTeam) == 0)
-            FormatEx(survivorTeam, sizeof(survivorTeam), "\x04#%d \x01%s", position, name);
-        else
-            FormatEx(survivorTeam, sizeof(survivorTeam), "%s \x03| \x04#%d \x01%s", survivorTeam, position, name);
-    }
-
-    char infectedTeam[256];
-
-    for (int i = 0; i < infecteds.Length; i++)
-    {
-        JSONObject infected = view_as<JSONObject>(infecteds.Get(i));
-
-        int position = infected.GetInt("position");
-
-        char name[256];
-        infected.GetString("name", name, sizeof(name));
-
-        if(strlen(infectedTeam) == 0)
-            FormatEx(infectedTeam, sizeof(infectedTeam), "\x04#%d \x01%s", position, name);
-        else
-            FormatEx(infectedTeam, sizeof(infectedTeam), "%s \x03| \x04#%d \x01%s", infectedTeam, position, name);
-    }
-
-    PrintToChatAll(survivorTeam);
-    PrintToChatAll("\x04---VS---");
-    PrintToChatAll(infectedTeam);
-}
-
-void MoveAllPlayersToSpectated()
-{
-    for (int client = 1; client <= MaxClients; client++)
-    {
-        if (!IsClientInGame(client) || IsFakeClient(client) || !SurvivorOrInfected(client))
-            continue;
-
-        MovePlayerToSpectator(client);
-    }
-}
-
-void MovePlayerToSpectator(int client)
-{
-    ChangeClientTeam(client, L4D2_TEAM_SPECTATOR);
-}
-
-void MovePlayerToSurvivor(int client)
-{
-    int bot = FindSurvivorBot();
-    if (bot <= 0)
-        return;
-
-    int flags = GetCommandFlags("sb_takecontrol");
-    SetCommandFlags("sb_takecontrol", flags & ~FCVAR_CHEAT);
-    FakeClientCommand(client, "sb_takecontrol");
-    SetCommandFlags("sb_takecontrol", flags);
-}
-
-void MovePlayerToInfected(int client)
-{
-    ChangeClientTeam(client, L4D2_TEAM_INFECTED);
-}
-
-int FindSurvivorBot()
-{
-    for (int client = 1; client <= MaxClients; client++)
-        if(IsClientInGame(client) && IsFakeClient(client) && GetClientTeam(client) == L4D2_TEAM_SURVIVOR)
-            return client;
-
-    return -1;
-}
-
-bool SurvivorOrInfected(int client)
-{
-    int clientTeam = GetClientTeam(client);
-    
-    return clientTeam == L4D2_TEAM_SURVIVOR || clientTeam == L4D2_TEAM_INFECTED;
-}
 
 bool GameInProgress()
 {
@@ -422,42 +184,6 @@ bool GameInProgress()
     int teamBScore = L4D2Direct_GetVSCampaignScore(1);
     
     return teamAScore != 0 || teamBScore != 0;
-}
-
-int NumberOfPlayersInTeams()
-{
-    int count = 0;
-        
-    for (int client = 1; client <= MaxClients; client++)
-    {
-        if (!IsClientInGame(client) || IsFakeClient(client) || !SurvivorOrInfected(client))
-            continue;
-
-        count++;
-    }
-
-    return count;
-}
-
-bool CanRunMix(int client)
-{
-    bool admin = GetAdminFlag(GetUserAdmin(client), Admin_Changemap);
-    if (admin)
-        return true;
-
-    return mixVotes >= NEEDED_FOR_THE_MIX;
-}
-
-void ClearMixVotes()
-{
-    mixVotes = 0;
-    mixBlocked = false;
-}
-
-void BlockMixVotes()
-{
-    mixVotes = 0;
-    mixBlocked = true;
 }
 
 void ResetRankingDisplayed()
