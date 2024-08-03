@@ -40,7 +40,7 @@ public Plugin myinfo =
 bool 
     enabled = false,
     teamChanged = false,
-    skip = false,
+    inTransition = false,
     inPause = false;
 
 int rqs = 0;
@@ -58,14 +58,85 @@ public void OnPluginStart()
     hMaxPlayersPunished = CreateConVar("rq_max_players_punished", "3", "Number of players that can be punished at the same time", FCVAR_PROTECTED);
     hPunishmentGapInSeconds = CreateConVar("rq_punishment_gap_in_seconds", "15", "Time frame during which players will be penalized if they do not wait for the return of players who have disconnected from the server", FCVAR_PROTECTED);
 
+    h_players = new ArrayList(sizeof(Player));
+    h_whiteList = new ArrayList(ByteCountToCells(64));
+
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
     HookEvent("player_disconnect", PlayerDisconnect_Event, EventHookMode_Pre);
 
-    h_players = new ArrayList();
-    h_whiteList = new ArrayList();
-
     CreateTimer(2.5, CheckPunishmentsTick, _, TIMER_REPEAT);
+
+    RegConsoleCmd("sm_rqdebug", DebugCmd);
+
+    Player player1;
+    strcopy(player1.steamId, 64, "STEAM_0:0:1");
+    strcopy(player1.name, MAX_NAME_LENGTH, "Player 1");
+    player1.deadline = 0.0;
+    h_players.PushArray(player1);
+
+    Player player2;
+    strcopy(player2.steamId, 64, "STEAM_0:0:2");
+    strcopy(player2.name, MAX_NAME_LENGTH, "Player 2");
+    player2.deadline = 5.0;
+    h_players.PushArray(player2);
+
+    Player player3;
+    strcopy(player3.steamId, 64, "STEAM_0:0:3");
+    strcopy(player3.name, MAX_NAME_LENGTH, "Player 3");
+    player3.deadline = 2.5;
+    h_players.PushArray(player3);
+
+    Player player4;
+    strcopy(player4.steamId, 64, "STEAM_0:0:4");
+    strcopy(player4.name, MAX_NAME_LENGTH, "Player 4");
+    player4.deadline = 0.0;
+    h_players.PushArray(player4);
+
+    Player player;
+    for (int i = 0; i < h_players.Length; i++)
+    {
+        h_players.GetArray(i, player);
+
+        PrintToChatAll("player[%d]: %s %s %f", i, player.steamId, player.name, player.deadline);
+    }
+}
+
+public Action DebugCmd(int client, int args)
+{
+    CPrintToChat(client, "enabled: %d", enabled);
+    CPrintToChat(client, "teamChanged: %d", teamChanged);
+    CPrintToChat(client, "inTransition: %d", inTransition);
+    CPrintToChat(client, "inPause: %d", inPause);
+    CPrintToChat(client, "rqs: %d", rqs);
+
+    CPrintToChat(client, "GetEngineTime: %f", GetEngineTime());
+    CPrintToChat(client, "L4D_GetCurrentChapter: %d", L4D_GetCurrentChapter());
+    CPrintToChat(client, "AnyPlayerTimedOut: %d", AnyPlayerTimedOut());
+    CPrintToChat(client, "NumberOfPlayersWhoLeft: %d", NumberOfPlayersWhoLeft());
+    CPrintToChat(client, "InSecondHalfOfRound: %d", InSecondHalfOfRound());
+
+    h_players.SortCustom(SortByDeadline);
+
+    CPrintToChat(client, "h_players.Length: %d", h_players.Length);
+    Player player;
+    for (int i = 0; i < h_players.Length; i++)
+    {
+        h_players.GetArray(i, player);
+
+        CPrintToChat(client, "player[%d]: %s %s %f", i, player.steamId, player.name, player.deadline);
+    }
+
+    CPrintToChat(client, "h_whiteList.Length: %d", h_whiteList.Length);
+    char steamId[64];
+    for (int i = 0; i < h_whiteList.Length; i++)
+    {
+        h_whiteList.GetString(i, steamId, sizeof(steamId));
+
+        CPrintToChat(client, "whiteList[%d]: %s", i, steamId);
+    }
+
+    return Plugin_Handled;
 }
 
 public void OnRoundIsLive()
@@ -91,8 +162,6 @@ public void OnPause()
 
 public void OnUnpause()
 {
-    inPause = false;
-
     float pausedTime = GetEngineTime() - pauseStart;
 
     Player player;
@@ -107,11 +176,13 @@ public void OnUnpause()
 
         h_players.SetArray(i, player);
     }
+
+    inPause = false;
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
 {
-	skip = true;
+	inTransition = true;
 }
 
 void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
@@ -128,22 +199,12 @@ void PlayerDisconnect_Event(Event hEvent, char[] sEventName, bool dontBroadcast)
 {
     teamChanged = true;
 
-    PreventPunishDeadSurvivorsLastRoundLastChapter(GetClientOfUserId(hEvent.GetInt("userid")));
-}
-
-Action RoundStartTick(Handle timer)
-{
-    skip = false;
-
-    if (IsNewGame() || L4D_GetCurrentChapter() >= 5)
-        DisablePunishments();
-
-    return Plugin_Stop;
+    PreventPunishDeadSurvivorsOnLastRound(GetClientOfUserId(hEvent.GetInt("userid")));
 }
 
 Action CheckPunishmentsTick(Handle timer)
 {
-    if (!enabled || skip || inPause)
+    if (!enabled || inTransition || inPause)
         return Plugin_Continue;
 
     if (teamChanged)
@@ -171,12 +232,22 @@ Action CheckPunishmentsTick(Handle timer)
     return Plugin_Continue;
 }
 
+Action RoundStartTick(Handle timer)
+{
+    inTransition = false;
+
+    if (IsNewGame() || L4D_GetCurrentChapter() >= 5)
+        DisablePunishments();
+
+    return Plugin_Stop;
+}
+
 void TryEnablePunishments()
 {
-    if (enabled || GameInProgress())
+    if (enabled || !IsNewGame())
         return;
 
-    int playersRequired = TeamSize() * 2;
+    int playersRequired = GetConVarInt(FindConVar("survivor_limit")) * 2;
 
     if (NumberOfPlayers() != playersRequired)
         return;
@@ -207,7 +278,7 @@ void TryEnablePunishments()
 
     enabled = true;
     teamChanged = true;
-    skip = false;
+    inTransition = false;
 
     CPrintToChatAll("{default}This is a competitive match. {red}Ragequit {default}is not allowed. Punishment: {red}%d{default} day(s) ban!", hDaysBanned.IntValue);
 }
@@ -272,7 +343,7 @@ void StartCounterForWhoLeft()
 
         for (int client = 1; !found && client <= MaxClients; client++)
         {
-            if (!IsClientInGame(client) || IsFakeClient(client))
+            if (!HUMAN_CLIENT(client))
                 continue;
 
             GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
@@ -299,14 +370,18 @@ void BanPlayersWhoTimeout()
     h_players.SortCustom(SortByDeadline);
 
     bool someonePunished = false;
+    int maxPlayersPunished = hMaxPlayersPunished.IntValue;
     float limit = GetEngineTime() - hPunishmentGapInSeconds.FloatValue;
 
     Player player;
-    for (int i = 0, punished = 0; punished <= hMaxPlayersPunished.IntValue && i < h_players.Length; i++)
+    for (int i = 0, punished = 0; punished <= maxPlayersPunished && i < h_players.Length; i++)
     {
         h_players.GetArray(i, player);
 
-        if (player.deadline == 0.0 || player.deadline > limit)
+        if (player.deadline == 0.0)
+            continue;
+
+        if (player.deadline >= limit)
             break;
 
         if (h_whiteList.FindString(player.steamId) != -1)
@@ -348,38 +423,25 @@ bool AnyPlayerTimedOut()
     {
         h_players.GetArray(i, player);
 
-        if (player.deadline != 0.0 && now >= player.deadline)
+        if (player.deadline != 0.0 && now > player.deadline)
             return true;
     }
 
     return false;
 }
 
-void PreventPunishDeadSurvivorsLastRoundLastChapter(int client)
+void PreventPunishDeadSurvivorsOnLastRound(int client)
 {
     if (client <= 0 || client > MaxClients)
         return;
 
-    if (L4D_GetCurrentChapter() < 4 
-    || GameRules_GetProp("m_bAreTeamsFlipped") == 0
-    || GetClientTeam(client) != L4D_TEAM_SURVIVOR
-    || IsPlayerAlive(client))
-        return;
+    if (L4D_GetCurrentChapter() >= 4 && InSecondHalfOfRound() && GetClientTeam(client) == L4D_TEAM_SURVIVOR && !IsPlayerAlive(client))
+    {
+        char steamId[64];
+        GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
 
-    char steamId[64];
-    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
-
-    h_whiteList.PushString(steamId);
-}
-
-bool GameInProgress()
-{
-    return !IsNewGame();
-}
-
-bool IsNewGame()
-{
-    return L4D2Direct_GetVSCampaignScore(0) == 0 && L4D2Direct_GetVSCampaignScore(1) == 0;
+        h_whiteList.PushString(steamId);
+    }
 }
 
 int NumberOfPlayersWhoLeft()
@@ -409,7 +471,12 @@ int NumberOfPlayers()
     return count;
 }
 
-int TeamSize()
+bool IsNewGame()
 {
-	return GetConVarInt(FindConVar("survivor_limit"));
+    return L4D2Direct_GetVSCampaignScore(0) == 0 && L4D2Direct_GetVSCampaignScore(1) == 0;
+}
+
+bool InSecondHalfOfRound()
+{
+    return view_as<bool>(GameRules_GetProp("m_bInSecondHalfOfRound"));
 }
