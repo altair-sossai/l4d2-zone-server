@@ -11,8 +11,7 @@
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
 
-#define HUMAN_CLIENT(%1) (IsClientInGame(%1) && !IsFakeClient(%1))
-#define SURVIVOR_OR_INFECTED(%1) (HUMAN_CLIENT(%1) && (GetClientTeam(%1) == L4D2_TEAM_SURVIVOR || GetClientTeam(%1) == L4D2_TEAM_INFECTED))
+#define SURVIVOR_OR_INFECTED(%1) (IsClientInGame(%1) && !IsFakeClient(%1) && (GetClientTeam(%1) == L4D2_TEAM_SURVIVOR || GetClientTeam(%1) == L4D2_TEAM_INFECTED))
 
 enum struct Player
 {
@@ -25,6 +24,7 @@ ConVar
     hDaysBanned,
     hMaxRageQuit,
     hLimitUntilBanInMinutes,
+    hAddTimeWhenInReadyInMinutes,
     hMaxPlayersPunished,
     hPunishmentGapInSeconds;
 
@@ -55,6 +55,7 @@ public void OnPluginStart()
     hDaysBanned = CreateConVar("rq_days_banned", "3", "Number of days banned if player abandons match", FCVAR_PROTECTED);
     hMaxRageQuit = CreateConVar("rq_max_ragequit", "5", "Number of players that can abandon the match before the punishments are disabled", FCVAR_PROTECTED);
     hLimitUntilBanInMinutes = CreateConVar("rq_limit_until_ban_in_minutes", "5", "Time limit in minutes for the player to return to the game", FCVAR_PROTECTED);
+    hAddTimeWhenInReadyInMinutes = CreateConVar("rq_add_time_when_in_ready_in_minutes", "5", "Additional time in minutes when game is in ready", FCVAR_PROTECTED);
     hMaxPlayersPunished = CreateConVar("rq_max_players_punished", "3", "Number of players that can be punished at the same time", FCVAR_PROTECTED);
     hPunishmentGapInSeconds = CreateConVar("rq_punishment_gap_in_seconds", "15", "Time frame during which players will be penalized if they do not wait for the return of players who have disconnected from the server", FCVAR_PROTECTED);
 
@@ -66,77 +67,6 @@ public void OnPluginStart()
     HookEvent("player_disconnect", PlayerDisconnect_Event, EventHookMode_Pre);
 
     CreateTimer(2.5, CheckPunishmentsTick, _, TIMER_REPEAT);
-
-    RegConsoleCmd("sm_rqdebug", DebugCmd);
-
-    Player player1;
-    strcopy(player1.steamId, 64, "STEAM_0:0:1");
-    strcopy(player1.name, MAX_NAME_LENGTH, "Player 1");
-    player1.deadline = 0.0;
-    h_players.PushArray(player1);
-
-    Player player2;
-    strcopy(player2.steamId, 64, "STEAM_0:0:2");
-    strcopy(player2.name, MAX_NAME_LENGTH, "Player 2");
-    player2.deadline = 5.0;
-    h_players.PushArray(player2);
-
-    Player player3;
-    strcopy(player3.steamId, 64, "STEAM_0:0:3");
-    strcopy(player3.name, MAX_NAME_LENGTH, "Player 3");
-    player3.deadline = 2.5;
-    h_players.PushArray(player3);
-
-    Player player4;
-    strcopy(player4.steamId, 64, "STEAM_0:0:4");
-    strcopy(player4.name, MAX_NAME_LENGTH, "Player 4");
-    player4.deadline = 0.0;
-    h_players.PushArray(player4);
-
-    Player player;
-    for (int i = 0; i < h_players.Length; i++)
-    {
-        h_players.GetArray(i, player);
-
-        PrintToChatAll("player[%d]: %s %s %f", i, player.steamId, player.name, player.deadline);
-    }
-}
-
-public Action DebugCmd(int client, int args)
-{
-    CPrintToChat(client, "enabled: %d", enabled);
-    CPrintToChat(client, "teamChanged: %d", teamChanged);
-    CPrintToChat(client, "inTransition: %d", inTransition);
-    CPrintToChat(client, "inPause: %d", inPause);
-    CPrintToChat(client, "rqs: %d", rqs);
-
-    CPrintToChat(client, "GetEngineTime: %f", GetEngineTime());
-    CPrintToChat(client, "L4D_GetCurrentChapter: %d", L4D_GetCurrentChapter());
-    CPrintToChat(client, "AnyPlayerTimedOut: %d", AnyPlayerTimedOut());
-    CPrintToChat(client, "NumberOfPlayersWhoLeft: %d", NumberOfPlayersWhoLeft());
-    CPrintToChat(client, "InSecondHalfOfRound: %d", InSecondHalfOfRound());
-
-    h_players.SortCustom(SortByDeadline);
-
-    CPrintToChat(client, "h_players.Length: %d", h_players.Length);
-    Player player;
-    for (int i = 0; i < h_players.Length; i++)
-    {
-        h_players.GetArray(i, player);
-
-        CPrintToChat(client, "player[%d]: %s %s %f", i, player.steamId, player.name, player.deadline);
-    }
-
-    CPrintToChat(client, "h_whiteList.Length: %d", h_whiteList.Length);
-    char steamId[64];
-    for (int i = 0; i < h_whiteList.Length; i++)
-    {
-        h_whiteList.GetString(i, steamId, sizeof(steamId));
-
-        CPrintToChat(client, "whiteList[%d]: %s", i, steamId);
-    }
-
-    return Plugin_Handled;
 }
 
 public void OnRoundIsLive()
@@ -252,6 +182,9 @@ void TryEnablePunishments()
     if (NumberOfPlayers() != playersRequired)
         return;
 
+    h_players.Clear();
+    h_whiteList.Clear();
+
     char steamId[64];
     char name[MAX_NAME_LENGTH];
 
@@ -292,7 +225,7 @@ void DisablePunishments()
     h_players.Clear();
     h_whiteList.Clear();
 
-    CPrintToChatAll("Punishments disabled.");
+    CPrintToChatAll("{default}Punishments disabled!");
 }
 
 void ClearCounterOfWhoReturned()
@@ -319,7 +252,7 @@ void ClearCounterOfWhoReturned()
             player.deadline = 0.0;
             h_players.SetArray(i, player);
 
-            CPrintToChatAll("{red}%s {default}returned to the game. Punishment canceled.", player.name);
+            CPrintToChatAll("{green}%s {default}returned to the game. Punishment canceled.", player.name);
 
             break;
         }
@@ -343,7 +276,7 @@ void StartCounterForWhoLeft()
 
         for (int client = 1; !found && client <= MaxClients; client++)
         {
-            if (!HUMAN_CLIENT(client))
+            if (!SURVIVOR_OR_INFECTED(client))
                 continue;
 
             GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
@@ -354,10 +287,15 @@ void StartCounterForWhoLeft()
         if (found)
             continue;
 
-        player.deadline = GetEngineTime() + hLimitUntilBanInMinutes.FloatValue * 60.0;
+        int minutes = hLimitUntilBanInMinutes.IntValue;
+
+        if (IsInReady())
+            minutes += hAddTimeWhenInReadyInMinutes.IntValue;
+
+        player.deadline = GetEngineTime() + minutes * 60.0;
         h_players.SetArray(i, player);
 
-        CPrintToChatAll("{red}%s {default}has left the game. He has {red}%d {default}minutes to return, or he will receive {red}%d {default}day(s) ban.", player.name, hLimitUntilBanInMinutes.IntValue, hDaysBanned.IntValue);
+        CPrintToChatAll("{green}%s {default}has left the game. He has {red}%d {default}minutes to return, or he will receive {red}%d {default}day(s) ban.", player.name, minutes, hDaysBanned.IntValue);
         CPrintToChatAll("Use {green}!pause {default} to wait for his return.");
     }
 }
@@ -387,8 +325,9 @@ void BanPlayersWhoTimeout()
         if (h_whiteList.FindString(player.steamId) != -1)
             continue;
 
-        CPrintToChatAll("{red}%s {default}has been banned for {red}%d {default}day(s) for abandoning the game.", player.name, hDaysBanned.IntValue);
-        ServerCommand("sm_ban %s %d Automatic ban for abandoning the game", player.steamId, hDaysBanned.IntValue * 1440);
+        CPrintToChatAll("{green}%s {default}has been banned for {red}%d {default}day(s) for abandoning the game.", player.name, hDaysBanned.IntValue);
+        ServerCommand("sm_addban %d %s Automatic ban for abandoning the game", hDaysBanned.IntValue * 1440, player.steamId);
+        KickPlayer(player.steamId);
 
         someonePunished = true;
         punished++;
@@ -412,6 +351,24 @@ int SortByDeadline(int index1, int index2, Handle array, Handle hndl)
         return 1;
 
     return 0;
+}
+
+void KickPlayer(const char[] steamId)
+{
+    char temp[64];
+
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (!IsClientInGame(client) || IsFakeClient(client))
+            continue;
+
+        GetClientAuthId(client, AuthId_Steam2, temp, sizeof(temp));
+        if (!StrEqual(steamId, temp))
+            continue;
+
+        KickClient(client, "Automatic ban for abandoning the game. You are banned for %d days.", hDaysBanned.IntValue);
+        return;
+    }
 }
 
 bool AnyPlayerTimedOut()
