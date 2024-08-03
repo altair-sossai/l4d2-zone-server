@@ -118,6 +118,7 @@ public void L4D2_OnEndVersusModeRound_Post()
 void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
     CreateTimer(10.0, RoundStartTick);
+    CreateTimer(30.0, DisableInTransitionTick);
 }
 
 void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast)
@@ -164,10 +165,15 @@ Action CheckPunishmentsTick(Handle timer)
 
 Action RoundStartTick(Handle timer)
 {
-    inTransition = false;
-
     if (IsNewGame() || L4D_GetCurrentChapter() >= 5)
         DisablePunishments();
+
+    return Plugin_Stop;
+}
+
+Action DisableInTransitionTick(Handle timer)
+{
+    inTransition = false;
 
     return Plugin_Stop;
 }
@@ -213,7 +219,7 @@ void TryEnablePunishments()
     teamChanged = true;
     inTransition = false;
 
-    CPrintToChatAll("{default}This is a competitive match. {red}Ragequit {default}is not allowed. Punishment: {red}%d{default} day(s) ban!", hDaysBanned.IntValue);
+    CPrintToChatAll("{red}Ragequit {default}results in {red}%d day(s) {default}of ban", hDaysBanned.IntValue);
 }
 
 void DisablePunishments()
@@ -225,7 +231,7 @@ void DisablePunishments()
     h_players.Clear();
     h_whiteList.Clear();
 
-    CPrintToChatAll("{default}Punishments disabled!");
+    CPrintToChatAll("{default}Ragequit punishment has been {red}disabled");
 }
 
 void ClearCounterOfWhoReturned()
@@ -251,8 +257,6 @@ void ClearCounterOfWhoReturned()
 
             player.deadline = 0.0;
             h_players.SetArray(i, player);
-
-            CPrintToChatAll("{green}%s {default}returned to the game. Punishment canceled.", player.name);
 
             break;
         }
@@ -295,7 +299,7 @@ void StartCounterForWhoLeft()
         player.deadline = GetEngineTime() + minutes * 60.0;
         h_players.SetArray(i, player);
 
-        CPrintToChatAll("{green}%s {default}has left the game. He has {red}%d {default}minutes to return, or he will receive {red}%d {default}day(s) ban.", player.name, minutes, hDaysBanned.IntValue);
+        CPrintToChatAll("{green}%s {default}left the game. Return in {red}%d mins {default}or receive a {red}%d day(s){default} of ban.", player.name, minutes, hDaysBanned.IntValue);
         CPrintToChatAll("Use {green}!pause {default} to wait for his return.");
     }
 }
@@ -325,9 +329,10 @@ void BanPlayersWhoTimeout()
         if (h_whiteList.FindString(player.steamId) != -1)
             continue;
 
-        CPrintToChatAll("{green}%s {default}has been banned for {red}%d {default}day(s) for abandoning the game.", player.name, hDaysBanned.IntValue);
-        ServerCommand("sm_addban %d %s Automatic ban for abandoning the game", hDaysBanned.IntValue * 1440, player.steamId);
+        ServerCommand("sm_addban %d %s Banned for leaving the game", hDaysBanned.IntValue * 1440, player.steamId);
         KickPlayer(player.steamId);
+
+        CPrintToChatAll("{green}%s {default}is banned for {red}%d day(s) {default}for ragequit", player.name, hDaysBanned.IntValue);
 
         someonePunished = true;
         punished++;
@@ -366,7 +371,8 @@ void KickPlayer(const char[] steamId)
         if (!StrEqual(steamId, temp))
             continue;
 
-        KickClient(client, "Automatic ban for abandoning the game. You are banned for %d days.", hDaysBanned.IntValue);
+        KickClient(client, "Banned for leaving the game. Duration: %d days.", hDaysBanned.IntValue);
+
         return;
     }
 }
