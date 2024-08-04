@@ -21,12 +21,12 @@ enum struct Player
 }
 
 ConVar
-    hDaysBanned,
-    hMaxRageQuit,
-    hLimitUntilBanInMinutes,
-    hAddTimeWhenInReadyInMinutes,
-    hMaxPlayersPunished,
-    hPunishmentGapInSeconds;
+    hBanDuration,
+    hMaxAbandonmentBeforeNoPenalty,
+    hReturnTimeLimitMinutes,
+    hReadyStateAdditionalTimeMinutes,
+    hMaxSimultaneousPunishments,
+    hPenaltyTimeFrameSeconds;
 
 public Plugin myinfo =
 {
@@ -52,12 +52,12 @@ ArrayList h_whiteList;
 
 public void OnPluginStart()
 {
-    hDaysBanned = CreateConVar("rq_days_banned", "3", "Number of days banned if player abandons match", FCVAR_PROTECTED);
-    hMaxRageQuit = CreateConVar("rq_max_ragequit", "5", "Number of players that can abandon the match before the punishments are disabled", FCVAR_PROTECTED);
-    hLimitUntilBanInMinutes = CreateConVar("rq_limit_until_ban_in_minutes", "5", "Time limit in minutes for the player to return to the game", FCVAR_PROTECTED);
-    hAddTimeWhenInReadyInMinutes = CreateConVar("rq_add_time_when_in_ready_in_minutes", "5", "Additional time in minutes when game is in ready", FCVAR_PROTECTED);
-    hMaxPlayersPunished = CreateConVar("rq_max_players_punished", "3", "Number of players that can be punished at the same time", FCVAR_PROTECTED);
-    hPunishmentGapInSeconds = CreateConVar("rq_punishment_gap_in_seconds", "15", "Time frame during which players will be penalized if they do not wait for the return of players who have disconnected from the server", FCVAR_PROTECTED);
+    hBanDuration = CreateConVar("rq_ban_duration_days", "3", "Number of days a player is banned if they abandon a match", FCVAR_PROTECTED);
+    hMaxAbandonmentBeforeNoPenalty = CreateConVar("rq_max_abandonment_before_no_penalty", "5", "Number of players that can abandon the match before penalties are disabled", FCVAR_PROTECTED);
+    hReturnTimeLimitMinutes = CreateConVar("rq_return_time_limit_minutes", "5", "Time limit in minutes for a player to return to the game before being banned", FCVAR_PROTECTED);
+    hReadyStateAdditionalTimeMinutes = CreateConVar("rq_ready_state_additional_time_minutes", "5", "Additional time in minutes added when the game is in the ready state", FCVAR_PROTECTED);
+    hMaxSimultaneousPunishments = CreateConVar("rq_max_simultaneous_punishments", "3", "Maximum number of players that can be punished at the same time", FCVAR_PROTECTED);
+    hPenaltyTimeFrameSeconds = CreateConVar("rq_penalty_time_frame_seconds", "15", "Time frame in seconds during which players will be penalized if they leave before disconnected players return", FCVAR_PROTECTED);
 
     h_players = new ArrayList(sizeof(Player));
     h_whiteList = new ArrayList(ByteCountToCells(64));
@@ -152,7 +152,7 @@ Action CheckPunishmentsTick(Handle timer)
     if (rqs == 0)
         return Plugin_Continue;
 
-    if (rqs >= hMaxRageQuit.IntValue)
+    if (rqs >= hMaxAbandonmentBeforeNoPenalty.IntValue)
     {
         DisablePunishments();
         return Plugin_Continue;
@@ -219,7 +219,7 @@ void TryEnablePunishments()
     teamChanged = true;
     inTransition = false;
 
-    CPrintToChatAll("{red}Ragequit {default}results in {red}%d day(s) {default}of ban", hDaysBanned.IntValue);
+    CPrintToChatAll("{red}Rage quit {default}results in {red}%d day(s) {default}of ban", hBanDuration.IntValue);
 }
 
 void DisablePunishments()
@@ -231,7 +231,7 @@ void DisablePunishments()
     h_players.Clear();
     h_whiteList.Clear();
 
-    CPrintToChatAll("{default}Ragequit punishment has been {red}disabled");
+    CPrintToChatAll("{default}Rage quit punishment has been {red}disabled");
 }
 
 void ClearCounterOfWhoReturned()
@@ -291,15 +291,15 @@ void StartCounterForWhoLeft()
         if (found)
             continue;
 
-        int minutes = hLimitUntilBanInMinutes.IntValue;
+        int minutes = hReturnTimeLimitMinutes.IntValue;
 
         if (IsInReady())
-            minutes += hAddTimeWhenInReadyInMinutes.IntValue;
+            minutes += hReadyStateAdditionalTimeMinutes.IntValue;
 
         player.deadline = GetEngineTime() + minutes * 60.0;
         h_players.SetArray(i, player);
 
-        CPrintToChatAll("{green}%s {default}left the game. Return in {red}%d mins {default}or receive a {red}%d day(s){default} of ban.", player.name, minutes, hDaysBanned.IntValue);
+        CPrintToChatAll("{green}%s {default}left the game. Return in {red}%d mins {default}or receive a {red}%d day(s){default} of ban.", player.name, minutes, hBanDuration.IntValue);
         CPrintToChatAll("Use {green}!pause {default} to wait for his return.");
     }
 }
@@ -312,11 +312,11 @@ void BanPlayersWhoTimeout()
     h_players.SortCustom(SortByDeadline);
 
     bool someonePunished = false;
-    int maxPlayersPunished = hMaxPlayersPunished.IntValue;
-    float limit = GetEngineTime() - hPunishmentGapInSeconds.FloatValue;
+    int maxSimultaneousPunishments = hMaxSimultaneousPunishments.IntValue;
+    float limit = GetEngineTime() - hPenaltyTimeFrameSeconds.FloatValue;
 
     Player player;
-    for (int i = 0, punished = 0; punished <= maxPlayersPunished && i < h_players.Length; i++)
+    for (int i = 0, punished = 0; punished <= maxSimultaneousPunishments && i < h_players.Length; i++)
     {
         h_players.GetArray(i, player);
 
@@ -329,10 +329,10 @@ void BanPlayersWhoTimeout()
         if (h_whiteList.FindString(player.steamId) != -1)
             continue;
 
-        ServerCommand("sm_addban %d %s Banned for leaving the game", hDaysBanned.IntValue * 1440, player.steamId);
+        ServerCommand("sm_addban %d %s Banned for leaving the game", hBanDuration.IntValue * 1440, player.steamId);
         KickPlayer(player.steamId);
 
-        CPrintToChatAll("{green}%s {default}is banned for {red}%d day(s) {default}for ragequit", player.name, hDaysBanned.IntValue);
+        CPrintToChatAll("{green}%s {default}is banned for {red}%d day(s) {default}for rage quit", player.name, hBanDuration.IntValue);
 
         someonePunished = true;
         punished++;
@@ -371,7 +371,7 @@ void KickPlayer(const char[] steamId)
         if (!StrEqual(steamId, temp))
             continue;
 
-        KickClient(client, "Banned for leaving the game. Duration: %d days.", hDaysBanned.IntValue);
+        KickClient(client, "Banned for leaving the game. Duration: %d days.", hBanDuration.IntValue);
 
         return;
     }
