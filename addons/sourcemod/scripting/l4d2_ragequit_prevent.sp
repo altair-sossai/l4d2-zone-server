@@ -71,6 +71,8 @@ public void OnPluginStart()
 
 public void OnRoundIsLive()
 {
+    inTransition = false;
+
     TryEnablePunishments();
 }
 
@@ -219,7 +221,7 @@ void TryEnablePunishments()
     teamChanged = true;
     inTransition = false;
 
-    CPrintToChatAll("{red}Rage quit {default}results in {red}%d day(s) {default}of ban", hBanDuration.IntValue);
+    CPrintToChatAll("{red}Rage quitting {default}results in a {red}%d-day {default} ban", hBanDuration.IntValue);
 }
 
 void DisablePunishments()
@@ -231,7 +233,7 @@ void DisablePunishments()
     h_players.Clear();
     h_whiteList.Clear();
 
-    CPrintToChatAll("{default}Rage quit punishment has been {red}disabled");
+    CPrintToChatAll("{default}Rage quitting punishment has been {red}disabled");
 }
 
 void ClearCounterOfWhoReturned()
@@ -299,8 +301,8 @@ void StartCounterForWhoLeft()
         player.deadline = GetEngineTime() + minutes * 60.0;
         h_players.SetArray(i, player);
 
-        CPrintToChatAll("{green}%s {default}left the game. Return in {red}%d mins {default}or receive a {red}%d day(s){default} of ban.", player.name, minutes, hBanDuration.IntValue);
-        CPrintToChatAll("Use {green}!pause {default} to wait for his return.");
+        CPrintToChatAll("{green}%s {default}has left the game. Return within {red}%d mins{default} or receive a {red}%d-day{default} ban", player.name, minutes, hBanDuration.IntValue);
+        CPrintToChatAll("{default}Use {green}!pause{default} to wait for their return");
     }
 }
 
@@ -332,7 +334,7 @@ void BanPlayersWhoTimeout()
         ServerCommand("sm_addban %d %s Banned for leaving the game", hBanDuration.IntValue * 1440, player.steamId);
         KickPlayer(player.steamId);
 
-        CPrintToChatAll("{green}%s {default}is banned for {red}%d day(s) {default}for rage quit", player.name, hBanDuration.IntValue);
+        CPrintToChatAll("{green}%s {default}has been banned for {red}%d days{default} due to rage quitting", player.name, hBanDuration.IntValue);
 
         someonePunished = true;
         punished++;
@@ -371,7 +373,7 @@ void KickPlayer(const char[] steamId)
         if (!StrEqual(steamId, temp))
             continue;
 
-        KickClient(client, "Banned for leaving the game. Duration: %d days.", hBanDuration.IntValue);
+        KickClient(client, "You have been banned for leaving the game. Ban Duration: %d days.", hBanDuration.IntValue);
 
         return;
     }
