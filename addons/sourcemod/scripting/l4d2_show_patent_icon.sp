@@ -9,8 +9,8 @@
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
 
-#define ICON_ORIGIN_SURVIVOR { 0.0, 0.0, 20.0 }
-#define ICON_ORIGIN_INFECTED { 0.0, 0.0, 95.0 }
+#define ICON_ORIGIN_SURVIVOR { -3.0, 0.0, 20.0 }
+#define ICON_ORIGIN_INFECTED { -3.0, 0.0, 95.0 }
 
 public Plugin myinfo =
 {
@@ -29,6 +29,8 @@ ConVar
 int iconRef[MAXPLAYERS + 1] = { -1, ... };
 int playersLevel[MAXPLAYERS + 1] = { 0, ... };
 
+bool patentIconEnabled = true;
+
 StringMap PlayersPatent;
 
 public void OnPluginStart()
@@ -42,44 +44,58 @@ public void OnPluginStart()
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
+    PrecacheAllPatentFiles();
+
     CreateTimer(1.0, PatentIconTick, _, TIMER_REPEAT);
 }
 
 public void OnRoundIsLive()
 {
+    patentIconEnabled = false;
     RemoveAllPatentIcons();
-}
-
-public void OnMapStart()
-{
-    PrecacheAllPatentFiles();
-    RefreshPlayersPatent();
 }
 
 public void OnClientPutInServer(int client)
 {
-    RefreshPlayersLevel();
+    if (patentIconEnabled && !IsFakeClient(client))
+        RefreshPlayersLevel();
 }
 
 public void OnClientDisconnect(int client)
 {
+    if (!patentIconEnabled)
+        return;
+
     RemovePatentIcon(client);
     RefreshPlayersLevel();
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
+    if (!patentIconEnabled)
+        return;
+
     RemovePatentIcon(GetClientOfUserId(GetEventInt(event, "userid")));
 }
 
 void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
-    RefreshPlayersPatent();
+    CreateTimer(10.0, NewGameTick);
+}
+
+Action NewGameTick(Handle timer)
+{
+    patentIconEnabled = IsNewGame();
+
+    if (patentIconEnabled)
+        RefreshPlayersPatent();
+
+    return Plugin_Stop;
 }
 
 Action PatentIconTick(Handle timer)
 {
-    if (!IsInReady() || GameInProgress())
+    if (!patentIconEnabled)
         return Plugin_Continue;
 
     int entity;
@@ -151,6 +167,9 @@ void SetPatentIcon(int client)
 
 Action OnSetIconTransmit(int entity, int client)
 {
+    if (!patentIconEnabled)
+        return Plugin_Handled;
+
     if (GetClientTeam(client) == L4D2_TEAM_SURVIVOR)
     {
         int ref = EntIndexToEntRef(entity);
@@ -193,19 +212,15 @@ void RefreshPlayersPatentResponse(HTTPResponse httpResponse, any value)
         player.GetString("communityId", communityId, sizeof(communityId));
 
         int level = player.GetInt("level");
-
         PlayersPatent.SetValue(communityId, level, true);
     }
 
     RefreshPlayersLevel();
 }
 
-bool GameInProgress()
+bool IsNewGame()
 {
-    int teamAScore = L4D2Direct_GetVSCampaignScore(0);
-    int teamBScore = L4D2Direct_GetVSCampaignScore(1);
-    
-    return teamAScore != 0 || teamBScore != 0;
+    return L4D2Direct_GetVSCampaignScore(0) == 0 && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
 
 void PrecacheAllPatentFiles()
