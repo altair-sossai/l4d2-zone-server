@@ -44,8 +44,6 @@ public void OnPluginStart()
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
-    PrecacheAllPatentFiles();
-
     CreateTimer(1.0, PatentIconTick, _, TIMER_REPEAT);
 }
 
@@ -53,6 +51,12 @@ public void OnRoundIsLive()
 {
     patentIconEnabled = false;
     RemoveAllPatentIcons();
+}
+
+public void OnMapStart()
+{
+    PrecacheAllPatentFiles();
+    RefreshPlayersPatent();
 }
 
 public void OnClientPutInServer(int client)
