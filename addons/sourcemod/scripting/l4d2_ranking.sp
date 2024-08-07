@@ -16,6 +16,7 @@ public Plugin myinfo =
 
 ConVar hUrl;
 
+bool showRankingEnabled = true;
 bool displayed[MAXPLAYERS + 1] = { false, ... };
 
 public void OnPluginStart()
@@ -24,11 +25,14 @@ public void OnPluginStart()
 
     RegConsoleCmd("sm_ranking", ShowRankingCmd);
 
+    HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
+
     CreateTimer(200.0, DisplayRankingUrlTick, _, TIMER_REPEAT);
 }
 
 public void OnRoundIsLive()
 {
+    showRankingEnabled = false;
     ResetRankingDisplayed();
 }
 
@@ -36,7 +40,20 @@ public void OnClientPutInServer(int client)
 {
     displayed[client] = false;
 
-    CreateTimer(60.0, ShowRankingTick, client);
+    if (!IsFakeClient(client))
+        CreateTimer(60.0, ShowRankingTick, client);
+}
+
+void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
+{
+    CreateTimer(10.0, NewGameTick);
+}
+
+Action NewGameTick(Handle timer)
+{
+    showRankingEnabled = IsNewGame();
+
+    return Plugin_Stop;
 }
 
 Action ShowRankingCmd(int client, int args)
@@ -47,7 +64,7 @@ Action ShowRankingCmd(int client, int args)
 
 Action DisplayRankingUrlTick(Handle timer)
 {
-    if (!IsInReady() || GameInProgress())
+    if (!showRankingEnabled)
         return Plugin_Continue;
 
     PrintToChatAll("\x03l4d2.com.br");
@@ -58,16 +75,17 @@ Action DisplayRankingUrlTick(Handle timer)
 
 Action ShowRankingTick(Handle timer, int client)
 {
-    if (displayed[client] || !IsInReady() || GameInProgress())
-        return Plugin_Continue;
+    if (showRankingEnabled && !displayed[client])
+        ShowRanking(client);
 
-    ShowRanking(client);
-
-    return Plugin_Handled;
+    return Plugin_Stop;
 }
 
 void ShowRanking(int client)
 {
+    if (IsFakeClient(client))
+        return;
+
     displayed[client] = true;
 
     char url[100];
@@ -79,12 +97,9 @@ void ShowRanking(int client)
     ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
 }
 
-bool GameInProgress()
+bool IsNewGame()
 {
-    int teamAScore = L4D2Direct_GetVSCampaignScore(0);
-    int teamBScore = L4D2Direct_GetVSCampaignScore(1);
-    
-    return teamAScore != 0 || teamBScore != 0;
+    return L4D2Direct_GetVSCampaignScore(0) == 0 && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
 
 void ResetRankingDisplayed()
