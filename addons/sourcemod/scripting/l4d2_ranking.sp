@@ -83,7 +83,7 @@ Action ShowRankingTick(Handle timer, int client)
 
 void ShowRanking(int client)
 {
-    if (IsFakeClient(client))
+    if (!IsClientInGame(client) || IsFakeClient(client))
         return;
 
     displayed[client] = true;
