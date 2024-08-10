@@ -91,10 +91,7 @@ void ShowRanking(int client)
     char url[100];
     GetConVarString(hUrl, url, sizeof(url));
 
-    char path[128];
-    FormatEx(path, sizeof(path), "%s/ranking", url);
-
-    ShowMOTDPanel(client, "L4D2 | Players Ranking", path, MOTDPANEL_TYPE_URL);
+    ShowMOTDPanel(client, "L4D2 | Players Ranking", url, MOTDPANEL_TYPE_URL);
 }
 
 bool IsNewGame()
