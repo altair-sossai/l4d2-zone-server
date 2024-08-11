@@ -1,103 +1,35 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 
-#define VOICE_NORMAL 0	
-#define VOICE_MUTED 1
-#define VOICE_SPEAKALL 2	
 #define VOICE_LISTENALL 4
+#define VOICE_TEAM 8
 
 #define TEAM_SPEC 1
-#define PLUGIN_VERSION "1.0"
 
-public Plugin:myinfo = 
+public Plugin myinfo = 
 {
 	name = "SpecLister",
-	author = "waertf & bear",
-	description = "Allows spectator listen others team voice for l4d",
+	author = "Altair Sossai",
+	description = "Allow spectators to hear all players",
 	version = "1.0",
-	url = "http://forums.alliedmods.net/showthread.php?t=95474"
+	url = "https://github.com/altair-sossai/l4d2-zone-server"
 }
 
-public OnPluginStart()
+public void OnPluginStart()
 {
-	HookEvent("player_team", PlayerChangeTeamEvent);
-
-	RegConsoleCmd("hear", PanelCommand);
-	RegConsoleCmd("muteall", MuteAllCommand);
+	HookEvent("player_team", PlayerTeam_Event);
 }
 
-public PlayerChangeTeamEvent(Handle:event, const String:name[], bool:dontBroadcast)
+void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
-	new userId = GetEventInt(event, "userid");
-	new client = GetClientOfUserId(userId);
-	new team = GetEventInt(event, "team");
+	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+	if (client <= 0 || client > MaxClients || !IsClientInGame(client) || IsFakeClient(client))
+		return;
+
+	int team = GetEventInt(event, "team");
 	
-	if(client == 0)
-		return ;
-
-	SetClientListeningFlags(client, team == TEAM_SPEC ? VOICE_LISTENALL : VOICE_NORMAL);
-}
-
-public Action:PanelCommand(client, args)
-{
-	if(GetClientTeam(client) != TEAM_SPEC)
-		return Plugin_Handled;
-
-	new Handle:panel = CreatePanel();
-
-	SetPanelTitle(panel, "O que você deseja fazer?");
-	DrawPanelItem(panel, "Ouvir todos os jogadores");
-	DrawPanelItem(panel, "Ouvir apenas os espectadores");
-	DrawPanelItem(panel, "Mutar todos");
- 
-	SendPanelToClient(panel, client, PanelHandler, 20);
- 
-	CloseHandle(panel);
- 
-	return Plugin_Handled;
-}
-
-public Action:MuteAllCommand(client, args)
-{
-	if(GetClientTeam(client) != TEAM_SPEC)
-		return Plugin_Handled;
-
-	SetClientListeningFlags(client, VOICE_MUTED);
-	PrintToChat(client, "\x04[Silêncio] \x03Você mutou todos...");
-}
-
-public PanelHandler(Handle:menu, MenuAction:action, client, selectedValue)
-{
-	if (action != MenuAction_Select)
-		return;
-
-	if(selectedValue == 1)
-	{
-		SetClientListeningFlags(client, VOICE_LISTENALL);
-		PrintToChat(client,"\x04[Ouvir] \x03Ouvindo jogadores e espectadores...");
-	}
-	else if(selectedValue == 2)
-	{
-		SetClientListeningFlags(client, VOICE_NORMAL);
-		PrintToChat(client,"\x04[Ouvir] \x03Ouvindo apenas espectadores...");
-	}
-	else if(selectedValue == 3)
-	{
-		SetClientListeningFlags(client, VOICE_MUTED);
-		PrintToChat(client, "\x04[Silêncio] \x03Você mutou todos...");
-	}
-}
-
-public OnClientPutInServer(client)
-{
-	CreateTimer(20.0, TimerAnnounce, client);
-}
-
-public Action:TimerAnnounce(Handle:timer, any:client)
-{
-	if (!IsClientInGame(client))
-		return;
-
-	if (GetClientTeam(client) == TEAM_SPEC)
-		PrintToChat(client, "\x04[Ouvir/Mutar] \x01Para ouvir ou mutar os jogadores digite: \03!hear");
+	SetClientListeningFlags(client, team == TEAM_SPEC ? VOICE_LISTENALL : VOICE_TEAM);
 }
