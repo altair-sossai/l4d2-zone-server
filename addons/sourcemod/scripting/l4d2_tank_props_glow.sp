@@ -374,9 +374,6 @@ void CreateTankPropGlow(int iTarget)
 
 	SDKHook(iEntity, SDKHook_SetTransmit, OnTransmit);
 	g_iEntityList[iTarget] = EntIndexToEntRef(iEntity);
-
-	// Fix PVS glow issues while inside walls (by Mart)
-	SetEdictFlags(iTarget, GetEdictFlags(iTarget) | FL_EDICT_ALWAYS);
 }
 
 Action OnTransmit(int iEntity, int iClient)
