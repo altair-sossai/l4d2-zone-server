@@ -53,7 +53,7 @@
 * @Forgetest
 */
 
-#define PLUGIN_VERSION "3.4.3"
+#define PLUGIN_VERSION "3.4.2"
 
 public Plugin myinfo =
 {
@@ -587,20 +587,18 @@ void PrintTankDamageTitle(const TankInfo info)
 	
 	char name[MAX_NAME_LENGTH];
 	bool bHumanControlled = FindTankControlName(info.userid, name, sizeof(name));
-
-	Format(name, sizeof(name), "%t", IsFakeClient(client) ? (bHumanControlled ? "Frustrated" : "AI") : "HumanControlled", name);
 	
 	if (IsPlayerAlive(client))
 		CPrintToChatAll("%t",
 				g_hCvarTopCount.IntValue ? "RemainingHealth_TopNumbered" : "RemainingHealth",
-				name,
+				IsFakeClient(client) ? (bHumanControlled ? "Frustrated" : "AI") : "HumanControlled", name,
 				info.lastHealth,
 				info.index,
 				g_hCvarTopCount.IntValue);
 	else
 		CPrintToChatAll("%t",
 				g_hCvarTopCount.IntValue ? "DamageDealt_TopNumbered" : "DamageDealt",
-				name,
+				IsFakeClient(client) ? (bHumanControlled ? "Frustrated" : "AI") : "HumanControlled", name,
 				info.index,
 				g_hCvarTopCount.IntValue);
 }
@@ -612,12 +610,17 @@ void PrintTankFactsTitle(const TankInfo info)
 	char name[MAX_NAME_LENGTH];
 	bool bHumanControlled = FindTankControlName(info.userid, name, sizeof(name));
 	
-	Format(name, sizeof(name), "%t", IsFakeClient(client) ? (bHumanControlled ? "Frustrated" : "AI") : "HumanControlled", name);
-
-	CPrintToChatAll("%t",
-			"FactsTitle",
-			name,
-			info.index);
+	if (IsPlayerAlive(client))
+		CPrintToChatAll("%t",
+				"FactsTitle",
+				IsFakeClient(client) ? (bHumanControlled ? "Frustrated" : "AI") : "HumanControlled", name,
+				info.lastHealth,
+				info.index);
+	else
+		CPrintToChatAll("%t",
+				"FactsTitle",
+				IsFakeClient(client) ? (bHumanControlled ? "Frustrated" : "AI") : "HumanControlled", name,
+				info.index);
 }
 
 void PrintTankInfo(int userid = 0)
