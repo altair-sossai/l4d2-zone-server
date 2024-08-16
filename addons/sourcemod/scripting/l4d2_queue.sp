@@ -1,3 +1,6 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <readyup>
 #include <left4dhooks>
