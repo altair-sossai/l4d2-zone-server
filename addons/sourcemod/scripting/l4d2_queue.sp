@@ -5,6 +5,8 @@
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
 
+#define MAX_MESSAGE_LENGTH 200
+
 ArrayList queue;
 
 public Plugin myinfo =
@@ -135,7 +137,7 @@ void PrintQueue(int target)
 	if (queue.Length == 0)
 		return;
 
-	char output[1024];
+	char output[512];
 	char steamId[64];
 
 	for (int i = 0, position = 1; i < queue.Length; i++)
@@ -156,6 +158,13 @@ void PrintQueue(int target)
 			Format(output, sizeof(output), "%s\x01, \x03%dº \x01%N", output, position, client);
 
 		position++;
+
+		if (strlen(output) > MAX_MESSAGE_LENGTH)
+		{
+			output[MAX_MESSAGE_LENGTH] = '\0';
+			Format(output, sizeof(output), "%s...", output);
+			break;
+		}
 	}
 
 	if (target == 0)
