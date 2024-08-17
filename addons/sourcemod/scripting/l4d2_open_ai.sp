@@ -52,16 +52,17 @@ void ShowLastMatchSummaryResponse(HTTPResponse httpResponse, any value)
     if (httpResponse.Status != HTTPStatus_OK)
         return;
 
-    JSONArray response = view_as<JSONArray>(httpResponse.Data);
+    JSONObject response = view_as<JSONObject>(httpResponse.Data);
+    JSONArray phrases = view_as<JSONArray>(response.Get("phrases"));
 
     char message[250];
 
-    for (int i = 0; i < response.Length; i++)
+    for (int i = 0; i < phrases.Length; i++)
     {
         if (i == 0)
-            CPrintToChatAll("{default}[{green}ChatGPT{default}] Curiosidades da última partida");
+            CPrintToChatAll("{default}[{blue}ChatGPT{default}] Detalhes da última partida:");
 
-        response.GetString(i, message, sizeof(message));
+        phrases.GetString(i, message, sizeof(message));
         CPrintToChatAll(message);
     }
 }
