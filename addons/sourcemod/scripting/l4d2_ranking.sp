@@ -3,7 +3,6 @@
 
 #include <sourcemod>
 #include <left4dhooks>
-#include <readyup>
 
 public Plugin myinfo =
 {
