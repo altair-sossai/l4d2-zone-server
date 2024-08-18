@@ -4,13 +4,14 @@
 #include <sourcemod>
 #include <left4dhooks>
 #include <colors>
+#include <readyup>
 #include <ripext>
 
 public Plugin myinfo =
 {
-    name        = "L4D2 - Open AI",
+    name        = "L4D2 - Open AI Integration",
     author      = "Altair Sossai",
-    description = "Plugin to enable the Open AI in the server",
+    description = "Integrates with Open AI to bring a summary of the last match",
     version     = "1.0.0",
     url         = "https://github.com/altair-sossai/l4d2-zone-server"
 };
@@ -26,12 +27,12 @@ public void OnPluginStart()
 
 void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
-    CreateTimer(30.0, NewGameTick);
+    CreateTimer(60.0, NewGameTick);
 }
 
 Action NewGameTick(Handle timer)
 {
-    if (IsNewGame())
+    if (IsNewGame() && IsInReady())
         ShowLastMatchSummary();
 
     return Plugin_Stop;
