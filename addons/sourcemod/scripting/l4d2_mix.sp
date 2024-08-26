@@ -2,7 +2,7 @@
 #include <sdktools_sound>
 
 #define MAX_STR_LEN 30
-#define MIN_MIX_START_COUNT 2
+#define MIN_MIX_START_COUNT 4
 
 #define COND_HAS_ALREADY_VOTED 0
 #define COND_NEED_MORE_VOTES 1
@@ -157,8 +157,15 @@ public Action Cmd_MixStart(int client, int args)
     if (currentState != STATE_NO_MIX) {
         PrintToChat(client, "\x04Mix Manager: \x01Already started.");
         return Plugin_Handled;
-    } else if (!isMixAllowed) {
+    } 
+    
+    if (!isMixAllowed) {
         PrintToChat(client, "\x04Mix Manager: \x01Not allowed on live round.");
+        return Plugin_Handled;
+    } 
+    
+    if (GetClientTeam(client) == 1 && !GetAdminFlag(GetUserAdmin(client), Admin_Changemap)) {
+        PrintToChat(client, "\x04Mix Manager: \x01You can not start a mix as a spectator.");
         return Plugin_Handled;
     }
 
