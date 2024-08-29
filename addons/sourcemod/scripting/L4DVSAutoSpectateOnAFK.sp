@@ -44,7 +44,6 @@ new Float:afkPlayerLastPos[MAXPLAYERS + 1][3];
 new Float:afkPlayerLastEyes[MAXPLAYERS + 1][3];
 new Handle:afkTimer;
 new bool:IsMapVS;
-new bool:LeavedSafeRoom;
 new bool:PlayerJustConnected[MAXPLAYERS + 1];
 
 
@@ -65,18 +64,17 @@ public OnPluginStart()
 	// For roundstart and roundend..
 	HookEvent("round_start", Event_RoundStart, EventHookMode_Post);
 	HookEvent("round_end", Event_RoundEnd, EventHookMode_Pre);
-	HookEvent("player_left_start_area", PlayerLeftStart);
 	HookEvent("finale_vehicle_leaving", afkEventFinaleLeaving, EventHookMode_Pre);
 	
 	// Afk manager time limits
-	h_AfkWarnSpecTime = CreateConVar("l4d_specafk_warnspectime", "15", "Warn time before spec", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
-	h_AfkSpecTime = CreateConVar("l4d_specafk_spectime", "15", "time before spec (after warn)", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
-	h_AfkWarnKickTime = CreateConVar("l4d_specafk_warnkicktime", "30", "Warn time before kick (while already on spec)", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
-	h_AfkKickTime = CreateConVar("l4d_specafk_kicktime", "30", "time before kick (while already on spec after warn)", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
-	h_AfkCheckInterval = CreateConVar("l4d_specafk_checkinteral", "5", "Check/warn interval", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
-	h_AfkKickEnabled = CreateConVar("l4d_specafk_kickenabled", "1", "If kick enabled on afk while on spec", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
-	h_AfkSpecOnConnect = CreateConVar("l4d_specafk_speconconnect", "0", "If player will be forced to spectate on connect", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
-	h_AfkShowTeamPanel = CreateConVar("l4d_specafk_showteampanel", "0", "If team panel will be showed to connecting players", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkWarnSpecTime = CreateConVar("l4d_specafk_warnspectime", "15", "Warn time before spec", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkSpecTime = CreateConVar("l4d_specafk_spectime", "15", "time before spec (after warn)", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkWarnKickTime = CreateConVar("l4d_specafk_warnkicktime", "30", "Warn time before kick (while already on spec)", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkKickTime = CreateConVar("l4d_specafk_kicktime", "30", "time before kick (while already on spec after warn)", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkCheckInterval = CreateConVar("l4d_specafk_checkinteral", "5", "Check/warn interval", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkKickEnabled = CreateConVar("l4d_specafk_kickenabled", "1", "If kick enabled on afk while on spec", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkSpecOnConnect = CreateConVar("l4d_specafk_speconconnect", "0", "If player will be forced to spectate on connect", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
+	h_AfkShowTeamPanel = CreateConVar("l4d_specafk_showteampanel", "0", "If team panel will be showed to connecting players", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY, false, 0.0, false, 0.0);
 	
 	// Hook cvars changes ...
 	HookConVarChange(h_AfkWarnSpecTime, ConVarChanged);
@@ -89,14 +87,15 @@ public OnPluginStart()
 	HookConVarChange(h_AfkShowTeamPanel, ConVarChanged);
 	
 	// We register the version cvar
-	CreateConVar("l4d_specafk_version", PLUGIN_VERSION, "Version of L4D VS Auto spectate on AFK", FCVAR_PLUGIN|FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
+	CreateConVar("l4d_specafk_version", PLUGIN_VERSION, "Version of L4D VS Auto spectate on AFK", FCVAR_SPONLY|FCVAR_REPLICATED|FCVAR_NOTIFY);
 	
 	// We tweak some settings ..
 	SetConVarInt(FindConVar("vs_max_team_switches"), 9999); // so that players can switch multiple times
 	
 	// We read the cvars
 	ReadCvars();
-}
+}
+
 public ReadCvars()
 {
 	// first we read all the variables ...
@@ -141,16 +140,12 @@ public OnMapStart()
 
 public OnClientPutInServer(client)
 {
-	// If players already leaved safe room we mark the player as just connected ...
-	if (LeavedSafeRoom)
-		PlayerJustConnected[client] = true;
-	else
-	PlayerJustConnected[client] = false; // it just connected, but we don't care right now ...
+	PlayerJustConnected[client] = false;
 }
 
 public IsValidClient (client)
 {
-	if ((client >= 1) && (client <= GetMaxClients()))
+	if ((client >= 1) && (client <= MaxClients))
 		return true;
 	else
 	return false;
@@ -203,27 +198,9 @@ public Action:Event_RoundStart (Handle:event, const String:name[], bool:dontBroa
 	else
 	IsMapVS = false;
 	
-	// reset some variables
-	LeavedSafeRoom = false;
-	
 	// We start the AFK manager
 	afkManager_Start();
 	
-	return Plugin_Continue;
-}
-
-
-public Action:PlayerLeftStart(Handle:event, const String:name[], bool:dontBroadcast)
-{
-	// We check is map is VS ....
-	if (IsMapVS)
-	{
-		// We don't care who left, just that at least one did
-		if (!LeavedSafeRoom)
-		{
-			LeavedSafeRoom = true;
-		}
-	}
 	return Plugin_Continue;
 }
 
@@ -408,7 +385,7 @@ public Action:afkChangedTeam (Handle:event, const String:name[], bool:dontBroadc
 		if (IsClientConnected(victim)&&(!IsFakeClient(victim)))
 		{	
 			// If players left the safe room and this player just connected and we have set spec on connect ...
-			if (LeavedSafeRoom && PlayerJustConnected[victim] && afkSpecOnConnect)
+			if (PlayerJustConnected[victim] && afkSpecOnConnect)
 			{
 				// If player is on survivors and is dead ... we don't force him to spec
 				if ((GetClientTeam(victim) == 2) && (!IsPlayerAlive(victim)))
@@ -511,7 +488,7 @@ public Action:afkCheckThread(Handle:timer)
 	if (!afkManager_Active)
 		return Plugin_Stop;
 	
-	new count = GetMaxClients();
+	new count = MaxClients;
 	decl i;
 	new Float:pos[3];
 	new Float:eyes[3];
@@ -561,22 +538,11 @@ public Action:afkCheckThread(Handle:timer)
 								// if his action time reached 0 ...
 								if (afkPlayerTimeLeftAction[i] <= 0)
 								{
-									// If players leaved safe room we force him to spectate
-									if (LeavedSafeRoom)
-									{
-										// we force the player to spectate
-										afkForceSpectate(i, true, false);
-										
-										// reset the timers
-										afkResetTimers(i);
-									}
-									else // if players haven't leaved safe room ... we warn this player that he will be forced to spectate as soon as a player leaves
-									{
-										PrintToChat(i, "\x01\x04[SM] You will be forced to spectate as soon as a player leaves the safe room.");
-									}
+									afkForceSpectate(i, true, false);
+									afkResetTimers(i);
 								}
 								else // we just warn him ...
-								PrintToChat(i, "\x01\x04[SM] You will be forced to spectate in %i seconds.", afkPlayerTimeLeftAction[i]);
+									PrintToChat(i, "\x01\x04[SM] You will be forced to spectate in %i seconds.", afkPlayerTimeLeftAction[i]);
 								
 							}
 						} // player is not trapped
@@ -621,20 +587,9 @@ public Action:afkCheckThread(Handle:timer)
 						
 						// if his action time reached 0 ...
 						if (afkPlayerTimeLeftAction[i] <=  0)
-						{
-							// If players haven't leaved the safe room ..
-							if (!LeavedSafeRoom)
-							{
-								// we force the player to spectate
-								afkKickClient(i);
-							}
-							else // We warn him that he will be kicked ...
-							{
-								PrintToChat(i, "\x01\x04[SM] You will be kicked as soon as a player leaves the safe room.");
-							}
-						}
+							afkKickClient(i);
 						else // we just warn him ...
-						PrintToChat(i, "\x01\x04[SM] You will be \x03kicked\x04 in %i seconds.", afkPlayerTimeLeftAction[i]);
+							PrintToChat(i, "\x01\x04[SM] You will be \x03kicked\x04 in %i seconds.", afkPlayerTimeLeftAction[i]);
 						
 					}			
 				} // player is not admin
