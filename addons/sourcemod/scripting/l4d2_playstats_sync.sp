@@ -30,7 +30,14 @@ public void OnPluginStart()
 
 void RoundStart_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
+    CreateTimer(10.0, RoundStart_Tick);
+}
+
+Action RoundStart_Tick(Handle timer)
+{
     Sync();
+
+    return Plugin_Stop;
 }
 
 void Sync()
