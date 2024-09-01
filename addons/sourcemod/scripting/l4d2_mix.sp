@@ -2,7 +2,7 @@
 #include <sdktools_sound>
 
 #define MAX_STR_LEN 30
-#define MIN_MIX_START_COUNT 4
+#define MIN_MIX_START_COUNT 2
 
 #define COND_HAS_ALREADY_VOTED 0
 #define COND_NEED_MORE_VOTES 1
