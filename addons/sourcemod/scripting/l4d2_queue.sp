@@ -206,7 +206,7 @@ void PrintQueue(int target)
 		if (position == 1)
 			FormatEx(output, sizeof(output), "\x04Fila: \x03%dº \x01%N", position, client);
 		else
-			Format(output, sizeof(output), "%s\x01, \x03%dº \x01%N", output, position, client);
+			Format(output, sizeof(output), "%s \x03%dº \x01%N", output, position, client);
 
 		position++;
 
