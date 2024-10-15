@@ -10,7 +10,13 @@
 
 #define MAX_MESSAGE_LENGTH 200
 
-ArrayList queue;
+ArrayList h_Queue;
+
+enum struct Player
+{
+    char steamId[64];
+    float priority;
+}
 
 public Plugin myinfo =
 {
@@ -23,9 +29,10 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-	queue = new ArrayList(ByteCountToCells(64));
+	h_Queue = new ArrayList(sizeof(Player));
 
 	RegConsoleCmd("sm_fila", PrintQueueCmd);
+	RegConsoleCmd("sm_queue", PrintQueueCmd);
 }
 
 public Action PrintQueueCmd(int client, int args)
@@ -60,62 +67,90 @@ void Enqueue(int client)
 	char steamId[64];
 	GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
 
-	if (strlen(steamId) == 0 || strcmp(steamId, "BOT") == 0)
+	if (strlen(steamId) == 0 || StrEqual(steamId, "BOT"))
 		return;
 
-	int index = queue.FindString(steamId);
-	if (index != -1)
-		return;
+	Player player;
 
-	queue.PushString(steamId);
+	for (int i = 0; i < h_Queue.Length; i++)
+	{
+		h_Queue.GetArray(i, player);
+
+		if (StrEqual(player.steamId, steamId))
+			return;
+	}
+
+	strcopy(player.steamId, sizeof(player.steamId), steamId);
+	player.priority = GetEngineTime();
+
+	h_Queue.PushArray(player);
+
+	SortQueue();
 }
 
 void RequeuePlayers()
 {
-	char steamId[64];
+	Player player;
 
-	for (int i = 0; i < queue.Length; )
+	for (int i = 0; i < h_Queue.Length; i++)
 	{
-		queue.GetString(i, steamId, sizeof(steamId));
+		h_Queue.GetArray(i, player);
 
-		int client = GetClientUsingSteamId(steamId);
+		int client = GetClientUsingSteamId(player.steamId);
 		if (client == -1)
-		{
-			i++;
 			continue;
-		}
 
 		int team = GetClientTeam(client);
 		if (team != L4D2_TEAM_SURVIVOR && team != L4D2_TEAM_INFECTED)
-		{
-			i++;
 			continue;
-		}
 
-		queue.Erase(i);
+		player.priority = GetEngineTime();
+
+		h_Queue.SetArray(i, player);
 	}
 
-	for (int client = 1; client <= MaxClients; client++) 
-		Enqueue(client);
+	SortQueue();
 }
 
 void UnqueueAllDisconnected()
 {
-	char steamId[64];
-
-	for (int i = 0; i < queue.Length; )
+	Player player;
+	
+	for (int i = 0; i < h_Queue.Length; )
 	{
-		queue.GetString(i, steamId, sizeof(steamId));
+		h_Queue.GetArray(i, player);
 
-		if (GetClientUsingSteamId(steamId) != -1)
+		if (GetClientUsingSteamId(player.steamId) != -1)
 		{
 			i++;
 			continue;
 		}
 
-		queue.Erase(i);
+		h_Queue.Erase(i);
 	}
 }
+
+void SortQueue()
+{
+	h_Queue.SortCustom(SortByPriority);
+}
+
+int SortByPriority(int index1, int index2, Handle array, Handle hndl)
+{
+    Player player1, player2;
+
+    h_Queue.GetArray(index1, player1);
+    h_Queue.GetArray(index2, player2);
+
+    if (player1.priority < player2.priority)
+        return -1;
+
+    if (player1.priority > player2.priority)
+        return 1;
+
+    return 0;
+}
+
 
 int GetClientUsingSteamId(const char[] steamId) 
 {
@@ -128,7 +163,7 @@ int GetClientUsingSteamId(const char[] steamId)
         
         GetClientAuthId(client, AuthId_Steam2, current, sizeof(current));     
         
-        if (strcmp(steamId, current) == 0)
+        if (StrEqual(steamId, current))
             return client;
     }
     
@@ -137,17 +172,17 @@ int GetClientUsingSteamId(const char[] steamId)
 
 void PrintQueue(int target)
 {
-	if (queue.Length == 0)
+	if (h_Queue.Length == 0)
 		return;
 
+	Player player;
 	char output[512];
-	char steamId[64];
 
-	for (int i = 0, position = 1; i < queue.Length; i++)
+	for (int i = 0, position = 1; i < h_Queue.Length; i++)
 	{
-		queue.GetString(i, steamId, sizeof(steamId));
+		h_Queue.GetArray(i, player);
 
-		int client = GetClientUsingSteamId(steamId);
+		int client = GetClientUsingSteamId(player.steamId);
 		if (client == -1)
 			continue;
 
