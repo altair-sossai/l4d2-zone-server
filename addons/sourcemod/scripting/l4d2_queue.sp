@@ -92,6 +92,9 @@ void RequeuePlayers()
 {
 	Player player;
 
+	bool survivorsAreWinning = SurvivorsAreWinning();
+	bool infectedAreWinning = !survivorsAreWinning;
+
 	for (int i = 0; i < h_Queue.Length; i++)
 	{
 		h_Queue.GetArray(i, player);
@@ -104,7 +107,12 @@ void RequeuePlayers()
 		if (team != L4D2_TEAM_SURVIVOR && team != L4D2_TEAM_INFECTED)
 			continue;
 
-		player.priority = GetEngineTime();
+		if (survivorsAreWinning && team == L4D2_TEAM_SURVIVOR)
+			player.priority = 0.0;
+		else if (infectedAreWinning && team == L4D2_TEAM_INFECTED)
+			player.priority = 0.0;
+		else
+			player.priority = GetEngineTime();
 
 		h_Queue.SetArray(i, player);
 	}
@@ -178,6 +186,8 @@ void PrintQueue(int target)
 	Player player;
 	char output[512];
 
+	bool isNewGame = IsNewGame();
+
 	for (int i = 0, position = 1; i < h_Queue.Length; i++)
 	{
 		h_Queue.GetArray(i, player);
@@ -186,9 +196,12 @@ void PrintQueue(int target)
 		if (client == -1)
 			continue;
 
-		int team = GetClientTeam(client);
-		if (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED)
-			continue;
+		if (!isNewGame)
+		{
+			int team = GetClientTeam(client);
+			if (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED)
+				continue;
+		}
 
 		if (position == 1)
 			FormatEx(output, sizeof(output), "\x04Fila: \x03%dº \x01%N", position, client);
@@ -209,4 +222,25 @@ void PrintQueue(int target)
 		PrintToChatAll(output);
 	else
 		PrintToChat(target, output);
+}
+
+bool IsNewGame()
+{
+	int teamAScore = L4D2Direct_GetVSCampaignScore(0);
+	int teamBScore = L4D2Direct_GetVSCampaignScore(1);
+
+	return teamAScore == 0 && teamBScore == 0;
+}
+
+bool SurvivorsAreWinning()
+{
+	int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+
+	int survivorIndex = flipped ? 1 : 0;
+	int infectedIndex = flipped ? 0 : 1;
+
+	int survivorScore = L4D2Direct_GetVSCampaignScore(survivorIndex);
+	int infectedScore = L4D2Direct_GetVSCampaignScore(infectedIndex);
+
+	return survivorScore >= infectedScore;
 }
