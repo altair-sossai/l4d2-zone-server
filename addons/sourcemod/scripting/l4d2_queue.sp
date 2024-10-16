@@ -1,14 +1,13 @@
 #pragma semicolon 1
 #pragma newdecls required
 
+#include <colors>
 #include <sourcemod>
 #include <readyup>
 #include <left4dhooks>
 
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
-
-#define MAX_MESSAGE_LENGTH 200
 
 ArrayList h_Queue;
 
@@ -204,9 +203,9 @@ void PrintQueue(int target)
 		}
 
 		if (position == 1)
-			FormatEx(output, sizeof(output), "\x04Fila: \x03%dº \x01%N", position, client);
+			FormatEx(output, sizeof(output), "{orange}Fila: {olive}%dº {default}%N", position, client);
 		else
-			Format(output, sizeof(output), "%s \x03%dº \x01%N", output, position, client);
+			Format(output, sizeof(output), "%s {olive}%dº {default}%N", output, position, client);
 
 		position++;
 
@@ -219,9 +218,9 @@ void PrintQueue(int target)
 	}
 
 	if (target == 0)
-		PrintToChatAll(output);
+		CPrintToChatAll(output);
 	else
-		PrintToChat(target, output);
+		CPrintToChat(target, output);
 }
 
 bool IsNewGame()
