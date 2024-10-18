@@ -208,13 +208,6 @@ void PrintQueue(int target)
 			Format(output, sizeof(output), "%s {olive}%dº {default}%N", output, position, client);
 
 		position++;
-
-		if (strlen(output) > MAX_MESSAGE_LENGTH)
-		{
-			output[MAX_MESSAGE_LENGTH] = '\0';
-			Format(output, sizeof(output), "%s...", output);
-			break;
-		}
 	}
 
 	if (target == 0)
