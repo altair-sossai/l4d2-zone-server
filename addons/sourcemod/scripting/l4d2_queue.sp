@@ -183,6 +183,7 @@ void PrintQueue(int target)
 		return;
 
 	Player player;
+	char color[32];
 	char output[512];
 
 	bool isNewGame = IsNewGame();
@@ -202,10 +203,15 @@ void PrintQueue(int target)
 				continue;
 		}
 
-		if (position == 1)
-			FormatEx(output, sizeof(output), "{orange}Fila: {olive}%dº {default}%N", position, client);
+		if (player.priority == 0)
+			strcopy(color, sizeof(color), "{red}");
 		else
-			Format(output, sizeof(output), "%s {olive}%dº {default}%N", output, position, client);
+			strcopy(color, sizeof(color), "{olive}");
+
+		if (position == 1)
+			FormatEx(output, sizeof(output), "{orange}Fila: %s%dº {default}%N", color, position, client);
+		else
+			Format(output, sizeof(output), "%s %s%dº {default}%N", output, color, position, client);
 
 		position++;
 	}
