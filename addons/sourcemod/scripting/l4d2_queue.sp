@@ -204,9 +204,9 @@ void PrintQueue(int target)
 		}
 
 		if (player.priority == 0)
-			strcopy(color, sizeof(color), "{red}");
-		else
 			strcopy(color, sizeof(color), "{olive}");
+		else
+			strcopy(color, sizeof(color), "{blue}");
 
 		if (position == 1)
 			FormatEx(output, sizeof(output), "{orange}Fila: %s%dº {default}%N", color, position, client);
