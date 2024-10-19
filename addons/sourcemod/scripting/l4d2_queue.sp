@@ -203,7 +203,7 @@ void PrintQueue(int target)
 				continue;
 		}
 
-		if (player.priority == 0)
+		if (player.priority == 0.0)
 			strcopy(color, sizeof(color), "{olive}");
 		else
 			strcopy(color, sizeof(color), "{blue}");
