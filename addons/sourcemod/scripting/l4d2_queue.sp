@@ -9,6 +9,8 @@
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
 
+#define MAX_MESSAGE_NAMES 6
+
 ArrayList h_Queue;
 
 enum struct Player
@@ -188,7 +190,7 @@ void PrintQueue(int target)
 
 	bool isNewGame = IsNewGame();
 
-	for (int i = 0, position = 1; i < h_Queue.Length; i++)
+	for (int i = 0, c = 1, position = 1; i < h_Queue.Length; i++, c = c == MAX_MESSAGE_NAMES ? 1 : c + 1)
 	{
 		h_Queue.GetArray(i, player);
 
@@ -214,7 +216,20 @@ void PrintQueue(int target)
 			Format(output, sizeof(output), "%s %s%dº {default}%N", output, color, position, client);
 
 		position++;
+
+		if (c == MAX_MESSAGE_NAMES)
+		{
+			if (target == 0)
+				CPrintToChatAll(output);
+			else
+				CPrintToChat(target, output);
+
+			output[0] = '\0';
+		}
 	}
+
+	if (strlen(output) == 0)
+		return;
 
 	if (target == 0)
 		CPrintToChatAll(output);
