@@ -91,6 +91,9 @@ void Enqueue(int client)
 
 void RequeuePlayers()
 {
+	if (IsNewGame())
+		return;
+
 	Player player;
 
 	bool survivorsAreWinning = SurvivorsAreWinning();
@@ -105,17 +108,27 @@ void RequeuePlayers()
 			continue;
 
 		int team = GetClientTeam(client);
-		if (team != L4D2_TEAM_SURVIVOR && team != L4D2_TEAM_INFECTED)
+
+		if (team == L4D2_TEAM_SURVIVOR)
+		{
+			player.priority = survivorsAreWinning ? 0.0 : GetEngineTime();
+			h_Queue.SetArray(i, player);
 			continue;
+		}
+		
+		if (team == L4D2_TEAM_INFECTED)
+		{
+			player.priority = infectedAreWinning ? 0.0 : GetEngineTime();
+			h_Queue.SetArray(i, player);
+			continue;
+		}
 
-		if (survivorsAreWinning && team == L4D2_TEAM_SURVIVOR)
-			player.priority = 0.0;
-		else if (infectedAreWinning && team == L4D2_TEAM_INFECTED)
-			player.priority = 0.0;
-		else
+		if (player.priority == 0.0)
+		{
 			player.priority = GetEngineTime();
-
-		h_Queue.SetArray(i, player);
+			h_Queue.SetArray(i, player);
+			continue;
+		}
 	}
 
 	SortQueue();
@@ -224,7 +237,7 @@ void PrintQueue(int target)
 			else
 				CPrintToChat(target, output);
 
-			output[0] = '\0';
+			output = "";
 		}
 	}
 
