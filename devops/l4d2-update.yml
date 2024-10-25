@@ -1,0 +1,21 @@
+trigger:
+- master
+
+pool:
+  vmImage: 'ubuntu-latest'
+
+variables:
+  sshServiceConnection: 'L4D2 - Server'
+
+stages:
+- stage: L4D2ServerUpdate 
+  displayName: "Update Left 4 Dead 2 Server"
+  jobs:
+  - job: L4D2ServerUpdate
+    steps:
+    - task: SSH@0
+      inputs:
+        sshEndpoint: $(sshServiceConnection)
+        readyTimeout: '20000'
+        runOptions: 'script'
+        scriptPath: '/home/steam/l4d2/left4dead2/bash/update.sh'
