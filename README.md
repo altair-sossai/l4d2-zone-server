@@ -1,5 +1,10 @@
 # **L4D2 Competitive Rework**
 
+### Build Status
+
+[![Build Status](https://dev.azure.com/altairsossai/L4D2%20-%20Play%20Stats/_apis/build/status%2Fl4d2-zone-server?branchName=master)](https://dev.azure.com/altairsossai/L4D2%20-%20Play%20Stats/_build/latest?definitionId=36&branchName=master)
+
+
 **IMPORTANT NOTES** - **DON'T IGNORE THESE!**
 * The goal for this repo is to work on **Linux**, but Windows support is available.
 * Ensure that your machine is running at least **Ubuntu 20.04** (GLIBC minimum of 2.31)
