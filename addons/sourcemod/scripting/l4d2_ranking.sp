@@ -13,7 +13,9 @@ public Plugin myinfo =
     url         = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
-ConVar hUrl;
+ConVar 
+    hUrl,
+    hShowMOTDPanel;
 
 bool showRankingEnabled = true;
 bool displayed[MAXPLAYERS + 1] = { false, ... };
@@ -21,6 +23,7 @@ bool displayed[MAXPLAYERS + 1] = { false, ... };
 public void OnPluginStart()
 {
     hUrl = CreateConVar("ranking_url", "", "Ranking site URL", FCVAR_PROTECTED);
+    hShowMOTDPanel = CreateConVar("ranking_show_motd_panel", "1", "Show MOTD panel with the ranking site URL", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 
     RegConsoleCmd("sm_ranking", ShowRankingCmd);
 
@@ -82,7 +85,7 @@ Action ShowRankingTick(Handle timer, int client)
 
 void ShowRanking(int client)
 {
-    if (!IsClientInGame(client) || IsFakeClient(client))
+    if (!IsClientInGame(client) || IsFakeClient(client) || !hShowMOTDPanel.IntValue)
         return;
 
     displayed[client] = true;
