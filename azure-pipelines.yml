@@ -33,7 +33,9 @@ stages:
       inputs:
         sshEndpoint: $(sshServiceConnection)
         sourceFolder: '$(Build.Repository.LocalPath)'
-        contents: 'host.txt, motd.txt'
+        contents: |
+          host.txt
+          motd.txt
         targetFolder: '/home/steam/l4d2/left4dead2'
         cleanTargetFolder: false
         overwrite: true
