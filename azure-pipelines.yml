@@ -29,6 +29,16 @@ stages:
         overwrite: true
         readyTimeout: '20000'
 
+    - task: CopyFilesOverSSH@0
+      inputs:
+        sshEndpoint: $(sshServiceConnection)
+        sourceFolder: '$(Build.Repository.LocalPath)'
+        contents: 'host.txt, motd.txt'
+        targetFolder: '/home/steam/l4d2/left4dead2'
+        cleanTargetFolder: false
+        overwrite: true
+        readyTimeout: '20000'
+
     - task: SSH@0
       inputs:
         sshEndpoint: $(sshServiceConnection)
