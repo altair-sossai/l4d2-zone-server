@@ -27,21 +27,21 @@ public void OnPluginStart()
 
 Action LocalHostCmd(int client, int args)
 {
-    char localHostUrl[100];
-    GetConVarString(hLocalhostUrl, localHostUrl, sizeof(localHostUrl));
+    char url[100];
+    GetConVarString(hLocalhostUrl, url, sizeof(url));
 
-    char localHostType[10];
-    GetConVarString(hLocalhostType, localHostType, sizeof(localHostType));
+    char type[10];
+    GetConVarString(hLocalhostType, type, sizeof(type));
 
-    if (StrEqual(localHostType, "url"))
+    if (StrEqual(type, "url"))
     {
-        ShowMOTDPanel(client, "localhost", localHostUrl, MOTDPANEL_TYPE_URL);
+        ShowMOTDPanel(client, "localhost", url, MOTDPANEL_TYPE_URL);
         return Plugin_Handled;
     }
 
-    if (StrEqual(localHostType, "text"))
+    if (StrEqual(type, "text"))
     {
-        HTTPRequest request = new HTTPRequest(localHostUrl);
+        HTTPRequest request = new HTTPRequest(url);
 
         request.Get(LocalHostResponse, client);
 
