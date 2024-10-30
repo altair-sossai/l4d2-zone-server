@@ -202,8 +202,8 @@ void PrintQueue(int target)
 	char output[512];
 
 	bool isNewGame = IsNewGame();
-
-	for (int i = 0, c = 1, position = 1; i < h_Queue.Length; i++, c = c == MAX_MESSAGE_NAMES ? 1 : c + 1)
+	
+	for (int i = 0, count = 0, position = 1; i < h_Queue.Length; i++)
 	{
 		h_Queue.GetArray(i, player);
 
@@ -228,9 +228,10 @@ void PrintQueue(int target)
 		else
 			Format(output, sizeof(output), "%s %s%dº {default}%N", output, color, position, client);
 
+		count++;
 		position++;
 
-		if (c == MAX_MESSAGE_NAMES)
+		if (count == MAX_MESSAGE_NAMES)
 		{
 			if (target == 0)
 				CPrintToChatAll(output);
@@ -238,6 +239,7 @@ void PrintQueue(int target)
 				CPrintToChat(target, output);
 
 			output = "";
+			count = 0;
 		}
 	}
 
