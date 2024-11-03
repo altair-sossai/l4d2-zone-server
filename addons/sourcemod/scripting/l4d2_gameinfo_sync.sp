@@ -23,18 +23,14 @@ public void OnPluginStart()
     hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
 
-    CreateTimer(10.0, SendGameInfo, _, TIMER_REPEAT);
+    CreateTimer(10.0, SendGameInfoTick, _, TIMER_REPEAT);
 }
 
-Action SendGameInfo(Handle handle)
+Action SendGameInfoTick(Handle handle)
 {
     int areTeamsFlipped = GameRules_GetProp("m_bAreTeamsFlipped");
-
-    int survivorIndex = areTeamsFlipped ? 1 : 0;
-    int infectedIndex = areTeamsFlipped ? 0 : 1;
-
-    int survivorScore = L4D2Direct_GetVSCampaignScore(survivorIndex);
-    int infectedScore = L4D2Direct_GetVSCampaignScore(infectedIndex);
+    int survivorScore = L4D2Direct_GetVSCampaignScore(areTeamsFlipped ? 1 : 0);
+    int infectedScore = L4D2Direct_GetVSCampaignScore(areTeamsFlipped ? 0 : 1);
 
     JSONObject command = new JSONObject();
 
