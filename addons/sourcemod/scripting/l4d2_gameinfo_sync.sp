@@ -32,7 +32,19 @@ public void OnPluginStart()
     hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
 
-    SendConfiguration();
+    HookEvent("round_start", RoundStart_Event);
+}
+
+void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
+{
+    CreateTimer(5.0, RoundStart_Timer);
+}
+
+Action RoundStart_Timer(Handle timer)
+{
+	SendConfiguration();
+
+	return Plugin_Continue;
 }
 
 void SendConfiguration()
