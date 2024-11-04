@@ -20,10 +20,12 @@ ConVar
     hConfigurationName;
 
 JSONObject 
-    ConfigurationCommand;
+    ConfigurationCommand,
+    RoundCommand;
 
 HTTPRequest
-    ConfigurationRequest;
+    ConfigurationRequest,
+    RoundRequest;
 
 char ConfigurationName[64];
 
@@ -41,10 +43,11 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 }
 
 Action RoundStart_Timer(Handle timer)
-{
-	SendConfiguration();
+    {
+    SendConfiguration();
+    SendRound();
 
-	return Plugin_Continue;
+    return Plugin_Continue;
 }
 
 void SendConfiguration()
@@ -67,6 +70,20 @@ void SendConfiguration()
         ConfigurationRequest = BuildHTTPRequest("/api/game-info/configuration");
     
     ConfigurationRequest.Put(ConfigurationCommand, DoNothing);
+}
+
+void SendRound()
+{
+    if (RoundCommand == null)
+        RoundCommand = new JSONObject();
+
+    RoundCommand.SetInt("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped"));
+    RoundCommand.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
+
+    if (RoundRequest == null)
+        RoundRequest = BuildHTTPRequest("/api/game-info/round");
+
+    RoundRequest.Put(RoundCommand, DoNothing);
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
