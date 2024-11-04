@@ -19,16 +19,6 @@ ConVar
     hSecretKey,
     hConfigurationName;
 
-JSONObject 
-    ConfigurationCommand,
-    RoundCommand,
-    ScoreboardCommand;
-
-HTTPRequest
-    ConfigurationRequest,
-    RoundRequest,
-    ScoreboardRequest;
-
 char ConfigurationName[64];
 
 public void OnPluginStart()
@@ -63,10 +53,9 @@ Action Every_5_Seconds_Timer(Handle hTimer)
 
 void SendConfiguration()
 {
-    if (ConfigurationCommand == null)
-        ConfigurationCommand = new JSONObject();
+    JSONObject command = new JSONObject();
 
-    ConfigurationCommand.SetInt("teamSize", GetConVarInt(FindConVar("survivor_limit")));
+    command.SetInt("teamSize", GetConVarInt(FindConVar("survivor_limit")));
 
     if (hConfigurationName == null)
         hConfigurationName = FindConVar("l4d_ready_cfg_name");
@@ -75,45 +64,40 @@ void SendConfiguration()
         hConfigurationName.GetString(ConfigurationName, sizeof(ConfigurationName));
 
     if (strlen(ConfigurationName) > 0)
-        ConfigurationCommand.SetString("name", ConfigurationName);
+        command.SetString("name", ConfigurationName);
 
-    if (ConfigurationRequest == null)
-        ConfigurationRequest = BuildHTTPRequest("/api/game-info/configuration");
+    HTTPRequest request = BuildHTTPRequest("/api/game-info/configuration");
     
-    ConfigurationRequest.Put(ConfigurationCommand, DoNothing);
+    request.Put(command, DoNothing);
 }
 
 void SendRound()
 {
-    if (RoundCommand == null)
-        RoundCommand = new JSONObject();
+    JSONObject command = new JSONObject();
 
-    RoundCommand.SetInt("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped"));
-    RoundCommand.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
+    command.SetInt("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped"));
+    command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
 
-    if (RoundRequest == null)
-        RoundRequest = BuildHTTPRequest("/api/game-info/round");
+    HTTPRequest request = BuildHTTPRequest("/api/game-info/round");
 
-    RoundRequest.Put(RoundCommand, DoNothing);
+    request.Put(command, DoNothing);
 }
 
 void SendScoreboard()
 {
-    if (ScoreboardCommand == null)
-        ScoreboardCommand = new JSONObject();
+    JSONObject command = new JSONObject();
 
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
 
     int survivorIndex = flipped ? 1 : 0;
     int infectedIndex = flipped ? 0 : 1;
 
-    ScoreboardCommand.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(survivorIndex));
-    ScoreboardCommand.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(infectedIndex));
+    command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(survivorIndex));
+    command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(infectedIndex));
 
-    if (ScoreboardRequest == null)
-        ScoreboardRequest = BuildHTTPRequest("/api/game-info/scoreboard");
+    HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
 
-    ScoreboardRequest.Put(ScoreboardCommand, DoNothing);
+    request.Put(command, DoNothing);
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
