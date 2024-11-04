@@ -21,11 +21,13 @@ ConVar
 
 JSONObject 
     ConfigurationCommand,
-    RoundCommand;
+    RoundCommand,
+    ScoreboardCommand;
 
 HTTPRequest
     ConfigurationRequest,
-    RoundRequest;
+    RoundRequest,
+    ScoreboardRequest;
 
 char ConfigurationName[64];
 
@@ -35,6 +37,8 @@ public void OnPluginStart()
     hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
 
     HookEvent("round_start", RoundStart_Event);
+
+    CreateTimer(5.0, Every_5_Seconds_Timer, _, TIMER_REPEAT);
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -43,9 +47,16 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 }
 
 Action RoundStart_Timer(Handle timer)
-    {
+{
     SendConfiguration();
     SendRound();
+
+    return Plugin_Continue;
+}
+
+Action Every_5_Seconds_Timer(Handle hTimer)
+{
+    SendScoreboard();
 
     return Plugin_Continue;
 }
@@ -84,6 +95,25 @@ void SendRound()
         RoundRequest = BuildHTTPRequest("/api/game-info/round");
 
     RoundRequest.Put(RoundCommand, DoNothing);
+}
+
+void SendScoreboard()
+{
+    if (ScoreboardCommand == null)
+        ScoreboardCommand = new JSONObject();
+
+    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+
+    int survivorIndex = flipped ? 1 : 0;
+    int infectedIndex = flipped ? 0 : 1;
+
+    ScoreboardCommand.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(survivorIndex));
+    ScoreboardCommand.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(infectedIndex));
+
+    if (ScoreboardRequest == null)
+        ScoreboardRequest = BuildHTTPRequest("/api/game-info/scoreboard");
+
+    ScoreboardRequest.Put(ScoreboardCommand, DoNothing);
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
