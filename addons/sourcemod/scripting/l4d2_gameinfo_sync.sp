@@ -16,32 +16,45 @@ public Plugin myinfo =
 
 ConVar
     hUrl,
-    hSecretKey;
+    hSecretKey,
+    hConfigurationName;
+
+JSONObject 
+    ConfigurationCommand;
+
+HTTPRequest
+    ConfigurationRequest;
+
+char ConfigurationName[64];
 
 public void OnPluginStart()
 {
     hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
 
-    CreateTimer(10.0, SendGameInfoTick, _, TIMER_REPEAT);
+    SendConfiguration();
 }
 
-Action SendGameInfoTick(Handle handle)
+void SendConfiguration()
 {
-    int areTeamsFlipped = GameRules_GetProp("m_bAreTeamsFlipped");
-    int survivorScore = L4D2Direct_GetVSCampaignScore(areTeamsFlipped ? 1 : 0);
-    int infectedScore = L4D2Direct_GetVSCampaignScore(areTeamsFlipped ? 0 : 1);
+    if (ConfigurationCommand == null)
+        ConfigurationCommand = new JSONObject();
 
-    JSONObject command = new JSONObject();
+    ConfigurationCommand.SetInt("teamSize", GetConVarInt(FindConVar("survivor_limit")));
 
-    command.SetInt("areTeamsFlipped", areTeamsFlipped);
-    command.SetInt("survivorScore", survivorScore);
-    command.SetInt("infectedScore", infectedScore);
+    if (hConfigurationName == null)
+        hConfigurationName = FindConVar("l4d_ready_cfg_name");
 
-    HTTPRequest request = BuildHTTPRequest("/api/game-info");
-    request.Put(command, DoNothing);
+    if (hConfigurationName != null)
+        hConfigurationName.GetString(ConfigurationName, sizeof(ConfigurationName));
 
-    return Plugin_Handled;
+    if (strlen(ConfigurationName) > 0)
+        ConfigurationCommand.SetString("name", ConfigurationName);
+
+    if (ConfigurationRequest == null)
+        ConfigurationRequest = BuildHTTPRequest("/api/game-info/configuration");
+    
+    ConfigurationRequest.Put(ConfigurationCommand, DoNothing);
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
