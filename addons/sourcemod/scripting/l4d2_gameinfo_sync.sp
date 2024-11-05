@@ -3,7 +3,14 @@
 
 #include <ripext>
 #include <sourcemod>
+#include <sdktools>
 #include <left4dhooks>
+#include <readyup>
+#include <l4d2util>
+
+#define L4D2_TEAM_SPECTATOR 1
+#define L4D2_TEAM_SURVIVOR 2
+#define L4D2_TEAM_INFECTED 3
 
 public Plugin myinfo =
 {
@@ -21,19 +28,51 @@ ConVar
 
 char ConfigurationName[64];
 
+bool inTransition = false;
+
 public void OnPluginStart()
 {
     hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
 
     HookEvent("round_start", RoundStart_Event);
+    HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 
     CreateTimer(5.0, Every_5_Seconds_Timer, _, TIMER_REPEAT);
+}
+
+public void OnRoundIsLive()
+{
+    inTransition = false;
+
+    SendPlayers();
+}
+
+public void L4D2_OnEndVersusModeRound_Post()
+{
+    inTransition = true;
+
+    CreateTimer(10.0, L4D2_OnEndVersusModeRound_Post_Timer);
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     CreateTimer(5.0, RoundStart_Timer);
+}
+
+void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
+{
+    if (IsInReady())
+        return;
+
+    SendPlayers();
+}
+
+Action L4D2_OnEndVersusModeRound_Post_Timer(Handle timer)
+{
+    inTransition = false;
+
+    return Plugin_Continue;
 }
 
 Action RoundStart_Timer(Handle timer)
@@ -53,6 +92,9 @@ Action Every_5_Seconds_Timer(Handle hTimer)
 
 void SendConfiguration()
 {
+    if (inTransition)
+        return;
+
     JSONObject command = new JSONObject();
 
     command.SetInt("teamSize", GetConVarInt(FindConVar("survivor_limit")));
@@ -73,6 +115,9 @@ void SendConfiguration()
 
 void SendRound()
 {
+    if (inTransition)
+        return;
+
     JSONObject command = new JSONObject();
 
     command.SetInt("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped"));
@@ -85,6 +130,9 @@ void SendRound()
 
 void SendScoreboard()
 {
+    if (inTransition)
+        return;
+
     JSONObject command = new JSONObject();
 
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
@@ -96,6 +144,92 @@ void SendScoreboard()
     command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(infectedIndex));
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
+
+    request.Put(command, DoNothing);
+}
+
+void SendPlayers()
+{
+    if (inTransition)
+        return;
+
+    JSONObject command = new JSONObject();
+
+    JSONArray survivors = new JSONArray();
+    JSONArray infecteds = new JSONArray();
+    JSONArray spectators = new JSONArray();
+
+    char communityId[25];
+    char name[MAX_NAME_LENGTH];
+
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (!IsClientInGame(client))
+            continue;
+
+        int team = GetClientTeam(client);
+        if (team != L4D2_TEAM_SPECTATOR && team != L4D2_TEAM_SURVIVOR && team != L4D2_TEAM_INFECTED)
+            continue;
+
+        JSONObject player = new JSONObject();
+
+        GetClientAuthId(client, AuthId_SteamID64, communityId, sizeof(communityId));
+        player.SetString("communityId", communityId);
+
+        GetClientName(client, name, sizeof(name));
+        player.SetString("name", name);
+
+        player.SetFloat("latency", GetClientLatency(client, NetFlow_Both));
+
+        if (team == L4D2_TEAM_SURVIVOR)
+        {
+            player.SetInt("character", IdentifySurvivor(client));
+            player.SetInt("permanentHealth", GetSurvivorPermanentHealth(client));
+            player.SetInt("temporaryHealth", GetSurvivorTemporaryHealth(client));
+            player.SetInt("primaryWeapon", IdentifyWeapon(GetPlayerWeaponSlot(client, 0)));
+
+            int slot1 = GetPlayerWeaponSlot(client, 1);
+            int secondaryWeapon = IdentifyWeapon(slot1);
+
+            player.SetInt("secondaryWeapon", secondaryWeapon);
+
+            if (secondaryWeapon == WEPID_MELEE)
+                player.SetInt("meleeWeapon", IdentifyMeleeWeapon(slot1));
+
+            player.SetInt("slotNumber3", IdentifyWeapon(GetPlayerWeaponSlot(client, 2)));
+            player.SetInt("slotNumber4", IdentifyWeapon(GetPlayerWeaponSlot(client, 3)));
+            player.SetInt("slotNumber5", IdentifyWeapon(GetPlayerWeaponSlot(client, 4)));
+            //player.SetInt("blackAndWhite", 0);
+            player.SetBool("incapacitated", IsIncapacitated(client));
+            player.SetBool("isPlayerAlive", IsPlayerAlive(client));
+            player.SetBool("isFakeClient", IsFakeClient(client));
+            //player.SetInt("progress", 0);
+
+            survivors.Push(player);
+        }
+        
+        if (team == L4D2_TEAM_INFECTED)
+        {
+            player.SetInt("Type", GetInfectedClass(client));
+            //player.SetInt("DamageTotal", 0);
+            //player.SetInt("CurrentHp", 0);
+            //player.SetInt("MaxHp", 0);
+            player.SetBool("isInfectedGhost", IsInfectedGhost(client));
+            player.SetBool("isPlayerAlive", IsPlayerAlive(client));
+            player.SetBool("isFakeClient", IsFakeClient(client));
+
+            infecteds.Push(player);
+        }
+        
+        if (team == L4D2_TEAM_SPECTATOR)
+            spectators.Push(player);
+    }
+
+    command.Set("survivors", survivors);
+    command.Set("infecteds", infecteds);
+    command.Set("spectators", spectators);
+
+    HTTPRequest request = BuildHTTPRequest("/api/game-info/players");
 
     request.Put(command, DoNothing);
 }
