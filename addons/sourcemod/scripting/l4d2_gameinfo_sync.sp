@@ -8,6 +8,7 @@
 #include <readyup>
 #include <l4d2util>
 #include <colors>
+#include <l4d2_hybrid_scoremod>
 
 #define L4D2_TEAM_SPECTATOR 1
 #define L4D2_TEAM_SURVIVOR 2
@@ -173,6 +174,8 @@ void SendScoreboard()
 
     command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(survivorIndex));
     command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(infectedIndex));
+    command.SetInt("bonus", SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus());
+    command.SetInt("maxBonus", SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus());
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
 
