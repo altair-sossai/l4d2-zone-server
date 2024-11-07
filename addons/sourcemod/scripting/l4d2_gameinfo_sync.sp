@@ -237,34 +237,41 @@ void SendPlayers()
         GetClientName(client, name, sizeof(name));
         player.SetString("name", name);
 
-        player.SetFloat("latency", GetClientLatency(client, NetFlow_Both));
+        if (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED)
+            player.SetFloat("latency", GetClientLatency(client, NetFlow_Both));
 
         if (team == L4D2_TEAM_SURVIVOR)
         {
             player.SetInt("character", IdentifySurvivor(client));
-            player.SetInt("permanentHealth", GetSurvivorPermanentHealth(client));
-            player.SetInt("temporaryHealth", GetSurvivorTemporaryHealth(client));
-            player.SetInt("primaryWeapon", IdentifyWeapon(GetPlayerWeaponSlot(client, 0)));
 
-            int slot1 = GetPlayerWeaponSlot(client, 1);
-            int secondaryWeapon = IdentifyWeapon(slot1);
+            bool isPlayerAlive = IsPlayerAlive(client);
 
-            player.SetInt("secondaryWeapon", secondaryWeapon);
+            if (isPlayerAlive)
+            {
+                player.SetInt("permanentHealth", GetSurvivorPermanentHealth(client));
+                player.SetInt("temporaryHealth", GetSurvivorTemporaryHealth(client));
+                player.SetInt("primaryWeapon", IdentifyWeapon(GetPlayerWeaponSlot(client, 0)));
 
-            if (secondaryWeapon == WEPID_MELEE)
-                player.SetInt("meleeWeapon", IdentifyMeleeWeapon(slot1));
+                int slot1 = GetPlayerWeaponSlot(client, 1);
+                int secondaryWeapon = IdentifyWeapon(slot1);
 
-            player.SetInt("slotNumber3", IdentifyWeapon(GetPlayerWeaponSlot(client, 2)));
-            player.SetInt("slotNumber4", IdentifyWeapon(GetPlayerWeaponSlot(client, 3)));
-            player.SetInt("slotNumber5", IdentifyWeapon(GetPlayerWeaponSlot(client, 4)));
-            player.SetBool("blackAndWhite", L4D_IsPlayerOnThirdStrike(client));
-            player.SetBool("incapacitated", IsIncapacitated(client));
-            player.SetBool("isPlayerAlive", IsPlayerAlive(client));
+                player.SetInt("secondaryWeapon", secondaryWeapon);
 
-            float progress = GetSurvivorProgress(client);
-            if (progress > SurvivorProgress[client])
-                SurvivorProgress[client] = progress;
+                if (secondaryWeapon == WEPID_MELEE)
+                    player.SetInt("meleeWeapon", IdentifyMeleeWeapon(slot1));
 
+                player.SetInt("slotNumber3", IdentifyWeapon(GetPlayerWeaponSlot(client, 2)));
+                player.SetInt("slotNumber4", IdentifyWeapon(GetPlayerWeaponSlot(client, 3)));
+                player.SetInt("slotNumber5", IdentifyWeapon(GetPlayerWeaponSlot(client, 4)));
+                player.SetBool("blackAndWhite", L4D_IsPlayerOnThirdStrike(client));
+                player.SetBool("incapacitated", IsIncapacitated(client));
+
+                float progress = GetSurvivorProgress(client);
+                if (progress > SurvivorProgress[client])
+                    SurvivorProgress[client] = progress;
+            }
+
+            player.SetBool("isPlayerAlive", isPlayerAlive);
             player.SetFloat("progress", SurvivorProgress[client]);
 
             survivors.Push(player);
@@ -272,12 +279,19 @@ void SendPlayers()
 
         if (team == L4D2_TEAM_INFECTED)
         {
-            player.SetInt("type", GetInfectedClass(client));
+            bool isInfectedGhost = IsInfectedGhost(client);
+            bool isPlayerAlive = IsPlayerAlive(client);
+
+            if (isInfectedGhost || isPlayerAlive)
+            {
+                player.SetInt("type", GetInfectedClass(client));
+                player.SetInt("health", GetClientHealth(client));
+                player.SetInt("maxHealth", GetEntProp(client, Prop_Data, "m_iMaxHealth"));
+            }
+
             player.SetInt("damage", InfectedDamage[client]);
-            player.SetInt("health", GetClientHealth(client));
-            player.SetInt("maxHealth", GetEntProp(client, Prop_Data, "m_iMaxHealth"));
-            player.SetBool("isInfectedGhost", IsInfectedGhost(client));
-            player.SetBool("isPlayerAlive", IsPlayerAlive(client));
+            player.SetBool("isInfectedGhost", isInfectedGhost);
+            player.SetBool("isPlayerAlive", isPlayerAlive);
 
             infecteds.Push(player);
         }
