@@ -53,8 +53,6 @@ public void OnRoundIsLive()
 public void L4D2_OnEndVersusModeRound_Post()
 {
     inTransition = true;
-
-    CreateTimer(10.0, L4D2_OnEndVersusModeRound_Post_Timer);
 }
 
 Action Say_Callback(int client, char[] command, int args)
@@ -99,15 +97,10 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
     CreateTimer(5.0, RoundStart_Timer);
 }
 
-Action L4D2_OnEndVersusModeRound_Post_Timer(Handle timer)
+Action RoundStart_Timer(Handle timer)
 {
     inTransition = false;
 
-    return Plugin_Continue;
-}
-
-Action RoundStart_Timer(Handle timer)
-{
     SendConfiguration();
     SendRound();
 
@@ -169,11 +162,8 @@ void SendScoreboard()
 
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
 
-    int survivorIndex = flipped ? 1 : 0;
-    int infectedIndex = flipped ? 0 : 1;
-
-    command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(survivorIndex));
-    command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(infectedIndex));
+    command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(flipped ? 1 : 0) + L4D_GetTeamScore(flipped ? 2 : 1));
+    command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(flipped ? 0 : 1) + L4D_GetTeamScore(flipped ? 1 : 2));
     command.SetInt("bonus", SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus());
     command.SetInt("maxBonus", SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus());
 
