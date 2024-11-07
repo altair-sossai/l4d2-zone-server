@@ -30,7 +30,9 @@ ConVar
 
 char ConfigurationName[64];
 
-bool inTransition = false;
+bool InTransition = false;
+
+int InfectedDamage[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
@@ -41,18 +43,22 @@ public void OnPluginStart()
     AddCommandListener(Say_Callback, "say_team");
 
     HookEvent("round_start", RoundStart_Event);
+    HookEvent("player_hurt", PlayerHurt_Event);
+    HookEvent("player_disconnect", PlayerDisconnect_Event);
 
     CreateTimer(5.0, Every_5_Seconds_Timer, _, TIMER_REPEAT);
+
+    ClearInfectedDamage();
 }
 
 public void OnRoundIsLive()
 {
-    inTransition = false;
+    InTransition = false;
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
 {
-    inTransition = true;
+    InTransition = true;
 }
 
 Action Say_Callback(int client, char[] command, int args)
@@ -94,12 +100,31 @@ Action Say_Callback(int client, char[] command, int args)
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
+    ClearInfectedDamage();
     CreateTimer(5.0, RoundStart_Timer);
+}
+
+void PlayerHurt_Event(Handle event, const char[] name, bool dontBroadcast)
+{
+	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
+
+	if (attacker == 0 || !IsClientInGame(attacker) || GetClientTeam(attacker) != L4D2_TEAM_INFECTED)
+	    return;
+	
+	InfectedDamage[attacker] += GetEventInt(event, "dmg_health");
+}
+
+void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
+{
+	int client = GetClientOfUserId(GetEventInt(event, "userid"));
+
+	if (client > -1 && client <= MAXPLAYERS)
+        InfectedDamage[client] = 0;
 }
 
 Action RoundStart_Timer(Handle timer)
 {
-    inTransition = false;
+    InTransition = false;
 
     SendConfiguration();
     SendRound();
@@ -117,7 +142,7 @@ Action Every_5_Seconds_Timer(Handle hTimer)
 
 void SendConfiguration()
 {
-    if (inTransition)
+    if (InTransition)
         return;
 
     JSONObject command = new JSONObject();
@@ -140,7 +165,7 @@ void SendConfiguration()
 
 void SendRound()
 {
-    if (inTransition)
+    if (InTransition)
         return;
 
     JSONObject command = new JSONObject();
@@ -155,7 +180,7 @@ void SendRound()
 
 void SendScoreboard()
 {
-    if (inTransition)
+    if (InTransition)
         return;
 
     JSONObject command = new JSONObject();
@@ -174,7 +199,7 @@ void SendScoreboard()
 
 void SendPlayers()
 {
-    if (inTransition)
+    if (InTransition)
         return;
 
     JSONObject command = new JSONObject();
@@ -234,7 +259,7 @@ void SendPlayers()
         if (team == L4D2_TEAM_INFECTED)
         {
             player.SetInt("type", GetInfectedClass(client));
-            //player.SetInt("DamageTotal", 0);
+            player.SetInt("DamageTotal", InfectedDamage[client]);
             player.SetInt("health", GetClientHealth(client));
             player.SetInt("maxHealth", GetEntProp(client, Prop_Data, "m_iMaxHealth"));
             player.SetBool("isInfectedGhost", IsInfectedGhost(client));
@@ -273,6 +298,12 @@ HTTPRequest BuildHTTPRequest(char[] path)
     request.SetHeader("Authorization", secretKey);
 
     return request;
+}
+
+void ClearInfectedDamage()
+{
+    for (int i = 1; i <= MaxClients; i++)
+        InfectedDamage[i] = 0;
 }
 
 float GetSurvivorProgress(int client)
