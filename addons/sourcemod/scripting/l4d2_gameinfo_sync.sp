@@ -259,7 +259,7 @@ void SendPlayers()
         if (team == L4D2_TEAM_INFECTED)
         {
             player.SetInt("type", GetInfectedClass(client));
-            player.SetInt("DamageTotal", InfectedDamage[client]);
+            player.SetInt("damage", InfectedDamage[client]);
             player.SetInt("health", GetClientHealth(client));
             player.SetInt("maxHealth", GetEntProp(client, Prop_Data, "m_iMaxHealth"));
             player.SetBool("isInfectedGhost", IsInfectedGhost(client));
