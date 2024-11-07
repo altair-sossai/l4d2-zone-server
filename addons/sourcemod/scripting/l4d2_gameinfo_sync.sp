@@ -34,6 +34,8 @@ bool InTransition = false;
 
 int InfectedDamage[MAXPLAYERS + 1];
 
+float SurvivorProgress[MAXPLAYERS + 1];
+
 public void OnPluginStart()
 {
     hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
@@ -49,11 +51,14 @@ public void OnPluginStart()
     CreateTimer(5.0, Every_5_Seconds_Timer, _, TIMER_REPEAT);
 
     ClearInfectedDamage();
+    ClearSurvivorProgress();
 }
 
 public void OnRoundIsLive()
 {
     InTransition = false;
+    ClearInfectedDamage();
+    ClearSurvivorProgress();
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
@@ -101,6 +106,7 @@ Action Say_Callback(int client, char[] command, int args)
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     ClearInfectedDamage();
+    ClearSurvivorProgress();
     CreateTimer(5.0, RoundStart_Timer);
 }
 
@@ -119,7 +125,10 @@ void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
 	int client = GetClientOfUserId(GetEventInt(event, "userid"));
 
 	if (client > -1 && client <= MAXPLAYERS)
+    {
         InfectedDamage[client] = 0;
+        SurvivorProgress[client] = 0.0;
+    }
 }
 
 Action RoundStart_Timer(Handle timer)
@@ -251,7 +260,12 @@ void SendPlayers()
             player.SetBool("blackAndWhite", L4D_IsPlayerOnThirdStrike(client));
             player.SetBool("incapacitated", IsIncapacitated(client));
             player.SetBool("isPlayerAlive", IsPlayerAlive(client));
-            player.SetFloat("progress", GetSurvivorProgress(client));
+
+            float progress = GetSurvivorProgress(client);
+            if (progress > SurvivorProgress[client])
+                SurvivorProgress[client] = progress;
+
+            player.SetFloat("progress", SurvivorProgress[client]);
 
             survivors.Push(player);
         }
@@ -304,6 +318,12 @@ void ClearInfectedDamage()
 {
     for (int i = 1; i <= MaxClients; i++)
         InfectedDamage[i] = 0;
+}
+
+void ClearSurvivorProgress()
+{
+    for (int i = 1; i <= MaxClients; i++)
+        SurvivorProgress[i] = 0.0;
 }
 
 float GetSurvivorProgress(int client)
