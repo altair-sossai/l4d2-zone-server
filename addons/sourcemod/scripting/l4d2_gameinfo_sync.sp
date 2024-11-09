@@ -191,8 +191,8 @@ void SendRound()
 
     command.SetInt("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped"));
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
-    command.SetInt("tankPercent", g_iTankPercent);
-    command.SetInt("witchPercent", g_iWitchPercent);
+    command.SetFloat("tankPercent", g_iTankPercent / 100.0);
+    command.SetFloat("witchPercent", g_iWitchPercent / 100.0);
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/round");
 
