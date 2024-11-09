@@ -1,14 +1,15 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#include <ripext>
 #include <sourcemod>
 #include <sdktools>
 #include <left4dhooks>
+#include <ripext>
 #include <readyup>
 #include <l4d2util>
 #include <colors>
 #include <l4d2_hybrid_scoremod>
+#include <l4d2_boss_percents>
 
 #define L4D2_TEAM_SPECTATOR 1
 #define L4D2_TEAM_SURVIVOR 2
@@ -28,13 +29,16 @@ ConVar
     hSecretKey,
     hConfigurationName;
 
-char ConfigurationName[64];
+char g_sConfigurationName[64];
 
-bool InTransition = false;
+bool g_bInTransition = false;
 
-int InfectedDamage[MAXPLAYERS + 1];
+int 
+    g_iInfectedDamage[MAXPLAYERS + 1],
+    g_iTankPercent,
+    g_iWitchPercent;
 
-float SurvivorProgress[MAXPLAYERS + 1];
+float g_fSurvivorProgress[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
@@ -56,14 +60,14 @@ public void OnPluginStart()
 
 public void OnRoundIsLive()
 {
-    InTransition = false;
+    g_bInTransition = false;
     ClearInfectedDamage();
     ClearSurvivorProgress();
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
 {
-    InTransition = true;
+    g_bInTransition = true;
 }
 
 Action Say_Callback(int client, char[] command, int args)
@@ -117,7 +121,7 @@ void PlayerHurt_Event(Handle event, const char[] name, bool dontBroadcast)
 	if (attacker == 0 || !IsClientInGame(attacker) || GetClientTeam(attacker) != L4D2_TEAM_INFECTED)
 	    return;
 	
-	InfectedDamage[attacker] += GetEventInt(event, "dmg_health");
+	g_iInfectedDamage[attacker] += GetEventInt(event, "dmg_health");
 }
 
 void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -126,14 +130,14 @@ void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
 
 	if (client > -1 && client <= MAXPLAYERS)
     {
-        InfectedDamage[client] = 0;
-        SurvivorProgress[client] = 0.0;
+        g_iInfectedDamage[client] = 0;
+        g_fSurvivorProgress[client] = 0.0;
     }
 }
 
 Action RoundStart_Timer(Handle timer)
 {
-    InTransition = false;
+    g_bInTransition = false;
 
     SendConfiguration();
     SendRound();
@@ -146,12 +150,15 @@ Action Every_5_Seconds_Timer(Handle hTimer)
     SendScoreboard();
     SendPlayers();
 
+    if (!g_bInTransition && (g_iTankPercent != GetStoredTankPercent() || g_iWitchPercent != GetStoredWitchPercent()))
+        SendRound();
+
     return Plugin_Continue;
 }
 
 void SendConfiguration()
 {
-    if (InTransition)
+    if (g_bInTransition)
         return;
 
     JSONObject command = new JSONObject();
@@ -162,10 +169,10 @@ void SendConfiguration()
         hConfigurationName = FindConVar("l4d_ready_cfg_name");
 
     if (hConfigurationName != null)
-        hConfigurationName.GetString(ConfigurationName, sizeof(ConfigurationName));
+        hConfigurationName.GetString(g_sConfigurationName, sizeof(g_sConfigurationName));
 
-    if (strlen(ConfigurationName) > 0)
-        command.SetString("name", ConfigurationName);
+    if (strlen(g_sConfigurationName) > 0)
+        command.SetString("name", g_sConfigurationName);
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/configuration");
     
@@ -174,13 +181,18 @@ void SendConfiguration()
 
 void SendRound()
 {
-    if (InTransition)
+    if (g_bInTransition)
         return;
 
     JSONObject command = new JSONObject();
 
+    g_iTankPercent = GetStoredTankPercent();
+    g_iWitchPercent = GetStoredWitchPercent();
+
     command.SetInt("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped"));
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
+    command.SetInt("tankPercent", g_iTankPercent);
+    command.SetInt("witchPercent", g_iWitchPercent);
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/round");
 
@@ -189,7 +201,7 @@ void SendRound()
 
 void SendScoreboard()
 {
-    if (InTransition)
+    if (g_bInTransition)
         return;
 
     JSONObject command = new JSONObject();
@@ -208,7 +220,7 @@ void SendScoreboard()
 
 void SendPlayers()
 {
-    if (InTransition)
+    if (g_bInTransition)
         return;
 
     JSONObject command = new JSONObject();
@@ -267,12 +279,12 @@ void SendPlayers()
                 player.SetBool("incapacitated", IsIncapacitated(client));
 
                 float progress = GetSurvivorProgress(client);
-                if (progress > SurvivorProgress[client])
-                    SurvivorProgress[client] = progress;
+                if (progress > g_fSurvivorProgress[client])
+                    g_fSurvivorProgress[client] = progress;
             }
 
             player.SetBool("isPlayerAlive", isPlayerAlive);
-            player.SetFloat("progress", SurvivorProgress[client]);
+            player.SetFloat("progress", g_fSurvivorProgress[client]);
 
             survivors.Push(player);
         }
@@ -289,7 +301,7 @@ void SendPlayers()
                 player.SetInt("maxHealth", GetEntProp(client, Prop_Data, "m_iMaxHealth"));
             }
 
-            player.SetInt("damage", InfectedDamage[client]);
+            player.SetInt("damage", g_iInfectedDamage[client]);
             player.SetBool("isInfectedGhost", isInfectedGhost);
             player.SetBool("isPlayerAlive", isPlayerAlive);
 
@@ -331,13 +343,13 @@ HTTPRequest BuildHTTPRequest(char[] path)
 void ClearInfectedDamage()
 {
     for (int i = 1; i <= MaxClients; i++)
-        InfectedDamage[i] = 0;
+        g_iInfectedDamage[i] = 0;
 }
 
 void ClearSurvivorProgress()
 {
     for (int i = 1; i <= MaxClients; i++)
-        SurvivorProgress[i] = 0.0;
+        g_fSurvivorProgress[i] = 0.0;
 }
 
 float GetSurvivorProgress(int client)
