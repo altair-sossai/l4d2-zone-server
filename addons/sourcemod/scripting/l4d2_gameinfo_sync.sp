@@ -189,7 +189,7 @@ void SendRound()
     g_iTankPercent = GetStoredTankPercent();
     g_iWitchPercent = GetStoredWitchPercent();
 
-    command.SetInt("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped"));
+    command.SetBool("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped") ? true : false);
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
     command.SetFloat("tankPercent", g_iTankPercent / 100.0);
     command.SetFloat("witchPercent", g_iWitchPercent / 100.0);
@@ -284,7 +284,7 @@ void SendPlayers()
             }
 
             player.SetBool("isPlayerAlive", isPlayerAlive);
-            player.SetFloat("progress", g_fSurvivorProgress[client]);
+            player.SetFloat("progress", g_fSurvivorProgress[client] / 100.0);
 
             survivors.Push(player);
         }
