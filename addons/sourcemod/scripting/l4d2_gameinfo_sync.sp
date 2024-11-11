@@ -215,7 +215,7 @@ void SendScoreboard()
     command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(flipped ? 0 : 1) + L4D_GetTeamScore(flipped ? 1 : 2));
     command.SetInt("bonus", SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus());
     command.SetInt("maxBonus", SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus());
-    command.SetFloat("currentProgress", GetCurrentProgress() / 100.0);
+    command.SetFloat("currentProgress", IsInReady() ? 0.0 : (GetCurrentProgress() / 100.0));
     command.SetInt("currentProgressPoints", L4D_GetTeamScore(flipped ? 2 : 1));
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
