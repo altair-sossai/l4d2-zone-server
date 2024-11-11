@@ -210,13 +210,16 @@ void SendScoreboard()
     JSONObject command = new JSONObject();
 
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+    bool isInReady = IsInReady();
+    int bonus = SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus();
+    int maxBonus = SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
 
     command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(flipped ? 1 : 0) + L4D_GetTeamScore(flipped ? 2 : 1));
     command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(flipped ? 0 : 1) + L4D_GetTeamScore(flipped ? 1 : 2));
-    command.SetInt("bonus", SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus());
-    command.SetInt("maxBonus", SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus());
-    command.SetFloat("currentProgress", IsInReady() ? 0.0 : (GetCurrentProgress() / 100.0));
-    command.SetInt("currentProgressPoints", L4D_GetTeamScore(flipped ? 2 : 1));
+    command.SetInt("bonus", isInReady ? maxBonus : bonus);
+    command.SetInt("maxBonus", maxBonus);
+    command.SetFloat("currentProgress", isInReady ? 0.0 : (GetCurrentProgress() / 100.0));
+    command.SetInt("currentProgressPoints", isInReady ? 0 : L4D_GetTeamScore(flipped ? 2 : 1));
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
 
