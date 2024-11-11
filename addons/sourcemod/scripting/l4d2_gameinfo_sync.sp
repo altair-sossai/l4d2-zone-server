@@ -289,7 +289,7 @@ void SendPlayers()
             }
 
             player.SetBool("isPlayerAlive", isPlayerAlive);
-            player.SetFloat("progress", g_fSurvivorProgress[client]);
+            player.SetFloat("progress", IsInReady() ? 0.0 : g_fSurvivorProgress[client]);
 
             survivors.Push(player);
         }
