@@ -83,6 +83,7 @@ Action Say_Callback(int client, char[] command, int args)
 
     char message[MAX_MESSAGE_LENGTH];
     GetCmdArgString(message, sizeof(message));
+    StripQuotes(message);
 
     if (strlen(message) == 0 || message[0] == '!' || message[0] == '/')
         return Plugin_Continue;
