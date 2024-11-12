@@ -192,6 +192,7 @@ void SendRound()
     g_iTankPercent = GetStoredTankPercent();
     g_iWitchPercent = GetStoredWitchPercent();
 
+    command.SetBool("isInReady", IsInReady());
     command.SetBool("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped") ? true : false);
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
     command.SetFloat("tankPercent", g_iTankPercent / 100.0);
