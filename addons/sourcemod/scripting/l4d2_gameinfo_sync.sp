@@ -66,6 +66,7 @@ public void OnRoundIsLive()
     g_bInTransition = false;
     ClearInfectedDamage();
     ClearSurvivorProgress();
+    CreateTimer(2.0, OnRoundIsLive_Timer);
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
@@ -144,6 +145,13 @@ Action RoundStart_Timer(Handle timer)
     g_bInTransition = false;
 
     SendConfiguration();
+    SendRound();
+
+    return Plugin_Continue;
+}
+
+Action OnRoundIsLive_Timer(Handle timer)
+{
     SendRound();
 
     return Plugin_Continue;
