@@ -230,6 +230,7 @@ void SendScoreboard()
     command.SetInt("maxBonus", maxBonus);
     command.SetFloat("currentProgress", isInReady ? 0.0 : (GetCurrentProgress() / 100.0));
     command.SetInt("currentProgressPoints", isInReady ? 0 : L4D_GetTeamScore(flipped ? 2 : 1));
+    command.SetBool("isTankInPlay", IsTankInPlay());
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
 
