@@ -27,8 +27,7 @@ public Plugin myinfo =
 ConVar
     g_hUrl,
     g_hSecretKey,
-    g_hConfigurationName,
-    g_hVsBossBuffer;
+    g_hConfigurationName;
 
 char g_sConfigurationName[64];
 
@@ -43,8 +42,6 @@ float g_fSurvivorProgress[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
-    g_hVsBossBuffer = FindConVar("versus_boss_buffer");
-
     g_hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
 
@@ -223,13 +220,16 @@ void SendScoreboard()
     bool isInReady = IsInReady();
     int bonus = SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus();
     int maxBonus = SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
+    int currentProgressPoints = isInReady ? 0 : L4D_GetTeamScore(flipped ? 2 : 1);
+    int maxChapterProgressPoints = L4D_GetVersusMaxCompletionScore();
+    float currentProgress = (isInReady || maxChapterProgressPoints == 0) ? 0.0 : (float(currentProgressPoints) / float(maxChapterProgressPoints));
 
     command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(flipped ? 1 : 0) + L4D_GetTeamScore(flipped ? 2 : 1));
     command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(flipped ? 0 : 1) + L4D_GetTeamScore(flipped ? 1 : 2));
     command.SetInt("bonus", isInReady ? maxBonus : bonus);
     command.SetInt("maxBonus", maxBonus);
-    command.SetFloat("currentProgress", isInReady ? 0.0 : (GetCurrentProgress() / 100.0));
-    command.SetInt("currentProgressPoints", isInReady ? 0 : L4D_GetTeamScore(flipped ? 2 : 1));
+    command.SetFloat("currentProgress", currentProgress);
+    command.SetInt("currentProgressPoints", currentProgressPoints);
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
 
@@ -380,36 +380,6 @@ float GetSurvivorProgress(int client)
         return Max(0.0, Min(L4D2Direct_GetTerrorNavAreaFlow(navArea) / L4D2Direct_GetMapMaxFlowDistance(), 1.0));
 	
     return 0.0;
-}
-
-int GetCurrentProgress()
-{
-	return RoundToNearest(GetBossProximity() * 100.0);
-}
-
-float GetBossProximity()
-{
-	float proximity = GetMaxSurvivorCompletion() + g_hVsBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance();
-
-	return (proximity > 1.0) ? 1.0 : proximity;
-}
-
-float GetMaxSurvivorCompletion()
-{
-	float flow = 0.0, tmp_flow = 0.0, origin[3];
-	Address pNavArea;
-	for (int i = 1; i <= MaxClients; i++) {
-		if (IsClientInGame(i) && GetClientTeam(i) == L4D2_TEAM_SURVIVOR) {
-			GetClientAbsOrigin(i, origin);
-			pNavArea = L4D2Direct_GetTerrorNavArea(origin);
-			if (pNavArea != Address_Null) {
-				tmp_flow = L4D2Direct_GetTerrorNavAreaFlow(pNavArea);
-				flow = (flow > tmp_flow) ? flow : tmp_flow;
-			}
-		}
-	}
-
-	return (flow / L4D2Direct_GetMapMaxFlowDistance());
 }
 
 float Max(float a, float b) {
