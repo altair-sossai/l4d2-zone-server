@@ -296,9 +296,12 @@ void SendPlayers()
                 player.SetBool("blackAndWhite", L4D_IsPlayerOnThirdStrike(client));
                 player.SetBool("incapacitated", IsIncapacitated(client));
 
-                float progress = GetSurvivorProgress(client);
-                if (progress > g_fSurvivorProgress[client])
-                    g_fSurvivorProgress[client] = progress;
+                if (!IsTankInPlay())
+                {
+                    float progress = GetSurvivorProgress(client);
+                    if (progress > g_fSurvivorProgress[client])
+                        g_fSurvivorProgress[client] = progress;
+                }
             }
 
             player.SetBool("isPlayerAlive", isPlayerAlive);
