@@ -5,6 +5,7 @@
 #include <sdktools>
 #include <left4dhooks>
 #include <ripext>
+#include <pause>
 #include <readyup>
 #include <l4d2util>
 #include <colors>
@@ -67,6 +68,16 @@ public void OnRoundIsLive()
     ClearInfectedDamage();
     ClearSurvivorProgress();
     CreateTimer(2.0, OnRoundIsLive_Timer);
+}
+
+public void OnPause()
+{
+    SendRound();
+}
+
+public void OnUnpause()
+{
+    SendRound();
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
@@ -202,6 +213,7 @@ void SendRound()
     g_iWitchPercent = GetStoredWitchPercent();
 
     command.SetBool("isInReady", IsInReady());
+    command.SetBool("isInPause", IsInPause());
     command.SetBool("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped") ? true : false);
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
     command.SetFloat("tankPercent", g_iTankPercent / 100.0);
