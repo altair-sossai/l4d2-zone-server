@@ -55,7 +55,7 @@ public void OnPluginStart()
     HookEvent("player_hurt", PlayerHurt_Event);
     HookEvent("player_disconnect", PlayerDisconnect_Event);
 
-    CreateTimer(5.0, Every_5_Seconds_Timer, _, TIMER_REPEAT);
+    CreateTimer(3.0, SyncData_Timer, _, TIMER_REPEAT);
 
     ClearInfectedDamage();
     ClearSurvivorProgress();
@@ -157,7 +157,7 @@ Action OnRoundIsLive_Timer(Handle timer)
     return Plugin_Continue;
 }
 
-Action Every_5_Seconds_Timer(Handle hTimer)
+Action SyncData_Timer(Handle hTimer)
 {
     SendScoreboard();
     SendPlayers();
