@@ -219,7 +219,7 @@ void SendRound()
 
     command.SetBool("isInReady", IsInReady());
     command.SetBool("isInPause", IsInPause());
-    command.SetBool("areTeamsFlipped", GameRules_GetProp("m_bAreTeamsFlipped") ? true : false);
+    command.SetBool("inSecondHalfOfRound", GameRules_GetProp("m_bInSecondHalfOfRound") ? true : false);
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
     command.SetFloat("tankPercent", g_iTankPercent / 100.0);
     command.SetFloat("witchPercent", g_iWitchPercent / 100.0);
