@@ -16,6 +16,8 @@
 #define L4D2_TEAM_SURVIVOR 2
 #define L4D2_TEAM_INFECTED 3
 
+#define ZOMBIECLASS_TANK 8
+
 public Plugin myinfo =
 {
     name        = "L4D2 - Game Info Sync",
@@ -33,7 +35,9 @@ ConVar
 
 char g_sConfigurationName[64];
 
-bool g_bInTransition = false;
+bool 
+    g_bInTransition = false,
+    g_bTankIsDead = false;
 
 int 
     g_iInfectedDamage[MAXPLAYERS + 1],
@@ -54,6 +58,7 @@ public void OnPluginStart()
 
     HookEvent("round_start", RoundStart_Event);
     HookEvent("player_hurt", PlayerHurt_Event);
+    HookEvent("player_death", PlayerDeath_Event, EventHookMode_Post);
     HookEvent("player_disconnect", PlayerDisconnect_Event);
 
     CreateTimer(3.0, SyncData_Timer, _, TIMER_REPEAT);
@@ -65,6 +70,7 @@ public void OnPluginStart()
 public void OnRoundIsLive()
 {
     g_bInTransition = false;
+    g_bTankIsDead = false;
 
     ClearInfectedDamage();
     ClearSurvivorProgress();
@@ -130,6 +136,8 @@ Action Say_Callback(int client, char[] command, int args)
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
+    g_bTankIsDead = false;
+
     ClearInfectedDamage();
     ClearSurvivorProgress();
     CreateTimer(5.0, RoundStart_Timer);
@@ -143,6 +151,19 @@ void PlayerHurt_Event(Handle event, const char[] name, bool dontBroadcast)
 	    return;
 	
 	g_iInfectedDamage[attacker] += GetEventInt(event, "dmg_health");
+}
+
+void PlayerDeath_Event(Event hEvent, const char[] eName, bool dontBroadcast)
+{
+    if (g_bTankIsDead)
+        return;
+
+    int victim = GetClientOfUserId(hEvent.GetInt("userid"));
+    
+    if (victim == 0 || !IsClientInGame(victim) || GetClientTeam(victim) != L4D2_TEAM_INFECTED)
+        return;
+
+    g_bTankIsDead = GetEntProp(victim, Prop_Send, "m_zombieClass") == ZOMBIECLASS_TANK;
 }
 
 void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -248,6 +269,7 @@ void SendScoreboard()
     command.SetFloat("currentProgress", isInReady ? 0.0 : (GetCurrentProgress() / 100.0));
     command.SetInt("currentProgressPoints", isInReady ? 0 : L4D_GetTeamScore(flipped ? 2 : 1));
     command.SetBool("isTankInPlay", IsTankInPlay());
+    command.SetBool("tankIsDead", g_bTankIsDead);
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
 
