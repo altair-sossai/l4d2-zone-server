@@ -514,6 +514,12 @@ void chooseTank(any data)
 
     if (nextTankIndex == -1)
     {
+        RequeueInfecteds(h_whosHadTank);
+        nextTankIndex = PeekNextTankIndexInTheQueue();
+    }
+
+    if (nextTankIndex == -1)
+    {
         RemoveAllInfectedFrom(h_tankQueue);
         RemoveAllInfectedFrom(h_whosHadTank);
         EnqueueNewInfectedPlayers();
@@ -682,6 +688,29 @@ void EnqueueNewInfectedPlayers()
 
     if (end != -1)
         ShuffleArray(h_tankQueue, start, end);
+}
+
+void RequeueInfecteds(ArrayList arrayList)
+{
+    if (arrayList.Length == 0)
+        return;
+
+    char steamId[64];
+
+    for(int i = 0; i < arrayList.Length; i++)
+    {
+        arrayList.GetString(i, steamId, sizeof(steamId));
+
+        int client = getInfectedPlayerBySteamId(steamId);
+        if (client == -1 || h_tankQueue.FindString(steamId) != -1)
+            continue;
+
+        h_tankQueue.PushString(steamId);
+
+        int index = h_whosHadTank.FindString(steamId);
+        if (index != -1)
+            h_whosHadTank.Erase(index);
+    }
 }
 
 void RemoveAllInfectedFrom(ArrayList arrayList)
