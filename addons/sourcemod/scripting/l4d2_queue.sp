@@ -10,13 +10,16 @@
 #define L4D2_TEAM_INFECTED 3
 
 #define MAX_MESSAGE_NAMES 6
+#define MAX_SEQUENCE 9999
 
 ArrayList h_Queue;
+
+int sequence = 1;
 
 enum struct Player
 {
     char steamId[64];
-    float priority;
+    int priority;
 }
 
 public Plugin myinfo =
@@ -48,11 +51,6 @@ public void OnClientPutInServer(int client)
 	Enqueue(client);
 }
 
-public void OnRoundIsLive()
-{
-	RequeuePlayers();
-}
-
 public void L4D2_OnEndVersusModeRound_Post(int client)
 {
 	UnqueueAllDisconnected();
@@ -82,11 +80,27 @@ void Enqueue(int client)
 	}
 
 	strcopy(player.steamId, sizeof(player.steamId), steamId);
-	player.priority = GetEngineTime();
+	player.priority = NextSequence();
 
 	h_Queue.PushArray(player);
+}
 
-	SortQueue();
+void UnqueueAllDisconnected()
+{
+	Player player;
+	
+	for (int i = 0; i < h_Queue.Length; )
+	{
+		h_Queue.GetArray(i, player);
+
+		if (GetClientUsingSteamId(player.steamId) != -1)
+		{
+			i++;
+			continue;
+		}
+
+		h_Queue.Erase(i);
+	}
 }
 
 void RequeuePlayers()
@@ -110,45 +124,30 @@ void RequeuePlayers()
 		int team = GetClientTeam(client);
 
 		if (team == L4D2_TEAM_SURVIVOR)
-		{
-			player.priority = survivorsAreWinning ? 0.0 : GetEngineTime();
-			h_Queue.SetArray(i, player);
-			continue;
-		}
-		
-		if (team == L4D2_TEAM_INFECTED)
-		{
-			player.priority = infectedAreWinning ? 0.0 : GetEngineTime();
-			h_Queue.SetArray(i, player);
-			continue;
-		}
+			player.priority = survivorsAreWinning ? 0 : MAX_SEQUENCE;
 
-		if (player.priority == 0.0)
-		{
-			player.priority = GetEngineTime();
-			h_Queue.SetArray(i, player);
-			continue;
-		}
+		else if (team == L4D2_TEAM_INFECTED)
+			player.priority = infectedAreWinning ? 0 : MAX_SEQUENCE;
+
+		else
+			player.priority = NextSequence();
+
+		h_Queue.SetArray(i, player);
 	}
 
 	SortQueue();
-}
+	ResetSequence();
 
-void UnqueueAllDisconnected()
-{
-	Player player;
-	
-	for (int i = 0; i < h_Queue.Length; )
+	for (int i = 0; i < h_Queue.Length; i++)
 	{
 		h_Queue.GetArray(i, player);
 
-		if (GetClientUsingSteamId(player.steamId) != -1)
-		{
-			i++;
+		int client = GetClientUsingSteamId(player.steamId);
+		if (client == -1)
 			continue;
-		}
 
-		h_Queue.Erase(i);
+		player.priority = NextSequence();
+		h_Queue.SetArray(i, player);
 	}
 }
 
@@ -198,7 +197,6 @@ void PrintQueue(int target)
 		return;
 
 	Player player;
-	char color[32];
 	char output[512];
 
 	bool isNewGame = IsNewGame();
@@ -218,15 +216,10 @@ void PrintQueue(int target)
 				continue;
 		}
 
-		if (player.priority == 0.0)
-			strcopy(color, sizeof(color), "{olive}");
-		else
-			strcopy(color, sizeof(color), "{blue}");
-
 		if (position == 1)
-			FormatEx(output, sizeof(output), "{orange}Fila: %s%dº {default}%N", color, position, client);
+			FormatEx(output, sizeof(output), "{orange}Fila: {blue}%dº {default}%N", position, client);
 		else
-			Format(output, sizeof(output), "%s %s%dº {default}%N", output, color, position, client);
+			Format(output, sizeof(output), "%s {blue}%dº {default}%N", output, position, client);
 
 		count++;
 		position++;
@@ -271,4 +264,14 @@ bool SurvivorsAreWinning()
 	int infectedScore = L4D2Direct_GetVSCampaignScore(infectedIndex);
 
 	return survivorScore >= infectedScore;
+}
+
+void ResetSequence()
+{
+	sequence = 1;
+}
+
+int NextSequence()
+{
+	return sequence++;
 }
