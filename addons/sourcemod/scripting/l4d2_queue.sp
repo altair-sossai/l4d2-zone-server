@@ -20,6 +20,7 @@ enum struct Player
 {
     char steamId[64];
     int priority;
+	bool winning;
 }
 
 public Plugin myinfo =
@@ -80,7 +81,9 @@ void Enqueue(int client)
 	}
 
 	strcopy(player.steamId, sizeof(player.steamId), steamId);
+
 	player.priority = NextSequence();
+	player.winning = false;
 
 	h_Queue.PushArray(player);
 }
@@ -124,13 +127,20 @@ void RequeuePlayers()
 		int team = GetClientTeam(client);
 
 		if (team == L4D2_TEAM_SURVIVOR)
+		{
 			player.priority = survivorsAreWinning ? 0 : MAX_SEQUENCE;
-
+			player.winning = survivorsAreWinning;
+		}
 		else if (team == L4D2_TEAM_INFECTED)
+		{
 			player.priority = infectedAreWinning ? 0 : MAX_SEQUENCE;
-
+			player.winning = infectedAreWinning;
+		}
 		else
+		{
 			player.priority = NextSequence();
+			player.winning = false;
+		}
 
 		h_Queue.SetArray(i, player);
 	}
@@ -193,6 +203,48 @@ int GetClientUsingSteamId(const char[] steamId)
 
 void PrintQueue(int target)
 {
+	if (IsNewGame())
+		PrintWinners(target);
+
+	PrintOtherPlayers(target);
+}
+
+void PrintWinners(int target)
+{
+	if (h_Queue.Length == 0)
+		return;
+
+	Player player;
+	char output[512];
+
+	for (int i = 0; i < h_Queue.Length; i++)
+	{
+		h_Queue.GetArray(i, player);
+
+		if (!player.winning)
+			break;
+
+		int client = GetClientUsingSteamId(player.steamId);
+		if (client == -1)
+			continue;
+
+		if (strlen(output) == 0)
+			FormatEx(output, sizeof(output), "{orange}Winners: {default}%N", client);
+		else
+			Format(output, sizeof(output), "%s{green}, {default}%N", output, client);
+	}
+
+	if (strlen(output) == 0)
+		return;
+
+	if (target == 0)
+		CPrintToChatAll(output);
+	else
+		CPrintToChat(target, output);
+}
+
+void PrintOtherPlayers(int target)
+{
 	if (h_Queue.Length == 0)
 		return;
 
@@ -200,10 +252,13 @@ void PrintQueue(int target)
 	char output[512];
 
 	bool isNewGame = IsNewGame();
-	
+
 	for (int i = 0, count = 0, position = 1; i < h_Queue.Length; i++)
 	{
 		h_Queue.GetArray(i, player);
+
+		if (isNewGame && player.winning)
+			continue;
 
 		int client = GetClientUsingSteamId(player.steamId);
 		if (client == -1)
