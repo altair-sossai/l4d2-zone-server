@@ -38,7 +38,7 @@ public Action Command_KickSpecs(int client, const char[] command, int argc)
     int count = 0;
     for (int i = 1; i <= MaxClients; i++)
     {
-        if (!IsClientInGame(i))
+        if (!IsClientInGame(i) || IsFakeClient(i))
             continue;
 
         if (GetClientTeam(i) != TEAM_SURVIVORS && GetClientTeam(i) != TEAM_INFECTED)
@@ -47,7 +47,7 @@ public Action Command_KickSpecs(int client, const char[] command, int argc)
         count++;
     }
 
-    if (count < (TeamSize() / 2))
+    if (count < TeamSize())
     {
         PrintToChat(client, "\x05[SM] \x01You cannot use sm_kickspecs with insufficient players.");
         return Plugin_Handled;
