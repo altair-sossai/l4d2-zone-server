@@ -19,6 +19,13 @@ stages:
         tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
       displayName: 'Compress files'
 
+    - task: SSH@0
+      inputs:
+        sshEndpoint: $(sshServiceConnection)
+        readyTimeout: '20000'
+        commands: |
+          rm -f /home/devops/*.tar.gz
+
     - task: CopyFilesOverSSH@0
       inputs:
         sshEndpoint: $(sshServiceConnection)
