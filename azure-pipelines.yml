@@ -19,7 +19,7 @@ stages:
         commands: |
           # Clone the GitHub repository into /home/github
           rm -rf /home/github/l4d2-zone-server
-          git clone --depth=1 --branch master https://github.com/altair-sossai/l4d2-zone-server.git /home/github/l4d2-zone-server
+          git clone https://github.com/altair-sossai/l4d2-zone-server.git /home/github/l4d2-zone-server
 
           # Copy folders to the destination without deleting existing files
           cp -r /home/github/l4d2-zone-server/addons/* /home/steam/l4d2/left4dead2/addons/
