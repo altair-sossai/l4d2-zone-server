@@ -35,6 +35,7 @@ stages:
         cleanTargetFolder: false
         overwrite: true
         readyTimeout: '20000'
+        concurrentUploads: '1'
 
     - task: CopyFilesOverSSH@0
       inputs:
