@@ -10,53 +10,30 @@ variables:
 stages:
 - stage: Deploy
   jobs:
-  - job: CompressAndUpload
+  - job: DeployFromGit
     steps:
-    - script: |
-        tar -czf addons.tar.gz -C $(Build.Repository.LocalPath)/addons .
-        tar -czf cfg.tar.gz -C $(Build.Repository.LocalPath)/cfg .
-        tar -czf bash.tar.gz -C $(Build.Repository.LocalPath)/bash .
-        tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
-      displayName: 'Compress files'
-
     - task: SSH@0
       inputs:
         sshEndpoint: $(sshServiceConnection)
         readyTimeout: '20000'
         commands: |
-          rm -f /home/devops/*.tar.gz
+          # Clone the GitHub repository into /home/github
+          rm -rf /home/github/l4d2-zone-server
+          git clone --depth=1 --branch master https://github.com/altair-sossai/l4d2-zone-server.git /home/github/l4d2-zone-server
 
-    - task: CopyFilesOverSSH@0
-      inputs:
-        sshEndpoint: $(sshServiceConnection)
-        sourceFolder: '$(Build.Repository.LocalPath)'
-        contents: '*.tar.gz'
-        targetFolder: '/home/devops'
-        cleanTargetFolder: false
-        overwrite: true
-        readyTimeout: '20000'
+          # Copy folders to the destination without deleting existing files
+          cp -r /home/github/l4d2-zone-server/addons/* /home/steam/l4d2/left4dead2/addons/
+          cp -r /home/github/l4d2-zone-server/cfg/* /home/steam/l4d2/left4dead2/cfg/
+          cp -r /home/github/l4d2-zone-server/bash/* /home/steam/l4d2/left4dead2/bash/
+          cp -r /home/github/l4d2-zone-server/scripts/* /home/steam/l4d2/left4dead2/scripts/
 
-    - task: CopyFilesOverSSH@0
-      inputs:
-        sshEndpoint: $(sshServiceConnection)
-        sourceFolder: '$(Build.Repository.LocalPath)'
-        contents: |
-          host.txt
-          motd.txt
-        targetFolder: '/home/steam/l4d2/left4dead2'
-        cleanTargetFolder: false
-        overwrite: true
-        readyTimeout: '20000'
+          # Copy text files
+          cp /home/github/l4d2-zone-server/host.txt /home/steam/l4d2/left4dead2/host.txt
+          cp /home/github/l4d2-zone-server/motd.txt /home/steam/l4d2/left4dead2/motd.txt
 
-    - task: SSH@0
-      inputs:
-        sshEndpoint: $(sshServiceConnection)
-        readyTimeout: '20000'
-        commands: |
-          tar -xzf /home/devops/addons.tar.gz -C /home/steam/l4d2/left4dead2/addons
-          tar -xzf /home/devops/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
-          tar -xzf /home/devops/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
-          tar -xzf /home/devops/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
+          # Convert line endings and set executable permissions for bash scripts
           dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
           chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
-          rm /home/devops/*.tar.gz
+
+          # Clean up the cloned repository
+          rm -rf /home/github/l4d2-zone-server
