@@ -61,7 +61,7 @@ public void OnPluginStart()
     HookEvent("player_death", PlayerDeath_Event, EventHookMode_Post);
     HookEvent("player_disconnect", PlayerDisconnect_Event);
 
-    CreateTimer(10.0, SyncData_Timer, _, TIMER_REPEAT);
+    CreateTimer(5.0, SyncData_Timer, _, TIMER_REPEAT);
 
     ClearInfectedDamage();
     ClearSurvivorProgress();
