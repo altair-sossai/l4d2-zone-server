@@ -43,6 +43,7 @@ public void OnPluginStart()
 
     RegConsoleCmd("sm_fila", PrintQueueCmd);
     RegConsoleCmd("sm_queue", PrintQueueCmd);
+    RegConsoleCmd("sm_fixteams", FixTeamsCmd);
 }
 
 public void OnRoundIsLive()
@@ -72,7 +73,7 @@ Action EnableFixTeam_Timer(Handle timer)
 {
     EnableFixTeam();
     FixTeams();
-    CreateTimer(30.0, DisableFixTeam_Timer);
+    CreateTimer(50.0, DisableFixTeam_Timer);
 
     return Plugin_Continue;
 }
@@ -94,6 +95,19 @@ Action FixTeam_Timer(Handle timer)
 public Action PrintQueueCmd(int client, int args)
 {
     PrintQueue(client);
+
+    return Plugin_Handled;
+}
+
+public Action FixTeamsCmd(int client, int args)
+{
+    if (!MustFixTheTeams())
+    {
+        CPrintToChat(client, "{red}[Queue]{default} Cannot fix teams: {lightgreen}queue is empty{default} or there are {lightgreen}enough slots for all players{default}.");
+        return Plugin_Handled;
+    }
+
+    FixTeams();
 
     return Plugin_Handled;
 }
@@ -356,6 +370,8 @@ void FixTeams()
     if (!MustFixTheTeams())
         return;
 
+    PrintToConsoleAll("[Queue] Fixing teams...");
+
     int slots = Slots();
     int[] nextPlayers = new int[slots];
 
@@ -373,6 +389,9 @@ void FixTeams()
 
         nextPlayers[np++] = client;
     }
+
+    for (int np = 0; np < slots; np++)
+        PrintToConsoleAll("[Queue] Next player %d: %d", np + 1, nextPlayers[np]);
 
     bool found = false;
 
