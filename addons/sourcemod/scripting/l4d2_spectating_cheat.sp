@@ -164,7 +164,7 @@ public void Event_BotReplacePlayer(Event event, const char[] name, bool dontBroa
 
 void CreateInfectedModelGlow(int client)
 {
-    if (!client || !IsClientInGame(client) || GetClientTeam(client) != L4D_TEAM_INFECTED || !IsPlayerAlive(client) || g_bMapStarted == false)
+    if (!client || !IsClientInGame(client) || GetClientTeam(client) != L4D_TEAM_INFECTED || !IsPlayerAlive(client) || !g_bMapStarted)
         return;
 
     if (IsPlayerGhost(client) && GetZombieClass(client) == ZC_TANK)
@@ -172,7 +172,7 @@ void CreateInfectedModelGlow(int client)
 
     int entity = CreateEntityByName("prop_dynamic_ornament");
 
-    if (CheckIfEntityMax(entity) == false)
+    if (!IsEntityWithinSafeLimit(entity))
         return;
 
     RemoveInfectedModelGlow(client);
@@ -317,7 +317,7 @@ void RemoveAllModelGlow()
 
 void CreateAllModelGlow()
 {
-    if (g_bMapStarted == false) 
+    if (!g_bMapStarted) 
         return;
 
     for (int client = 1; client <= MaxClients; client++)
@@ -343,7 +343,7 @@ Action Timer_CheckGhostTank(Handle timer, int userid)
     return Plugin_Continue;
 }
 
-bool CheckIfEntityMax(int entity)
+bool IsEntityWithinSafeLimit(int entity)
 {
     if (entity == -1) 
         return false;
