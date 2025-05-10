@@ -45,7 +45,7 @@ public void OnPluginStart()
 
     RegConsoleCmd("sm_fila", PrintQueueCmd);
     RegConsoleCmd("sm_queue", PrintQueueCmd);
-    RegConsoleCmd("sm_fixteams", FixTeamsCmd);
+    RegConsoleCmd("sm_ffila", FixTeamsCmd);
 }
 
 public void OnRoundIsLive()
