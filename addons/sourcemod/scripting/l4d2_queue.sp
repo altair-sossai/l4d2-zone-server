@@ -38,6 +38,8 @@ public void OnPluginStart()
 {
     h_Queue = new ArrayList(sizeof(Player));
 
+    AddCommandListener(Mix_Callback, "sm_mix");
+
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event);
 
@@ -51,10 +53,17 @@ public void OnRoundIsLive()
     DisableFixTeam();
 }
 
+Action Mix_Callback(int client, char[] command, int args)
+{
+    DisableFixTeam();
+
+    return Plugin_Continue; 
+}
+
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     DisableFixTeam();
-    CreateTimer(1.0, EnableFixTeam_Timer);
+    CreateTimer(5.0, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
@@ -73,7 +82,7 @@ Action EnableFixTeam_Timer(Handle timer)
 {
     EnableFixTeam();
     FixTeams();
-    CreateTimer(50.0, DisableFixTeam_Timer);
+    CreateTimer(60.0, DisableFixTeam_Timer);
 
     return Plugin_Continue;
 }
@@ -492,10 +501,8 @@ int NumberOfPlayersInTheTeam(int team)
 
 bool IsNewGame()
 {
-    int teamAScore = L4D2Direct_GetVSCampaignScore(0);
-    int teamBScore = L4D2Direct_GetVSCampaignScore(1);
-
-    return teamAScore == 0 && teamBScore == 0;
+    return L4D2Direct_GetVSCampaignScore(0) == 0 
+        && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
 
 bool SurvivorsAreWinning()
