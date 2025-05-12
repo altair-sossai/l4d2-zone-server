@@ -15,8 +15,10 @@
 
 ArrayList h_Queue;
 
-int sequence = 1;
-bool fixTeam = false;
+int g_iSequence = 1;
+
+bool g_bFixTeam = false,
+     g_bSkip[MAXPLAYERS + 1];
 
 enum struct Player
 {
@@ -39,6 +41,10 @@ public void OnPluginStart()
     h_Queue = new ArrayList(sizeof(Player));
 
     AddCommandListener(Mix_Callback, "sm_mix");
+    AddCommandListener(Spectate_Callback, "sm_spectate");
+    AddCommandListener(Spectate_Callback, "sm_spec");
+    AddCommandListener(Spectate_Callback, "sm_s");
+    AddCommandListener(JoinTeam_Callback, "jointeam");
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event);
@@ -51,6 +57,9 @@ public void OnPluginStart()
 public void OnRoundIsLive()
 {
     DisableFixTeam();
+
+    for (int client = 1; client <= MaxClients; client++)
+        g_bSkip[client] = false;
 }
 
 Action Mix_Callback(int client, char[] command, int args)
@@ -58,6 +67,27 @@ Action Mix_Callback(int client, char[] command, int args)
     DisableFixTeam();
 
     return Plugin_Continue; 
+}
+
+Action Spectate_Callback(int client, char[] command, int args)
+{
+    g_bSkip[client] = true;
+
+    return Plugin_Continue; 
+}
+
+Action JoinTeam_Callback(int client, char[] command, int args)
+{
+    if (args == 0)
+        return Plugin_Continue;
+
+    char buffer[128];
+    GetCmdArg(1, buffer, sizeof(buffer));
+
+    if (StrEqual("1", buffer, false) || StrEqual("Spectator", buffer, false))
+        g_bSkip[client] = true;
+
+    return Plugin_Continue;
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -113,12 +143,7 @@ public Action FixTeamsCmd(int client, int args)
     if (!IsClientInGame(client) || IsFakeClient(client))
         return Plugin_Handled;
 
-    PrintToChat(client, "Fixing teams...");
-    PrintToChat(client, "MustFixTheTeams: %d", MustFixTheTeams());
-    
     FixTeams();
-
-    PrintToChat(client, "Fixing teams done!");
 
     return Plugin_Handled;
 }
@@ -393,7 +418,7 @@ void FixTeams()
         h_Queue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
+        if (client == -1 || g_bSkip[client])
             continue;
 
         nextPlayers[np++] = client;
@@ -437,7 +462,7 @@ void FixTeams()
 
 bool MustFixTheTeams()
 {
-    if (!fixTeam || !IsNewGame())
+    if (!g_bFixTeam || !IsNewGame())
         return false;
 
     int availableSlots = Slots();
@@ -451,7 +476,7 @@ bool MustFixTheTeams()
         h_Queue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
+        if (client == -1 || g_bSkip[client])
             continue;
 
         if (GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
@@ -517,12 +542,12 @@ bool SurvivorsAreWinning()
 
 void ResetSequence()
 {
-    sequence = 1;
+    g_iSequence = 1;
 }
 
 int NextSequence()
 {
-    return sequence++;
+    return g_iSequence++;
 }
 
 int Slots()
@@ -537,10 +562,10 @@ int TeamSize()
 
 void EnableFixTeam()
 {
-    fixTeam = true;
+    g_bFixTeam = true;
 }
 
 void DisableFixTeam()
 {
-    fixTeam = false;
+    g_bFixTeam = false;
 }
