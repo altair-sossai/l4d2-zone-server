@@ -54,14 +54,6 @@ public void OnPluginStart()
     RegConsoleCmd("sm_fixteams", FixTeamsCmd);
 }
 
-public void OnRoundIsLive()
-{
-    DisableFixTeam();
-
-    for (int client = 1; client <= MaxClients; client++)
-        g_bSkip[client] = false;
-}
-
 Action Mix_Callback(int client, char[] command, int args)
 {
     DisableFixTeam();
@@ -148,9 +140,22 @@ public Action FixTeamsCmd(int client, int args)
     return Plugin_Handled;
 }
 
+public void OnRoundIsLive()
+{
+    DisableFixTeam();
+
+    for (int client = 1; client <= MaxClients; client++)
+        g_bSkip[client] = false;
+}
+
 public void OnClientPutInServer(int client)
 {
     Enqueue(client);
+}
+
+public void OnClientDisconnect(int client)
+{
+    g_bSkip[client] = false;
 }
 
 public void L4D2_OnEndVersusModeRound_Post(int client)
@@ -282,7 +287,6 @@ int SortByPriority(int index1, int index2, Handle array, Handle hndl)
 
     return 0;
 }
-
 
 int GetClientUsingSteamId(const char[] steamId) 
 {
