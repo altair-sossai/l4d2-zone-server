@@ -64,6 +64,9 @@ Action Mix_Callback(int client, char[] command, int args)
 
 Action Spectate_Callback(int client, char[] command, int args)
 {
+    if (!g_bFixTeam)
+        return Plugin_Continue;
+
     g_bSkip[client] = true;
 
     return Plugin_Continue; 
@@ -71,7 +74,7 @@ Action Spectate_Callback(int client, char[] command, int args)
 
 Action JoinTeam_Callback(int client, char[] command, int args)
 {
-    if (args == 0)
+    if (!g_bFixTeam || args == 0)
         return Plugin_Continue;
 
     char buffer[128];
@@ -91,6 +94,9 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
+    if (!g_bFixTeam)
+        return;
+
     int client = GetClientOfUserId(event.GetInt("userid"));
     if (!IsClientInGame(client) || IsFakeClient(client))
         return;
@@ -416,15 +422,18 @@ void FixTeams()
     if (!MustFixTheTeams())
         return;
 
+    DisableFixTeam();
+
     int slots = Slots();
     int[] nextPlayers = new int[slots];
 
     for (int np = 0; np < slots; np++)
         nextPlayers[np] = -1;
 
+    Player player;
+
     for (int i = 0, np = 0; i < g_aQueue.Length && slots > np; i++)
     {
-        Player player;
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
@@ -468,6 +477,8 @@ void FixTeams()
             }
         }
     }
+
+    EnableFixTeam();
 }
 
 bool MustFixTheTeams()
@@ -480,9 +491,10 @@ bool MustFixTheTeams()
     if (g_aQueue.Length <= availableSlots)
         return false;
 
+    Player player;
+
     for (int i = 0; i < g_aQueue.Length && availableSlots > 0; i++)
     {
-        Player player;
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
