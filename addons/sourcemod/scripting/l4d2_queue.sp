@@ -49,9 +49,10 @@ public void OnPluginStart()
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event);
 
-    RegConsoleCmd("sm_fila", PrintQueueCmd);
-    RegConsoleCmd("sm_queue", PrintQueueCmd);
-    RegConsoleCmd("sm_fixteams", FixTeamsCmd);
+    RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
+    RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
+
+    RegAdminCmd("sm_fixteams", FixTeamsCmd, ADMFLAG_BAN, "Fix teams using the queue");
 }
 
 Action Mix_Callback(int client, char[] command, int args)
@@ -85,14 +86,11 @@ Action JoinTeam_Callback(int client, char[] command, int args)
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     DisableFixTeam();
-    CreateTimer(1.0, EnableFixTeam_Timer);
+    CreateTimer(2.5, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
-    if (!L4D_HasMapStarted())
-        return;
-
     int client = GetClientOfUserId(event.GetInt("userid"));
     if (!IsClientInGame(client) || IsFakeClient(client))
         return;
@@ -102,6 +100,9 @@ void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 
 Action EnableFixTeam_Timer(Handle timer)
 {
+    if (!IsNewGame())
+        return Plugin_Continue;
+
     EnableFixTeam();
     FixTeams();
     CreateTimer(60.0, DisableFixTeam_Timer);
@@ -132,10 +133,15 @@ public Action PrintQueueCmd(int client, int args)
 
 public Action FixTeamsCmd(int client, int args)
 {
-    if (!IsClientInGame(client) || IsFakeClient(client))
+    if (!IsClientInGame(client) || IsFakeClient(client) || !IsNewGame())
         return Plugin_Handled;
 
+    bool fixTeaam = g_bFixTeam;
+
+    EnableFixTeam();
     FixTeams();
+
+    g_bFixTeam = fixTeaam;
 
     return Plugin_Handled;
 }
@@ -466,7 +472,7 @@ void FixTeams()
 
 bool MustFixTheTeams()
 {
-    if (!g_bFixTeam || !IsNewGame())
+    if (!g_bFixTeam)
         return false;
 
     int availableSlots = Slots();
