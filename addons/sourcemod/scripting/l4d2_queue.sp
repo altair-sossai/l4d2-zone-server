@@ -1,10 +1,10 @@
 #pragma semicolon 1
 #pragma newdecls required
 
-#include <colors>
 #include <sourcemod>
-#include <readyup>
 #include <left4dhooks>
+#include <readyup>
+#include <colors>
 
 #define L4D2_TEAM_SPECTATOR 1
 #define L4D2_TEAM_SURVIVOR 2
@@ -13,7 +13,7 @@
 #define MAX_MESSAGE_NAMES 6
 #define MAX_SEQUENCE 9999
 
-ArrayList h_Queue;
+ArrayList g_aQueue;
 
 int g_iSequence = 1;
 
@@ -38,7 +38,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-    h_Queue = new ArrayList(sizeof(Player));
+    g_aQueue = new ArrayList(sizeof(Player));
 
     AddCommandListener(Mix_Callback, "sm_mix");
     AddCommandListener(Spectate_Callback, "sm_spectate");
@@ -184,9 +184,9 @@ void Enqueue(int client)
 
     Player player;
 
-    for (int i = 0; i < h_Queue.Length; i++)
+    for (int i = 0; i < g_aQueue.Length; i++)
     {
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         if (StrEqual(player.steamId, steamId))
             return;
@@ -197,16 +197,16 @@ void Enqueue(int client)
     player.priority = NextSequence();
     player.winning = false;
 
-    h_Queue.PushArray(player);
+    g_aQueue.PushArray(player);
 }
 
 void UnqueueAllDisconnected()
 {
     Player player;
     
-    for (int i = 0; i < h_Queue.Length; )
+    for (int i = 0; i < g_aQueue.Length; )
     {
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         if (GetClientUsingSteamId(player.steamId) != -1)
         {
@@ -214,7 +214,7 @@ void UnqueueAllDisconnected()
             continue;
         }
 
-        h_Queue.Erase(i);
+        g_aQueue.Erase(i);
     }
 }
 
@@ -228,9 +228,9 @@ void RequeuePlayers()
     bool survivorsAreWinning = SurvivorsAreWinning();
     bool infectedAreWinning = !survivorsAreWinning;
 
-    for (int i = 0; i < h_Queue.Length; i++)
+    for (int i = 0; i < g_aQueue.Length; i++)
     {
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
         if (client == -1)
@@ -254,36 +254,36 @@ void RequeuePlayers()
             player.winning = false;
         }
 
-        h_Queue.SetArray(i, player);
+        g_aQueue.SetArray(i, player);
     }
 
     SortQueue();
     ResetSequence();
 
-    for (int i = 0; i < h_Queue.Length; i++)
+    for (int i = 0; i < g_aQueue.Length; i++)
     {
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
         if (client == -1)
             continue;
 
         player.priority = NextSequence();
-        h_Queue.SetArray(i, player);
+        g_aQueue.SetArray(i, player);
     }
 }
 
 void SortQueue()
 {
-    h_Queue.SortCustom(SortByPriority);
+    g_aQueue.SortCustom(SortByPriority);
 }
 
 int SortByPriority(int index1, int index2, Handle array, Handle hndl)
 {
     Player player1, player2;
 
-    h_Queue.GetArray(index1, player1);
-    h_Queue.GetArray(index2, player2);
+    g_aQueue.GetArray(index1, player1);
+    g_aQueue.GetArray(index2, player2);
 
     if (player1.priority < player2.priority)
         return -1;
@@ -322,15 +322,15 @@ void PrintQueue(int target)
 
 void PrintWinners(int target)
 {
-    if (h_Queue.Length == 0)
+    if (g_aQueue.Length == 0)
         return;
 
     Player player;
     char output[512];
 
-    for (int i = 0; i < h_Queue.Length; i++)
+    for (int i = 0; i < g_aQueue.Length; i++)
     {
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         if (!player.winning)
             break;
@@ -356,7 +356,7 @@ void PrintWinners(int target)
 
 void PrintOtherPlayers(int target)
 {
-    if (h_Queue.Length == 0)
+    if (g_aQueue.Length == 0)
         return;
 
     Player player;
@@ -364,9 +364,9 @@ void PrintOtherPlayers(int target)
 
     bool isNewGame = IsNewGame();
 
-    for (int i = 0, count = 0, position = 1; i < h_Queue.Length; i++)
+    for (int i = 0, count = 0, position = 1; i < g_aQueue.Length; i++)
     {
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         if (isNewGame && player.winning)
             continue;
@@ -422,10 +422,10 @@ void FixTeams()
     for (int np = 0; np < slots; np++)
         nextPlayers[np] = -1;
 
-    for (int i = 0, np = 0; i < h_Queue.Length && slots > np; i++)
+    for (int i = 0, np = 0; i < g_aQueue.Length && slots > np; i++)
     {
         Player player;
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
         if (client == -1 || g_bSkip[client])
@@ -477,13 +477,13 @@ bool MustFixTheTeams()
 
     int availableSlots = Slots();
 
-    if (h_Queue.Length <= availableSlots)
+    if (g_aQueue.Length <= availableSlots)
         return false;
 
-    for (int i = 0; i < h_Queue.Length && availableSlots > 0; i++)
+    for (int i = 0; i < g_aQueue.Length && availableSlots > 0; i++)
     {
         Player player;
-        h_Queue.GetArray(i, player);
+        g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
         if (client == -1 || g_bSkip[client])
