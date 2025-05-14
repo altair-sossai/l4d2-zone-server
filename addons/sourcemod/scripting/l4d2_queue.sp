@@ -57,7 +57,14 @@ public void OnPluginStart()
 
 Action Mix_Callback(int client, char[] command, int args)
 {
-    DisableFixTeam();
+    if (!g_bFixTeam)
+        return Plugin_Continue;
+
+    int teamSize = TeamSize();
+
+    if (NumberOfPlayersInTheTeam(L4D2_TEAM_SURVIVOR) == teamSize 
+     && NumberOfPlayersInTheTeam(L4D2_TEAM_INFECTED) == teamSize)
+        DisableFixTeam();
 
     return Plugin_Continue; 
 }
@@ -89,7 +96,7 @@ Action JoinTeam_Callback(int client, char[] command, int args)
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     DisableFixTeam();
-    CreateTimer(2.5, EnableFixTeam_Timer);
+    CreateTimer(2.0, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
