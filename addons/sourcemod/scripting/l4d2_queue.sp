@@ -13,6 +13,8 @@
 #define MAX_MESSAGE_NAMES 6
 #define MAX_SEQUENCE 9999
 
+ConVar g_cvDebug;
+
 ArrayList g_aQueue;
 
 int g_iSequence = 1;
@@ -38,6 +40,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+    g_cvDebug = CreateConVar("l4d2_queue_debug", "0", "Debug info for the queue plugin", FCVAR_HIDDEN|FCVAR_SPONLY|FCVAR_CHEAT|FCVAR_NOTIFY, true, 0.0, true, 1.0);
     g_aQueue = new ArrayList(sizeof(Player));
 
     AddCommandListener(Mix_Callback, "sm_mix");
@@ -426,7 +429,13 @@ void PrintOtherPlayers(int target)
 
 void FixTeams()
 {
-    if (!MustFixTheTeams())
+    PrintDebug("FixTeams() called");
+
+    bool mustFixTheTeams = MustFixTheTeams();
+
+    PrintDebug("MustFixTheTeams() returned %s", mustFixTheTeams ? "true" : "false");
+
+    if (!mustFixTheTeams) 
         return;
 
     DisableFixTeam();
@@ -434,26 +443,44 @@ void FixTeams()
     int slots = Slots();
     int[] nextPlayers = new int[slots];
 
+    PrintDebug("Slots: %d", slots);
+    PrintDebug("Queue length: %d", g_aQueue.Length);
+
     for (int np = 0; np < slots; np++)
         nextPlayers[np] = -1;
 
     Player player;
+
+    PrintDebug("Filling nextPlayers[]");
 
     for (int i = 0, np = 0; i < g_aQueue.Length && slots > np; i++)
     {
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
+
+        PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false");
+
         if (client == -1 || g_bSkip[client])
             continue;
 
         nextPlayers[np++] = client;
     }
 
+    for (int np = 0; np < slots; np++)
+        PrintDebug("nextPlayers[%d]: %d (%N)", np, nextPlayers[np], nextPlayers[np]);
+
     bool found = false;
+
+    PrintDebug("Moving players to spectator team");
 
     for (int client = 1; client <= MaxClients; client++)
     {
+        if (!IsClientInGame(client))
+            continue;
+
+        PrintDebug("Client %d (%N), IsClientInGame: %d, IsFakeClient: %d, Team: %d", client, client, IsClientInGame(client), IsFakeClient(client), GetClientTeam(client));
+
         if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
             continue;
 
@@ -462,38 +489,63 @@ void FixTeams()
         for (int np = 0; !found && np < slots; np++)
             found = nextPlayers[np] == client;
         
+        PrintDebug("Client %d (%N), found: %s", client, client, found ? "true" : "false");
+
         if (!found)
+        {
+            PrintDebug("Moving client %d (%N) to spectator team", client, client);
             MovePlayerToTeam(client, L4D2_TEAM_SPECTATOR);
+        }
     }
 
     int teamSize = TeamSize();
 
+    PrintDebug("Team size: %d", teamSize);
+    PrintDebug("Moving players to teams");
+
     for (int np = 0; np < slots; np++)
     {
         int client = nextPlayers[np];
+
+        PrintDebug("#%d - Client: %d (%N), Team: %d", np, client, client, GetClientTeam(client));
 
         if (client == -1 || GetClientTeam(client) != L4D2_TEAM_SPECTATOR)
             continue;
 
         for (int team = L4D2_TEAM_SURVIVOR; team <= L4D2_TEAM_INFECTED; team++)
         {
+            PrintDebug("Team %d - Count: %d", team, NumberOfPlayersInTheTeam(team));
+
             if (NumberOfPlayersInTheTeam(team) < teamSize)
             {
+                PrintDebug("Moving client %d (%N) to team %d", client, client, team);
                 MovePlayerToTeam(client, team);
                 break;
+            }
+            else
+            {
+                PrintDebug("Team %d is full", team);
             }
         }
     }
 
     EnableFixTeam();
+
+    PrintDebug("FixTeams() finished");
 }
 
 bool MustFixTheTeams()
 {
+    PrintDebug("MustFixTheTeams() called");
+    PrintDebug("g_bFixTeam: %s", g_bFixTeam ? "true" : "false");
+
     if (!g_bFixTeam)
         return false;
 
     int availableSlots = Slots();
+
+    PrintDebug("Queue length: %d", g_aQueue.Length);
+    PrintDebug("Available slots: %d", availableSlots);
 
     if (g_aQueue.Length <= availableSlots)
         return false;
@@ -505,6 +557,9 @@ bool MustFixTheTeams()
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
+
+        PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s, Team: %d", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false", GetClientTeam(client));
+
         if (client == -1 || g_bSkip[client])
             continue;
 
@@ -512,6 +567,8 @@ bool MustFixTheTeams()
             return true;
 
         availableSlots--;
+
+        PrintDebug("Available slots: %d", availableSlots);
     }
 
     return false;
@@ -597,4 +654,14 @@ void EnableFixTeam()
 void DisableFixTeam()
 {
     g_bFixTeam = false;
+}
+
+void PrintDebug(const char[] format, any ...)
+{
+    if (!g_cvDebug.BoolValue)
+        return;
+
+    char msg[256];
+    VFormat(msg, sizeof(msg), format, 2);
+    PrintToConsoleAll("[QUEUE] %s", msg);
 }
