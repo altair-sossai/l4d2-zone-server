@@ -453,7 +453,7 @@ void FixTeams()
 
     PrintDebug("Filling nextPlayers[]");
 
-    for (int i = 0, np = 0; i < g_aQueue.Length && slots > np; i++)
+    for (int i = 0, np = 0; i < g_aQueue.Length && np < slots; i++)
     {
         g_aQueue.GetArray(i, player);
 
