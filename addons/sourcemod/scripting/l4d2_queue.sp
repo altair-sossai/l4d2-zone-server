@@ -149,7 +149,7 @@ public Action PrintQueueCmd(int client, int args)
 
 public Action FixTeamsCmd(int client, int args)
 {
-    if (!IsClientInGame(client) || IsFakeClient(client) || !IsNewGame())
+    if (!IsClientInGame(client) || IsFakeClient(client) || !IsNewGame() || !IsInReady())
         return Plugin_Handled;
 
     bool fixTeaam = g_bFixTeam;
@@ -459,7 +459,10 @@ void FixTeams()
 
         int client = GetClientUsingSteamId(player.steamId);
 
-        PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false");
+        if (client == -1)
+            PrintDebug("#%d - Client: %d, SteamId: %s, Skip: %s", i, client, player.steamId, g_bSkip[client] ? "true" : "false");
+        else
+            PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false");
 
         if (client == -1 || g_bSkip[client])
             continue;
@@ -467,8 +470,15 @@ void FixTeams()
         nextPlayers[np++] = client;
     }
 
+    PrintDebug("nextPlayers[] filled");
+
     for (int np = 0; np < slots; np++)
-        PrintDebug("nextPlayers[%d]: %d (%N)", np, nextPlayers[np], nextPlayers[np]);
+    {
+        if (nextPlayers[np] == -1)
+            PrintDebug("nextPlayers[%d]: %d", np, nextPlayers[np]);
+        else
+            PrintDebug("nextPlayers[%d]: %d (%N)", np, nextPlayers[np], nextPlayers[np]);
+    }
 
     bool found = false;
 
@@ -507,7 +517,10 @@ void FixTeams()
     {
         int client = nextPlayers[np];
 
-        PrintDebug("#%d - Client: %d (%N), Team: %d", np, client, client, GetClientTeam(client));
+        if (client == -1)
+            PrintDebug("#%d - Client: %d", np, client);
+        else
+            PrintDebug("#%d - Client: %d (%N), Team: %d", np, client, client, GetClientTeam(client));
 
         if (client == -1 || GetClientTeam(client) != L4D2_TEAM_SPECTATOR)
             continue;
@@ -558,7 +571,10 @@ bool MustFixTheTeams()
 
         int client = GetClientUsingSteamId(player.steamId);
 
-        PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s, Team: %d", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false", GetClientTeam(client));
+        if (client == -1)
+            PrintDebug("#%d - Client: %d, SteamId: %s, Skip: %s", i, client, player.steamId, g_bSkip[client] ? "true" : "false");
+        else
+            PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s, Team: %d", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false", GetClientTeam(client));
 
         if (client == -1 || g_bSkip[client])
             continue;
