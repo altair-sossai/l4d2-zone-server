@@ -74,7 +74,7 @@ Action Mix_Callback(int client, char[] command, int args)
 
 Action Spectate_Callback(int client, char[] command, int args)
 {
-    if (!g_bFixTeam)
+    if (!g_bFixTeam || !IsClientInGame(client) || IsFakeClient(client))
         return Plugin_Continue;
 
     g_bSkip[client] = true;
@@ -84,7 +84,7 @@ Action Spectate_Callback(int client, char[] command, int args)
 
 Action JoinTeam_Callback(int client, char[] command, int args)
 {
-    if (!g_bFixTeam || args == 0)
+    if (!g_bFixTeam || args == 0 || !IsClientInGame(client) || IsFakeClient(client))
         return Plugin_Continue;
 
     char buffer[128];
@@ -177,6 +177,9 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
+    if (!IsClientInGame(client) || IsFakeClient(client))
+        return;
+
     g_bSkip[client] = false;
 }
 
@@ -460,7 +463,7 @@ void FixTeams()
         int client = GetClientUsingSteamId(player.steamId);
 
         if (client == -1)
-            PrintDebug("#%d - Client: %d, SteamId: %s, Skip: %s", i, client, player.steamId, g_bSkip[client] ? "true" : "false");
+            PrintDebug("#%d - Client: %d, SteamId: %s", i, client, player.steamId);
         else
             PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false");
 
@@ -572,7 +575,7 @@ bool MustFixTheTeams()
         int client = GetClientUsingSteamId(player.steamId);
 
         if (client == -1)
-            PrintDebug("#%d - Client: %d, SteamId: %s, Skip: %s", i, client, player.steamId, g_bSkip[client] ? "true" : "false");
+            PrintDebug("#%d - Client: %d, SteamId: %s", i, client, player.steamId);
         else
             PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s, Team: %d", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false", GetClientTeam(client));
 
