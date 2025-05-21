@@ -108,12 +108,12 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
     ClearSkipData();
 
     CreateTimer(1.5, EnableFixTeam_Timer);
-    CreateTimer(30.0, EnableSkip_Timer);
+    CreateTimer(20.0, EnableSkip_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
-    if (!g_bFixTeam || !IsNewGame())
+    if (!g_bFixTeam || !IsNewGame() || !L4D_HasMapStarted())
         return;
 
     int client = GetClientOfUserId(event.GetInt("userid"));
@@ -161,6 +161,9 @@ Action FixTeam_Timer(Handle timer)
 
 public Action PrintQueueCmd(int client, int args)
 {
+    if (!IsValidClient(client) || IsFakeClient(client))
+        return Plugin_Handled;
+
     PrintQueue(client);
 
     return Plugin_Handled;
@@ -191,14 +194,15 @@ public void OnRoundIsLive()
 public void OnClientPutInServer(int client)
 {
     Enqueue(client);
+
+    if (client >= 1 && client <= MaxClients)
+        g_bSkip[client] = false;
 }
 
 public void OnClientDisconnect(int client)
 {
-    if (!IsValidClient(client) || IsFakeClient(client))
-        return;
-
-    g_bSkip[client] = false;
+    if (client >= 1 && client <= MaxClients)
+        g_bSkip[client] = false;
 }
 
 public void L4D2_OnEndVersusModeRound_Post(int client)
@@ -512,7 +516,7 @@ void FixTeams()
 
         PrintDebug("Client %d (%N), IsValidClient: %d, IsFakeClient: %d, Team: %d", client, client, IsValidClient(client), IsFakeClient(client), GetClientTeam(client));
 
-        if (!IsValidClient(client) || IsFakeClient(client) || GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
+        if (IsFakeClient(client) || GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
             continue;
 
         found = false;
