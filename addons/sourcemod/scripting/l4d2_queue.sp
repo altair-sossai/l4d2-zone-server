@@ -74,7 +74,7 @@ Action Mix_Callback(int client, char[] command, int args)
 
 Action Spectate_Callback(int client, char[] command, int args)
 {
-    if (!g_bFixTeam || !IsClientInGame(client) || IsFakeClient(client))
+    if (!g_bFixTeam || !IsValidClient(client) || IsFakeClient(client))
         return Plugin_Continue;
 
     g_bSkip[client] = true;
@@ -84,7 +84,7 @@ Action Spectate_Callback(int client, char[] command, int args)
 
 Action JoinTeam_Callback(int client, char[] command, int args)
 {
-    if (!g_bFixTeam || args == 0 || !IsClientInGame(client) || IsFakeClient(client))
+    if (!g_bFixTeam || args == 0 || !IsValidClient(client) || IsFakeClient(client))
         return Plugin_Continue;
 
     char buffer[128];
@@ -108,7 +108,7 @@ void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
         return;
 
     int client = GetClientOfUserId(event.GetInt("userid"));
-    if (!IsClientInGame(client) || IsFakeClient(client))
+    if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
     CreateTimer(1.0, FixTeam_Timer);
@@ -149,7 +149,7 @@ public Action PrintQueueCmd(int client, int args)
 
 public Action FixTeamsCmd(int client, int args)
 {
-    if (!IsClientInGame(client) || IsFakeClient(client) || !IsNewGame() || !IsInReady())
+    if (!IsValidClient(client) || IsFakeClient(client) || !IsNewGame() || !IsInReady())
         return Plugin_Handled;
 
     bool fixTeaam = g_bFixTeam;
@@ -177,7 +177,7 @@ public void OnClientPutInServer(int client)
 
 public void OnClientDisconnect(int client)
 {
-    if (!IsClientInGame(client) || IsFakeClient(client))
+    if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
     g_bSkip[client] = false;
@@ -192,7 +192,7 @@ public void L4D2_OnEndVersusModeRound_Post(int client)
 
 void Enqueue(int client)
 {
-    if (!IsClientInGame(client) || IsFakeClient(client))
+    if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
     char steamId[64];
@@ -319,7 +319,7 @@ int GetClientUsingSteamId(const char[] steamId)
    
     for (int client = 1; client <= MaxClients; client++) 
     {
-        if (!IsClientInGame(client) || IsFakeClient(client))
+        if (!IsValidClient(client) || IsFakeClient(client))
             continue;
         
         GetClientAuthId(client, AuthId_Steam2, current, sizeof(current));     
@@ -489,12 +489,12 @@ void FixTeams()
 
     for (int client = 1; client <= MaxClients; client++)
     {
-        if (!IsClientInGame(client))
+        if (!IsValidClient(client))
             continue;
 
-        PrintDebug("Client %d (%N), IsClientInGame: %d, IsFakeClient: %d, Team: %d", client, client, IsClientInGame(client), IsFakeClient(client), GetClientTeam(client));
+        PrintDebug("Client %d (%N), IsValidClient: %d, IsFakeClient: %d, Team: %d", client, client, IsValidClient(client), IsFakeClient(client), GetClientTeam(client));
 
-        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
+        if (!IsValidClient(client) || IsFakeClient(client) || GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
             continue;
 
         found = false;
@@ -617,7 +617,7 @@ int NumberOfPlayersInTheTeam(int team)
 
     for (int client = 1; client <= MaxClients; client++)
     {
-        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != team)
+        if (!IsValidClient(client) || IsFakeClient(client) || GetClientTeam(client) != team)
             continue;
 
         count++;
@@ -673,6 +673,14 @@ void EnableFixTeam()
 void DisableFixTeam()
 {
     g_bFixTeam = false;
+}
+
+bool IsValidClient(int client)
+{
+    if (client <= 0 || client > MaxClients) 
+        return false;
+
+    return IsClientInGame(client);
 }
 
 void PrintDebug(const char[] format, any ...)
