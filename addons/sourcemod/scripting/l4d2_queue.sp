@@ -20,6 +20,7 @@ ArrayList g_aQueue;
 int g_iSequence = 1;
 
 bool g_bFixTeam = false,
+     g_bSkipEnable = false,
      g_bSkip[MAXPLAYERS + 1];
 
 enum struct Player
@@ -60,21 +61,24 @@ public void OnPluginStart()
 
 Action Mix_Callback(int client, char[] command, int args)
 {
-    if (!g_bFixTeam)
+    if (!g_bFixTeam || !IsNewGame())
         return Plugin_Continue;
 
     int teamSize = TeamSize();
 
-    if (NumberOfPlayersInTheTeam(L4D2_TEAM_SURVIVOR) == teamSize 
-     && NumberOfPlayersInTheTeam(L4D2_TEAM_INFECTED) == teamSize)
+    if (NumberOfPlayersInTheTeam(L4D2_TEAM_SURVIVOR) == teamSize && NumberOfPlayersInTheTeam(L4D2_TEAM_INFECTED) == teamSize)
+    {
         DisableFixTeam();
+        DisableSkip();
+        ClearSkipData();
+    }
 
     return Plugin_Continue; 
 }
 
 Action Spectate_Callback(int client, char[] command, int args)
 {
-    if (!g_bFixTeam || !IsValidClient(client) || IsFakeClient(client))
+    if (!g_bFixTeam || !g_bSkipEnable || !IsValidClient(client) || IsFakeClient(client) || !IsNewGame())
         return Plugin_Continue;
 
     g_bSkip[client] = true;
@@ -84,7 +88,7 @@ Action Spectate_Callback(int client, char[] command, int args)
 
 Action JoinTeam_Callback(int client, char[] command, int args)
 {
-    if (!g_bFixTeam || args == 0 || !IsValidClient(client) || IsFakeClient(client))
+    if (!g_bFixTeam || !g_bSkipEnable || args == 0 || !IsValidClient(client) || IsFakeClient(client) || !IsNewGame())
         return Plugin_Continue;
 
     char buffer[128];
@@ -99,12 +103,17 @@ Action JoinTeam_Callback(int client, char[] command, int args)
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     DisableFixTeam();
-    CreateTimer(2.0, EnableFixTeam_Timer);
+    DisableSkip();
+
+    ClearSkipData();
+
+    CreateTimer(1.5, EnableFixTeam_Timer);
+    CreateTimer(30.0, EnableSkip_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
-    if (!g_bFixTeam)
+    if (!g_bFixTeam || !IsNewGame())
         return;
 
     int client = GetClientOfUserId(event.GetInt("userid"));
@@ -122,6 +131,16 @@ Action EnableFixTeam_Timer(Handle timer)
     EnableFixTeam();
     FixTeams();
     CreateTimer(60.0, DisableFixTeam_Timer);
+
+    return Plugin_Continue;
+}
+
+Action EnableSkip_Timer(Handle timer)
+{
+    if (!IsNewGame())
+        return Plugin_Continue;
+
+    EnableSkip();
 
     return Plugin_Continue;
 }
@@ -165,9 +184,8 @@ public Action FixTeamsCmd(int client, int args)
 public void OnRoundIsLive()
 {
     DisableFixTeam();
-
-    for (int client = 1; client <= MaxClients; client++)
-        g_bSkip[client] = false;
+    DisableSkip();
+    ClearSkipData();
 }
 
 public void OnClientPutInServer(int client)
@@ -673,6 +691,22 @@ void EnableFixTeam()
 void DisableFixTeam()
 {
     g_bFixTeam = false;
+}
+
+void EnableSkip()
+{
+    g_bSkipEnable = true;
+}
+
+void DisableSkip()
+{
+    g_bSkipEnable = false;
+}
+
+void ClearSkipData()
+{
+    for (int client = 1; client <= MaxClients; client++)
+        g_bSkip[client] = false;
 }
 
 bool IsValidClient(int client)
