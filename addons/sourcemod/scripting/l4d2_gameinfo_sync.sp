@@ -33,7 +33,9 @@ ConVar
     g_hConfigurationName,
     g_hVsBossBuffer;
 
-char g_sConfigurationName[64];
+char 
+    g_sConfigurationName[64],
+    g_sLastMessage[32];
 
 bool 
     g_bInTransition = false,
@@ -200,6 +202,8 @@ Action SyncData_Timer(Handle hTimer)
 
     if (!g_bInTransition && (g_iTankPercent != GetStoredTankPercent() || g_iWitchPercent != GetStoredWitchPercent()))
         SendRound();
+
+    CheckForNewExternalMessages();
 
     return Plugin_Continue;
 }
@@ -379,6 +383,44 @@ void SendPlayers()
     HTTPRequest request = BuildHTTPRequest("/api/game-info/players");
 
     request.Put(command, DoNothing);
+}
+
+void CheckForNewExternalMessages()
+{
+    if (g_bInTransition)
+        return;
+
+    char path[128] = "/api/external-chat";
+    
+    if (strlen(g_sLastMessage) != 0)
+        FormatEx(path, sizeof(path), "%s?after=%s", path, g_sLastMessage);
+
+    HTTPRequest request = BuildHTTPRequest(path);
+
+    request.Get(CheckForNewExternalMessagesResponse);
+}
+
+void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
+{
+    if (httpResponse.Status != HTTPStatus_OK)
+        return;
+
+    JSONArray response = view_as<JSONArray>(httpResponse.Data);
+
+    for (int i = 0; i < response.Length; i++)
+    {
+        JSONObject message = view_as<JSONObject>(response.Get(i));
+
+        message.GetString("ticks", g_sLastMessage, sizeof(g_sLastMessage));
+
+        char name[64];
+        message.GetString("name", name, sizeof(name));
+
+        char text[250];
+        message.GetString("text", text, sizeof(text));
+
+        CPrintToChatAll("{green}[{orange}%s{green}]{default}: %s", name, text);
+    }
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
