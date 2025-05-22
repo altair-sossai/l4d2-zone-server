@@ -419,7 +419,7 @@ void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
         char text[250];
         message.GetString("text", text, sizeof(text));
 
-        CPrintToChatAll("{default}(External){orange}%s{default} : %s", name, text);
+        CPrintToChatAll("{default}(External) {orange}%s{default} : %s", name, text);
     }
 }
 
