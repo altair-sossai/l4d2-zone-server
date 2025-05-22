@@ -113,7 +113,6 @@ Action Say_Callback(int client, char[] command, int args)
 
     JSONObject jObject = new JSONObject();
 
-    jObject.SetInt("when", GetTime());
     jObject.SetBool("public", StrEqual("say", command));
     jObject.SetInt("team", GetClientTeam(client));
 
