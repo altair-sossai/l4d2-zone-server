@@ -19,9 +19,7 @@ ArrayList g_aQueue;
 
 int g_iSequence = 1;
 
-bool g_bFixTeam = false,
-     g_bSkipEnable = false,
-     g_bSkip[MAXPLAYERS + 1];
+bool g_bFixTeam = false;
 
 enum struct Player
 {
@@ -45,10 +43,6 @@ public void OnPluginStart()
     g_aQueue = new ArrayList(sizeof(Player));
 
     AddCommandListener(Mix_Callback, "sm_mix");
-    AddCommandListener(Spectate_Callback, "sm_spectate");
-    AddCommandListener(Spectate_Callback, "sm_spec");
-    AddCommandListener(Spectate_Callback, "sm_s");
-    AddCommandListener(JoinTeam_Callback, "jointeam");
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event);
@@ -67,48 +61,16 @@ Action Mix_Callback(int client, char[] command, int args)
     int teamSize = TeamSize();
 
     if (NumberOfPlayersInTheTeam(L4D2_TEAM_SURVIVOR) == teamSize && NumberOfPlayersInTheTeam(L4D2_TEAM_INFECTED) == teamSize)
-    {
         DisableFixTeam();
-        DisableSkip();
-        ClearSkipData();
-    }
 
     return Plugin_Continue; 
-}
-
-Action Spectate_Callback(int client, char[] command, int args)
-{
-    if (!g_bFixTeam || !g_bSkipEnable || !IsValidClient(client) || IsFakeClient(client) || !IsNewGame())
-        return Plugin_Continue;
-
-    g_bSkip[client] = true;
-
-    return Plugin_Continue; 
-}
-
-Action JoinTeam_Callback(int client, char[] command, int args)
-{
-    if (!g_bFixTeam || !g_bSkipEnable || args == 0 || !IsValidClient(client) || IsFakeClient(client) || !IsNewGame())
-        return Plugin_Continue;
-
-    char buffer[128];
-    GetCmdArg(1, buffer, sizeof(buffer));
-
-    if (StrEqual("1", buffer, false) || StrEqual("Spectator", buffer, false))
-        g_bSkip[client] = true;
-
-    return Plugin_Continue;
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     DisableFixTeam();
-    DisableSkip();
-
-    ClearSkipData();
 
     CreateTimer(1.5, EnableFixTeam_Timer);
-    CreateTimer(20.0, EnableSkip_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
@@ -131,16 +93,6 @@ Action EnableFixTeam_Timer(Handle timer)
     EnableFixTeam();
     FixTeams();
     CreateTimer(60.0, DisableFixTeam_Timer);
-
-    return Plugin_Continue;
-}
-
-Action EnableSkip_Timer(Handle timer)
-{
-    if (!IsNewGame())
-        return Plugin_Continue;
-
-    EnableSkip();
 
     return Plugin_Continue;
 }
@@ -187,22 +139,11 @@ public Action FixTeamsCmd(int client, int args)
 public void OnRoundIsLive()
 {
     DisableFixTeam();
-    DisableSkip();
-    ClearSkipData();
 }
 
 public void OnClientPutInServer(int client)
 {
     Enqueue(client);
-
-    if (client >= 1 && client <= MaxClients)
-        g_bSkip[client] = false;
-}
-
-public void OnClientDisconnect(int client)
-{
-    if (client >= 1 && client <= MaxClients)
-        g_bSkip[client] = false;
 }
 
 public void L4D2_OnEndVersusModeRound_Post(int client)
@@ -487,9 +428,9 @@ void FixTeams()
         if (client == -1)
             PrintDebug("#%d - Client: %d, SteamId: %s", i, client, player.steamId);
         else
-            PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false");
+            PrintDebug("#%d - Client: %d (%N), SteamId: %s", i, client, client, player.steamId);
 
-        if (client == -1 || g_bSkip[client])
+        if (client == -1)
             continue;
 
         nextPlayers[np++] = client;
@@ -599,9 +540,9 @@ bool MustFixTheTeams()
         if (client == -1)
             PrintDebug("#%d - Client: %d, SteamId: %s", i, client, player.steamId);
         else
-            PrintDebug("#%d - Client: %d (%N), SteamId: %s, Skip: %s, Team: %d", i, client, client, player.steamId, g_bSkip[client] ? "true" : "false", GetClientTeam(client));
+            PrintDebug("#%d - Client: %d (%N), SteamId: %s, Team: %d", i, client, client, player.steamId, GetClientTeam(client));
 
-        if (client == -1 || g_bSkip[client])
+        if (client == -1)
             continue;
 
         if (GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
@@ -695,22 +636,6 @@ void EnableFixTeam()
 void DisableFixTeam()
 {
     g_bFixTeam = false;
-}
-
-void EnableSkip()
-{
-    g_bSkipEnable = true;
-}
-
-void DisableSkip()
-{
-    g_bSkipEnable = false;
-}
-
-void ClearSkipData()
-{
-    for (int client = 1; client <= MaxClients; client++)
-        g_bSkip[client] = false;
 }
 
 bool IsValidClient(int client)
