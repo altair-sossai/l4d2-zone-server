@@ -413,6 +413,12 @@ void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
 
         message.GetString("ticks", g_sLastMessage, sizeof(g_sLastMessage));
 
+        char steamId[64];
+        message.GetString("steamId", steamId, sizeof(steamId));
+
+        char profileUrl[256];
+        message.GetString("profileUrl", profileUrl, sizeof(profileUrl));
+
         char name[64];
         message.GetString("name", name, sizeof(name));
 
@@ -420,6 +426,9 @@ void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
         message.GetString("text", text, sizeof(text));
 
         CPrintToChatAll("{default}(External) {orange}%s{default} : %s", name, text);
+
+        PrintToConsoleAll("[External] %s (%s): %s", name, steamId, text);
+        PrintToConsoleAll(profileUrl);
     }
 }
 
