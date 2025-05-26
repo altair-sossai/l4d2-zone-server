@@ -70,12 +70,12 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     DisableFixTeam();
 
-    CreateTimer(1.5, EnableFixTeam_Timer);
+    CreateTimer(1.0, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
-    if (!g_bFixTeam || !IsNewGame() || !L4D_HasMapStarted())
+    if (!g_bFixTeam || !IsNewGame())
         return;
 
     int client = GetClientOfUserId(event.GetInt("userid"));
@@ -92,7 +92,7 @@ Action EnableFixTeam_Timer(Handle timer)
 
     EnableFixTeam();
     FixTeams();
-    CreateTimer(60.0, DisableFixTeam_Timer);
+    CreateTimer(90.0, DisableFixTeam_Timer);
 
     return Plugin_Continue;
 }
