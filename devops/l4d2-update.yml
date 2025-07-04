@@ -2,7 +2,7 @@ pool:
   vmImage: 'ubuntu-latest'
 
 variables:
-  sshServiceConnection: 'L4D2 - Server'
+  sshServiceConnection: 'L4D2 - Server (enxadahost)'
 
 stages:
 - stage: L4D2ServerUpdate 
