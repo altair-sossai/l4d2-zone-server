@@ -1,6 +1,9 @@
 
 # Left 4 Dead 2 — Fix for UDP Connect Retry Issue
 
+- [🇧🇷 README em Português](./L4D2_CONNECT_FIX.pt-br.md)
+- [🇪🇸 README en Español](./L4D2_CONNECT_FIX.es-es.md)
+
 If you are getting the following connection error when trying to join the server:
 
 ```
