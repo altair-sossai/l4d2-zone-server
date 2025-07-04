@@ -27,12 +27,13 @@ Follow these steps to solve it:
    ```
    +clientport 27666
    ```
+
+    <p align="center">
+    <img src="/tutorials/assets/l4d2-launch-options.png?raw=true" alt="Left 4 Dead 2 launch options"/>
+    </p>
+
    - `27666` can be any number **within the range 27005–27032**.  
    - Use a different port if you still have connection issues — sometimes changing the port helps resolve conflicts with other applications.
-
-<p align="center">
-  <img src="/tutorials/assets/l4d2-launch-options.png?raw=true" alt="Left 4 Dead 2 launch options"/>
-</p>
 
 ## ⚙️ Example Launch Options
 
