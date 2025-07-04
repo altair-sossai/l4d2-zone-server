@@ -54,6 +54,7 @@ stages:
         readyTimeout: '20000'
         commands: |
           tar -xzf /home/devops/addons.tar.gz -C /home/steam/l4d2/left4dead2/addons
+          mkdir -p /home/steam/l4d2/left4dead2/bash
           tar -xzf /home/devops/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
           tar -xzf /home/devops/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
           tar -xzf /home/devops/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
