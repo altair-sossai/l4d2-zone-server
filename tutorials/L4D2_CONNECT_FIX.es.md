@@ -1,4 +1,7 @@
-# 🇪🇸 Left 4 Dead 2 — Solución para el Error de Reintento de Conexión UDP
+# <img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/es.svg" width="40"/> Left 4 Dead 2 — Solución para el Error de Reintento de Conexión UDP
+
+- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/us.svg" width="20"/> README in English](./L4D2_CONNECT_FIX.en.md)
+- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/br.svg" width="20"/> README em Português](./L4D2_CONNECT_FIX.pt.md)
 
 Si recibes el siguiente error al intentar conectarte al servidor:
 

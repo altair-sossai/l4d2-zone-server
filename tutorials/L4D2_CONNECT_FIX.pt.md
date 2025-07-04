@@ -1,4 +1,7 @@
-# 🇧🇷 Left 4 Dead 2 — Correção para o Erro de Conexão UDP Connect Retry
+# <img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/br.svg" width="40"/> Left 4 Dead 2 — Correção para o Erro de Conexão UDP Connect Retry
+
+- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/us.svg" width="20"/> README in English](./L4D2_CONNECT_FIX.en.md)
+- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/es.svg" width="20"/> README en Español](./L4D2_CONNECT_FIX.es.md)
 
 Se você estiver recebendo o seguinte erro ao tentar conectar no servidor:
 
