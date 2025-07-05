@@ -46,8 +46,8 @@ sudo iptables -A INPUT -p udp --dport 27015 -m length --length 2521:65535 -j DRO
 sudo iptables -A INPUT -p udp --dport 27015 -m state --state ESTABLISHED -j ACCEPT
 
 # Limit incoming UDP connections to port 27015 to prevent DoS attacks
-sudo iptables -A INPUT -p udp --dport 27015 -m state --state NEW -m hashlimit --hashlimit-mode srcip,dstport --hashlimit-name StopDoS --hashlimit 10/s --hashlimit-burst 20 -j ACCEPT
-sudo iptables -A INPUT -p udp --dport 27015 -m state --state NEW -m hashlimit --hashlimit-mode srcip --hashlimit-name StopDoS --hashlimit 10/s --hashlimit-burst 20 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 27015 -m state --state NEW -m hashlimit --hashlimit-mode srcip,dstport --hashlimit-name StopDoS --hashlimit 1/s --hashlimit-burst 3 -j ACCEPT
+sudo iptables -A INPUT -p udp --dport 27015 -m state --state NEW -m hashlimit --hashlimit-mode srcip --hashlimit-name StopDoS --hashlimit 1/s --hashlimit-burst 3 -j ACCEPT
 
 # Drop all other incoming UDP packets to port 27015
 sudo iptables -A INPUT -p udp --dport 27015 -j DROP
