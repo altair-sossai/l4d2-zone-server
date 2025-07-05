@@ -61,3 +61,17 @@ stages:
           dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
           chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
           rm /home/devops/*.tar.gz
+
+    - task: AzureCLI@2
+      displayName: 'Upload assets'
+      inputs:
+        azureSubscription: 'PessoalSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az storage blob upload-batch \
+            --account-name l4d2playstats \
+            --destination assets \
+            --source "$(Build.Repository.LocalPath)/assets" \
+            --pattern "*" \
+            --overwrite
