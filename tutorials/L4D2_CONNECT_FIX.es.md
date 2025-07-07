@@ -47,7 +47,7 @@ Si abres el juego desde un **acceso directo en el escritorio**, debes agregar lo
 1. Haz clic derecho en el **acceso directo del juego** y selecciona **Propiedades**.
 2. En el campo **Destino**, añade los parámetros **después de las comillas**, por ejemplo:  
 
-```
+```plaintext
 "E:\Steam\steamapps\common\Left 4 Dead 2\left4dead2.exe" -console +clientport 27666
 ```
 

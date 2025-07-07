@@ -47,7 +47,7 @@ Se você abrir o jogo por um **atalho na Área de Trabalho**, é necessário adi
 1. Clique com o botão direito no **atalho do jogo** e selecione **Propriedades**.
 2. No campo **Destino**, adicione os parâmetros **após as aspas**, por exemplo:  
 
-```
+```plaintext
 "E:\Steam\steamapps\common\Left 4 Dead 2\left4dead2.exe" -console +clientport 27666
 ```
 

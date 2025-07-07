@@ -47,7 +47,7 @@ If you launch the game using a **desktop shortcut**, you must add the same launc
 1. Right-click the **game shortcut** and select **Properties**.
 2. In the **Target** field, add the parameters **after the quotes**, for example:  
 
-```
+```plaintext
 "E:\Steam\steamapps\common\Left 4 Dead 2\left4dead2.exe" -console +clientport 27666
 ```
 
