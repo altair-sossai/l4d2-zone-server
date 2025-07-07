@@ -75,3 +75,17 @@ stages:
             --source "$(Build.Repository.LocalPath)/assets" \
             --pattern "*" \
             --overwrite
+
+    - task: AzureCLI@2
+      displayName: 'Upload fastdl'
+      inputs:
+        azureSubscription: 'PessoalSubscription'
+        scriptType: 'bash'
+        scriptLocation: 'inlineScript'
+        inlineScript: |
+          az storage blob upload-batch \
+            --account-name l4d2playstats \
+            --destination fastdl \
+            --source "$(Build.Repository.LocalPath)/fastdl" \
+            --pattern "*" \
+            --overwrite
