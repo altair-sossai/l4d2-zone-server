@@ -38,6 +38,19 @@ Siga os passos abaixo para corrigir:
 * `27666` pode ser qualquer número **no intervalo de 27005–27032**.
 * Se ainda tiver problemas de conexão, tente mudar a porta — às vezes isso resolve conflitos com outros aplicativos.
 
+## ✅ Observação Importante
+
+Para que as opções de inicialização funcionem corretamente, **sempre inicie o jogo pela Steam**.
+
+Se você abrir o jogo por um **atalho na Área de Trabalho**, é necessário adicionar os mesmos parâmetros de inicialização nas propriedades do atalho:
+
+1. Clique com o botão direito no **atalho do jogo** e selecione **Propriedades**.
+2. No campo **Destino**, adicione os parâmetros **após as aspas**, por exemplo:  
+
+```
+"E:\Steam\steamapps\common\Left 4 Dead 2\left4dead2.exe" -console +clientport 27666
+```
+
 ## ⚙️ Exemplo de Opções de Inicialização
 
 Veja um exemplo das minhas Opções de Inicialização:

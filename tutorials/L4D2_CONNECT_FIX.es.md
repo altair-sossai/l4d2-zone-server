@@ -38,6 +38,19 @@ Sigue estos pasos para solucionarlo:
 * `27666` puede ser cualquier número **dentro del rango 27005–27032**.
 * Si el problema persiste, prueba otro puerto — a veces cambiarlo ayuda a resolver conflictos con otras aplicaciones.
 
+## ✅ Nota Importante
+
+Para que las opciones de lanzamiento funcionen correctamente, **siempre inicia el juego desde Steam**.
+
+Si abres el juego desde un **acceso directo en el escritorio**, debes agregar los mismos parámetros de lanzamiento en las propiedades del acceso directo:
+
+1. Haz clic derecho en el **acceso directo del juego** y selecciona **Propiedades**.
+2. En el campo **Destino**, añade los parámetros **después de las comillas**, por ejemplo:  
+
+```
+"E:\Steam\steamapps\common\Left 4 Dead 2\left4dead2.exe" -console +clientport 27666
+```
+
 ## ⚙️ Ejemplo de Opciones de Lanzamiento
 
 Así se ven mis Opciones de Lanzamiento:
