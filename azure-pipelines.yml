@@ -17,9 +17,10 @@ stages:
         tar -czf cfg.tar.gz -C $(Build.Repository.LocalPath)/cfg .
         tar -czf bash.tar.gz -C $(Build.Repository.LocalPath)/bash .
         tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
-      displayName: 'Compress files'
+      displayName: 'Compress folders into tar.gz files'
 
     - task: SSH@0
+      displayName: 'Clean remote .tar.gz files'
       inputs:
         sshEndpoint: $(sshServiceConnection)
         readyTimeout: '20000'
@@ -27,6 +28,7 @@ stages:
           rm -f /home/devops/*.tar.gz
 
     - task: CopyFilesOverSSH@0
+      displayName: 'Upload compressed files to server'
       inputs:
         sshEndpoint: $(sshServiceConnection)
         sourceFolder: '$(Build.Repository.LocalPath)'
@@ -37,6 +39,7 @@ stages:
         readyTimeout: '20000'
 
     - task: CopyFilesOverSSH@0
+      displayName: 'Upload host and motd files to game folder'
       inputs:
         sshEndpoint: $(sshServiceConnection)
         sourceFolder: '$(Build.Repository.LocalPath)'
@@ -49,6 +52,7 @@ stages:
         readyTimeout: '20000'
 
     - task: SSH@0
+      displayName: 'Extract files on server and set permissions'
       inputs:
         sshEndpoint: $(sshServiceConnection)
         readyTimeout: '20000'
@@ -63,7 +67,7 @@ stages:
           rm /home/devops/*.tar.gz
 
     - task: AzureCLI@2
-      displayName: 'Upload assets'
+      displayName: 'Upload game assets to Azure Blob Storage'
       inputs:
         azureSubscription: 'PessoalSubscription'
         scriptType: 'bash'
@@ -77,7 +81,7 @@ stages:
             --overwrite
 
     - task: AzureCLI@2
-      displayName: 'Upload fastdl'
+      displayName: 'Upload FastDL files to Azure Blob Storage'
       inputs:
         azureSubscription: 'PessoalSubscription'
         scriptType: 'bash'
