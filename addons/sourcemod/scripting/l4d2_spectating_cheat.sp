@@ -35,8 +35,6 @@ int g_iCvarColorGhost,
 
 bool g_bMapStarted;
 
-float g_fLastTimeBotReplacePlayer[MAXPLAYERS+1];
-
 public Plugin myinfo =
 {
     name = "l4d2 specating cheat",
@@ -65,7 +63,6 @@ public void OnPluginStart()
     HookEvent("mission_lost", Event_RoundEnd, EventHookMode_PostNoCopy);
     HookEvent("finale_vehicle_leaving", Event_RoundEnd, EventHookMode_PostNoCopy);
     HookEvent("tank_frustrated", OnTankFrustrated, EventHookMode_Post);
-    HookEvent("player_bot_replace", Event_BotReplacePlayer);
 
     if (g_bLateLoad)
     {
@@ -92,7 +89,6 @@ public void OnMapEnd()
 public void OnClientDisconnect(int client)
 {
     RemoveInfectedModelGlow(client);
-    g_fLastTimeBotReplacePlayer[client] = 0.0;
 }
 
 void OnTankFrustrated(Event event, const char[] name, bool dontBroadcast)
@@ -156,12 +152,6 @@ public void Event_RoundEnd(Event event, const char[] name, bool dontBroadcast)
     RemoveAllModelGlow();
 }
 
-public void Event_BotReplacePlayer(Event event, const char[] name, bool dontBroadcast)
-{
-    int player = GetClientOfUserId(event.GetInt("player"));
-    g_fLastTimeBotReplacePlayer[player] = GetGameTime();
-}
-
 void CreateInfectedModelGlow(int client)
 {
     if (!client || !IsClientInGame(client) || GetClientTeam(client) != L4D_TEAM_INFECTED || !IsPlayerAlive(client) || !g_bMapStarted)
@@ -200,7 +190,6 @@ void CreateInfectedModelGlow(int client)
     g_iModelIndex[client] = EntIndexToEntRef(entity);
 
     SDKHook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
-    SetEdictFlags(client, GetEdictFlags(client) | FL_EDICT_ALWAYS);
 }
 
 void RemoveInfectedModelGlow(int client)
@@ -215,21 +204,10 @@ void RemoveInfectedModelGlow(int client)
 
 public Action Hook_SetTransmit(int entity, int client)
 {
-    if (GetClientTeam(client) != L4D_TEAM_SPECTATOR)
-        return Plugin_Handled;
+    if (GetClientTeam(client) == L4D_TEAM_SPECTATOR)
+        return Plugin_Continue;
 
-    if (L4D_IsPlayerIdle(client))
-        return Plugin_Handled;
-
-    if (g_fLastTimeBotReplacePlayer[client] != 0.0)
-    {
-        if (GetGameTime() - g_fLastTimeBotReplacePlayer[client] < 0.3)
-            return Plugin_Handled;
-        else
-            g_fLastTimeBotReplacePlayer[client] = 0.0;
-    }
-
-    return Plugin_Continue;
+    return Plugin_Handled;
 }
 
 int GetColor(char[] sTemp)
