@@ -95,7 +95,7 @@ public void L4D2_OnEndVersusModeRound_Post()
     SendScoreboard();
     SendPlayers();
 
-    g_bInTransition = true;
+    CreateTimer(2.5, L4D2_OnEndVersusModeRound_Post_Timer);
 }
 
 Action Say_Callback(int client, char[] command, int args)
@@ -186,6 +186,13 @@ Action RoundStart_Timer(Handle timer)
     SendRound();
 
     return Plugin_Continue;
+}
+
+Action L4D2_OnEndVersusModeRound_Post_Timer(Handle timer)
+{
+    g_bInTransition = true;
+
+    return Plugin_Continue;    
 }
 
 Action OnRoundIsLive_Timer(Handle timer)
