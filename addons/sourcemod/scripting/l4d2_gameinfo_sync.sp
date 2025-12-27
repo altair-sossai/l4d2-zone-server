@@ -126,6 +126,8 @@ Action Say_Callback(int client, char[] command, int args)
     GetClientName(client, name, sizeof(name));
     jObject.SetString("name", name);
 
+    jObject.SetBool("isAdmin", CheckCommandAccess(client, "sm_ban", ADMFLAG_BAN));
+
     jObject.SetString("message", message);
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/messages");
