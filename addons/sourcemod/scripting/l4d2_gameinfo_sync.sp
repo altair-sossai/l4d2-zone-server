@@ -317,6 +317,8 @@ void SendPlayers()
         GetClientName(client, name, sizeof(name));
         player.SetString("name", name);
 
+        player.SetBool("isAdmin", CheckCommandAccess(client, "sm_ban", ADMFLAG_BAN));
+
         if (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED)
             player.SetFloat("latency", GetClientLatency(client, NetFlow_Both));
 
