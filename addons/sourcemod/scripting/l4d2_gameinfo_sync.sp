@@ -449,7 +449,7 @@ void CheckForNewServerCommands()
     if (g_bInTransition)
         return;
 
-    HTTPRequest request = BuildHTTPRequest("/api/server-command/dequeue");
+    HTTPRequest request = BuildHTTPRequest("/api/game-info/server-command/dequeue");
 
     request.Get(CheckForNewServerCommandsResponse);
 }
