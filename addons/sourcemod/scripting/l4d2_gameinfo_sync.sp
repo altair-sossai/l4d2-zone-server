@@ -213,6 +213,7 @@ Action SyncData_Timer(Handle hTimer)
         SendRound();
 
     CheckForNewExternalMessages();
+    CheckForNewServerCommands();
 
     return Plugin_Continue;
 }
@@ -441,6 +442,29 @@ void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
         PrintToConsoleAll("[External] %s (%s): %s", name, steamId, text);
         PrintToConsoleAll(profileUrl);
     }
+}
+
+void CheckForNewServerCommands()
+{
+    if (g_bInTransition)
+        return;
+
+    HTTPRequest request = BuildHTTPRequest("/api/server-command/dequeue");
+
+    request.Get(CheckForNewServerCommandsResponse);
+}
+
+void CheckForNewServerCommandsResponse(HTTPResponse httpResponse, any value)
+{
+    if (httpResponse.Status != HTTPStatus_OK)
+        return;
+
+    JSONObject response = view_as<JSONObject>(httpResponse.Data);
+
+    char fullCommand[256];
+    response.GetString("fullCommand", fullCommand, sizeof(fullCommand));
+
+    ServerCommand(fullCommand);
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
