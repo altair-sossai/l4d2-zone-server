@@ -9,6 +9,7 @@
 #undef REQUIRE_PLUGIN
 #include <pause>
 #include <readyup>
+
 #include <l4d2util>
 #include <colors>
 #include <l4d2_hybrid_scoremod>
@@ -40,6 +41,7 @@ char
     g_sLastMessage[32];
 
 bool 
+    g_bReadyUpIsAvailable = false,
     g_bPauseIsAvailable = false,
     g_bInTransition = false,
     g_bTankIsDead = false;
@@ -74,17 +76,24 @@ public void OnPluginStart()
 
 public void OnAllPluginsLoaded()
 {
+    g_bReadyUpIsAvailable = LibraryExists("readyup");
     g_bPauseIsAvailable = LibraryExists("pause");
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
+    if (strcmp(name, "readyup") == 0)
+        g_bReadyUpIsAvailable = false;
+
     if (strcmp(name, "pause") == 0)
         g_bPauseIsAvailable = false;
 }
 
 public void OnLibraryAdded(const char[] name)
 {
+    if (strcmp(name, "readyup") == 0)
+        g_bReadyUpIsAvailable = true;
+
     if (strcmp(name, "pause") == 0)
         g_bPauseIsAvailable = true;
 }
@@ -272,7 +281,11 @@ void SendRound()
     g_iTankPercent = GetStoredTankPercent();
     g_iWitchPercent = GetStoredWitchPercent();
 
-    command.SetBool("isInReady", IsInReady());
+    bool isInReady = false;
+    if (g_bReadyUpIsAvailable)
+        isInReady = IsInReady();
+
+    command.SetBool("isInReady", isInReady);
 
     if (g_bPauseIsAvailable)
         command.SetBool("isInPause", IsInPause());
@@ -295,7 +308,11 @@ void SendScoreboard()
     JSONObject command = new JSONObject();
 
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
-    bool isInReady = IsInReady();
+
+    bool isInReady = false;
+    if (g_bReadyUpIsAvailable)
+        isInReady = IsInReady();
+
     int bonus = SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus();
     int maxBonus = SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
 
@@ -326,6 +343,10 @@ void SendPlayers()
 
     char communityId[25];
     char name[MAX_NAME_LENGTH];
+
+    bool isInReady = false;
+    if (g_bReadyUpIsAvailable)
+        isInReady = IsInReady();
 
     for (int client = 1; client <= MaxClients; client++)
     {
@@ -384,7 +405,7 @@ void SendPlayers()
             }
 
             player.SetBool("isPlayerAlive", isPlayerAlive);
-            player.SetFloat("progress", IsInReady() ? 0.0 : g_fSurvivorProgress[client]);
+            player.SetFloat("progress", isInReady ? 0.0 : g_fSurvivorProgress[client]);
 
             survivors.Push(player);
         }
