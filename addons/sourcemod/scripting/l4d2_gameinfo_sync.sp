@@ -5,6 +5,8 @@
 #include <sdktools>
 #include <left4dhooks>
 #include <ripext>
+
+#undef REQUIRE_PLUGIN
 #include <pause>
 #include <readyup>
 #include <l4d2util>
@@ -38,6 +40,7 @@ char
     g_sLastMessage[32];
 
 bool 
+    g_bPauseIsAvailable = false,
     g_bInTransition = false,
     g_bTankIsDead = false;
 
@@ -68,6 +71,24 @@ public void OnPluginStart()
     ClearInfectedDamage();
     ClearSurvivorProgress();
 }
+
+public void OnAllPluginsLoaded()
+{
+    g_bPauseIsAvailable = LibraryExists("pause");
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+    if (strcmp(name, "pause") == 0)
+        g_bPauseIsAvailable = false;
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+    if (strcmp(name, "pause") == 0)
+        g_bPauseIsAvailable = true;
+}
+
 
 public void OnRoundIsLive()
 {
@@ -252,7 +273,10 @@ void SendRound()
     g_iWitchPercent = GetStoredWitchPercent();
 
     command.SetBool("isInReady", IsInReady());
-    command.SetBool("isInPause", IsInPause());
+
+    if (g_bPauseIsAvailable)
+        command.SetBool("isInPause", IsInPause());
+
     command.SetBool("inSecondHalfOfRound", GameRules_GetProp("m_bInSecondHalfOfRound") ? true : false);
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
     command.SetFloat("tankPercent", g_iTankPercent / 100.0);
