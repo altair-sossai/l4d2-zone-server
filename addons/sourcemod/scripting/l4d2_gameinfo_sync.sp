@@ -6,6 +6,8 @@
 #include <left4dhooks>
 #include <ripext>
 #include <colors>
+
+#define L4D2UTIL_STOCKS_ONLY 1
 #include <l4d2util>
 
 #undef REQUIRE_PLUGIN
