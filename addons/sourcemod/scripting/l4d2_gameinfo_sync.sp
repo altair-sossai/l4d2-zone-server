@@ -290,11 +290,7 @@ void SendRound()
     g_iTankPercent = GetTankPercent();
     g_iWitchPercent = GetWitchPercent();
 
-    bool isInReady = false;
-    if (g_bReadyUpIsAvailable)
-        isInReady = IsInReady();
-
-    command.SetBool("isInReady", isInReady);
+    command.SetBool("isInReady", GetIsInReady());
 
     if (g_bPauseIsAvailable)
         command.SetBool("isInPause", IsInPause());
@@ -317,11 +313,7 @@ void SendScoreboard()
     JSONObject command = new JSONObject();
 
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
-
-    bool isInReady = false;
-    if (g_bReadyUpIsAvailable)
-        isInReady = IsInReady();
-
+    bool isInReady = GetIsInReady();
     int bonus = SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus();
     int maxBonus = SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
 
@@ -353,9 +345,7 @@ void SendPlayers()
     char communityId[25];
     char name[MAX_NAME_LENGTH];
 
-    bool isInReady = false;
-    if (g_bReadyUpIsAvailable)
-        isInReady = IsInReady();
+    bool isInReady = GetIsInReady();
 
     for (int client = 1; client <= MaxClients; client++)
     {
@@ -592,6 +582,14 @@ float GetMaxSurvivorCompletion()
 	}
 
 	return (flow / L4D2Direct_GetMapMaxFlowDistance());
+}
+
+bool GetIsInReady()
+{
+    if (!g_bReadyUpIsAvailable)
+        return false;
+
+    return IsInReady();
 }
 
 int GetTankPercent()
