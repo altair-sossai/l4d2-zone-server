@@ -12,7 +12,6 @@
 #include <pause>
 #include <readyup>
 #include <l4d2_boss_percents>
-
 #include <l4d2_hybrid_scoremod>
 
 #define L4D2_TEAM_SPECTATOR 1
@@ -44,6 +43,7 @@ bool
     g_bReadyUpIsAvailable = false,
     g_bPauseIsAvailable = false,
     g_bL4D2BossPercentsAvailable = false,
+    g_bHybridScoremodIsAvailable = false,
     g_bInTransition = false,
     g_bTankIsDead = false;
 
@@ -81,6 +81,7 @@ public void OnAllPluginsLoaded()
     g_bReadyUpIsAvailable = LibraryExists("readyup");
     g_bPauseIsAvailable = LibraryExists("pause");
     g_bL4D2BossPercentsAvailable = LibraryExists("l4d_boss_percent");
+    g_bHybridScoremodIsAvailable = LibraryExists("l4d2_hybrid_scoremod") || LibraryExists("l4d2_hybrid_scoremod_zone");
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -93,6 +94,9 @@ public void OnLibraryRemoved(const char[] name)
 
     if (strcmp(name, "l4d_boss_percent") == 0)
         g_bL4D2BossPercentsAvailable = false;
+
+    if (strcmp(name, "l4d2_hybrid_scoremod") == 0 || strcmp(name, "l4d2_hybrid_scoremod_zone") == 0)
+        g_bHybridScoremodIsAvailable = false;
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -105,6 +109,9 @@ public void OnLibraryAdded(const char[] name)
 
     if (strcmp(name, "l4d_boss_percent") == 0)
         g_bL4D2BossPercentsAvailable = true;
+
+    if (strcmp(name, "l4d2_hybrid_scoremod") == 0 || strcmp(name, "l4d2_hybrid_scoremod_zone") == 0)
+        g_bHybridScoremodIsAvailable = true;
 }
 
 
@@ -314,8 +321,8 @@ void SendScoreboard()
 
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
     bool isInReady = GetIsInReady();
-    int bonus = SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus();
-    int maxBonus = SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
+    int bonus = GetBonus();
+    int maxBonus = GetMaxBonus();
 
     command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(flipped ? 1 : 0) + L4D_GetTeamScore(flipped ? 2 : 1));
     command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(flipped ? 0 : 1) + L4D_GetTeamScore(flipped ? 1 : 2));
@@ -616,6 +623,22 @@ int GetRoundTankFlow()
 int GetRoundWitchFlow()
 {
 	return RoundToNearest(L4D2Direct_GetVSWitchFlowPercent(InSecondHalfOfRound()) + g_hVersusBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance());
+}
+
+int GetBonus()
+{
+    if (!g_bHybridScoremodIsAvailable)
+        return 0;
+
+    return SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus();
+}
+
+int GetMaxBonus()
+{
+    if (!g_bHybridScoremodIsAvailable)
+        return 0;
+
+    return SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
 }
 
 float Max(float a, float b) {
