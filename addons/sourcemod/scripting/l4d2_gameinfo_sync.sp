@@ -114,7 +114,6 @@ public void OnLibraryAdded(const char[] name)
         g_bHybridScoremodIsAvailable = true;
 }
 
-
 public void OnRoundIsLive()
 {
     g_bInTransition = false;
