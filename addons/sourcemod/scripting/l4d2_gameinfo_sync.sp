@@ -5,15 +5,15 @@
 #include <sdktools>
 #include <left4dhooks>
 #include <ripext>
+#include <colors>
+#include <l4d2util>
 
 #undef REQUIRE_PLUGIN
 #include <pause>
 #include <readyup>
-
-#include <l4d2util>
-#include <colors>
-#include <l4d2_hybrid_scoremod>
 #include <l4d2_boss_percents>
+
+#include <l4d2_hybrid_scoremod>
 
 #define L4D2_TEAM_SPECTATOR 1
 #define L4D2_TEAM_SURVIVOR 2
@@ -34,7 +34,7 @@ ConVar
     g_hUrl,
     g_hSecretKey,
     g_hConfigurationName,
-    g_hVsBossBuffer;
+    g_hVersusBossBuffer;
 
 char 
     g_sConfigurationName[64],
@@ -43,6 +43,7 @@ char
 bool 
     g_bReadyUpIsAvailable = false,
     g_bPauseIsAvailable = false,
+    g_bL4D2BossPercentsAvailable = false,
     g_bInTransition = false,
     g_bTankIsDead = false;
 
@@ -51,11 +52,12 @@ int
     g_iTankPercent,
     g_iWitchPercent;
 
-float g_fSurvivorProgress[MAXPLAYERS + 1];
+float 
+    g_fSurvivorProgress[MAXPLAYERS + 1];
 
 public void OnPluginStart()
 {
-    g_hVsBossBuffer = FindConVar("versus_boss_buffer");
+    g_hVersusBossBuffer = FindConVar("versus_boss_buffer");
 
     g_hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
@@ -78,6 +80,7 @@ public void OnAllPluginsLoaded()
 {
     g_bReadyUpIsAvailable = LibraryExists("readyup");
     g_bPauseIsAvailable = LibraryExists("pause");
+    g_bL4D2BossPercentsAvailable = LibraryExists("l4d_boss_percent");
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -87,6 +90,9 @@ public void OnLibraryRemoved(const char[] name)
 
     if (strcmp(name, "pause") == 0)
         g_bPauseIsAvailable = false;
+
+    if (strcmp(name, "l4d_boss_percent") == 0)
+        g_bL4D2BossPercentsAvailable = false;
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -96,6 +102,9 @@ public void OnLibraryAdded(const char[] name)
 
     if (strcmp(name, "pause") == 0)
         g_bPauseIsAvailable = true;
+
+    if (strcmp(name, "l4d_boss_percent") == 0)
+        g_bL4D2BossPercentsAvailable = true;
 }
 
 
@@ -239,7 +248,7 @@ Action SyncData_Timer(Handle hTimer)
     SendScoreboard();
     SendPlayers();
 
-    if (!g_bInTransition && (g_iTankPercent != GetStoredTankPercent() || g_iWitchPercent != GetStoredWitchPercent()))
+    if (!g_bInTransition && (g_iTankPercent != GetTankPercent() || g_iWitchPercent != GetWitchPercent()))
         SendRound();
 
     CheckForNewExternalMessages();
@@ -278,8 +287,8 @@ void SendRound()
 
     JSONObject command = new JSONObject();
 
-    g_iTankPercent = GetStoredTankPercent();
-    g_iWitchPercent = GetStoredWitchPercent();
+    g_iTankPercent = GetTankPercent();
+    g_iWitchPercent = GetWitchPercent();
 
     bool isInReady = false;
     if (g_bReadyUpIsAvailable)
@@ -562,7 +571,7 @@ int GetCurrentProgress()
 
 float GetBossProximity()
 {
-	float proximity = GetMaxSurvivorCompletion() + g_hVsBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance();
+	float proximity = GetMaxSurvivorCompletion() + g_hVersusBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance();
 
 	return (proximity > 1.0) ? 1.0 : proximity;
 }
@@ -583,6 +592,32 @@ float GetMaxSurvivorCompletion()
 	}
 
 	return (flow / L4D2Direct_GetMapMaxFlowDistance());
+}
+
+int GetTankPercent()
+{
+    if (g_bL4D2BossPercentsAvailable)
+        return GetStoredTankPercent();
+
+    return GetRoundTankFlow();
+}
+
+int GetWitchPercent()
+{
+    if (g_bL4D2BossPercentsAvailable)
+        return GetStoredWitchPercent();
+
+    return GetRoundWitchFlow();
+}
+
+int GetRoundTankFlow()
+{
+	return RoundToNearest(L4D2Direct_GetVSTankFlowPercent(InSecondHalfOfRound()) + g_hVersusBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance());
+}
+
+int GetRoundWitchFlow()
+{
+	return RoundToNearest(L4D2Direct_GetVSWitchFlowPercent(InSecondHalfOfRound()) + g_hVersusBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance());
 }
 
 float Max(float a, float b) {
