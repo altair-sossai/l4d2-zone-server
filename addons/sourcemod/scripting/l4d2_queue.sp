@@ -146,7 +146,7 @@ public void OnClientPutInServer(int client)
     Enqueue(client);
 }
 
-public void L4D2_OnEndVersusModeRound_Post(int client)
+public void L4D2_OnEndVersusModeRound_Post()
 {
     UnqueueAllDisconnected();
     RequeuePlayers();
