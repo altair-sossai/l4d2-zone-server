@@ -9,4 +9,5 @@ spcomp ..\addons\sourcemod\scripting\l4d2_playstats_sync.sp -o ..\addons\sourcem
 spcomp ..\addons\sourcemod\scripting\l4d2_ranking.sp -o ..\addons\sourcemod\plugins\optional\l4d2_ranking.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_show_patent_icon.sp -o ..\addons\sourcemod\plugins\optional\l4d2_show_patent_icon.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_no_skip_getup_animation.sp -o ..\addons\sourcemod\plugins\optional\l4d2_no_skip_getup_animation.smx
+spcomp ..\addons\sourcemod\scripting\l4d2_jockey_no_deadstops.sp -o ..\addons\sourcemod\plugins\optional\l4d2_jockey_no_deadstops.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_gameinfo_sync.sp -o ..\addons\sourcemod\plugins\l4d2_gameinfo_sync.smx
