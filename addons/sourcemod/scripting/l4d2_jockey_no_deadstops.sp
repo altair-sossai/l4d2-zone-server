@@ -17,6 +17,13 @@ public Plugin myinfo =
 	url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
+public void OnRoundIsLive()
+{
+    PrintToChatAll("Jockey Deadstops disabled — M2 does not stop Jockeys (like Hunters)");
+    PrintToChatAll("Jockey Deadstops disabled — M2 does not stop Jockeys (like Hunters)");
+    PrintToChatAll("Jockey Deadstops disabled — M2 does not stop Jockeys (like Hunters)");
+}
+
 public Action L4D_OnShovedBySurvivor(int shover, int shovee, const float vecDir[3])
 {
     return Shove_Handler(shover, shovee);
