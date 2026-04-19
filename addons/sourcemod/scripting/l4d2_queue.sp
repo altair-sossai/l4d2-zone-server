@@ -70,7 +70,7 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     DisableFixTeam();
 
-    CreateTimer(1.0, EnableFixTeam_Timer);
+    CreateTimer(3.0, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
@@ -92,7 +92,7 @@ Action EnableFixTeam_Timer(Handle timer)
 
     EnableFixTeam();
     FixTeams();
-    CreateTimer(45.0, DisableFixTeam_Timer);
+    CreateTimer(30.0, DisableFixTeam_Timer);
 
     return Plugin_Continue;
 }
