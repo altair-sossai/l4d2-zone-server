@@ -141,7 +141,7 @@ public void OnRoundIsLive()
     DisableFixTeam();
 }
 
-public void OnClientPutInServer(int client)
+public void OnClientPostAdminCheck(int client)
 {
     Enqueue(client);
 }
