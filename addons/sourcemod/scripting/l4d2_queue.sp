@@ -11,7 +11,6 @@
 #define L4D2_TEAM_INFECTED 3
 
 #define MAX_MESSAGE_NAMES 6
-#define MAX_SEQUENCE 9999
 
 ConVar g_cvDebug;
 
@@ -207,39 +206,8 @@ void RequeuePlayers()
 
     Player player;
 
-    bool survivorsAreWinning = SurvivorsAreWinning();
-    bool infectedAreWinning = !survivorsAreWinning;
+    int winningTeam = GetWinningTeam();
 
-    for (int i = 0; i < g_aQueue.Length; i++)
-    {
-        g_aQueue.GetArray(i, player);
-
-        int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
-            continue;
-
-        int team = GetClientTeam(client);
-
-        if (team == L4D2_TEAM_SURVIVOR)
-        {
-            player.priority = survivorsAreWinning ? 0 : MAX_SEQUENCE;
-            player.winning = survivorsAreWinning;
-        }
-        else if (team == L4D2_TEAM_INFECTED)
-        {
-            player.priority = infectedAreWinning ? 0 : MAX_SEQUENCE;
-            player.winning = infectedAreWinning;
-        }
-        else
-        {
-            player.priority = NextSequence();
-            player.winning = false;
-        }
-
-        g_aQueue.SetArray(i, player);
-    }
-
-    SortQueue();
     ResetSequence();
 
     for (int i = 0; i < g_aQueue.Length; i++)
@@ -250,9 +218,56 @@ void RequeuePlayers()
         if (client == -1)
             continue;
 
+        int team = GetClientTeam(client);
+        bool winner = team == winningTeam;
+
+        if (!winner)
+            continue;
+
         player.priority = NextSequence();
+        player.winning = true;
         g_aQueue.SetArray(i, player);
     }
+
+    for (int i = 0; i < g_aQueue.Length; i++)
+    {
+        g_aQueue.GetArray(i, player);
+
+        int client = GetClientUsingSteamId(player.steamId);
+        if (client == -1)
+            continue;
+
+        int team = GetClientTeam(client);
+        bool activeTeam = team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED;
+
+        if (activeTeam)
+            continue;
+
+        player.priority = NextSequence();
+        player.winning = false;
+        g_aQueue.SetArray(i, player);
+    }
+
+    for (int i = 0; i < g_aQueue.Length; i++)
+    {
+        g_aQueue.GetArray(i, player);
+
+        int client = GetClientUsingSteamId(player.steamId);
+        if (client == -1)
+            continue;
+
+        int team = GetClientTeam(client);
+        bool loser = (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED) && team != winningTeam;
+
+        if (!loser)
+            continue;
+
+        player.priority = NextSequence();
+        player.winning = false;
+        g_aQueue.SetArray(i, player);
+    }
+
+    SortQueue();
 }
 
 void SortQueue()
@@ -595,7 +610,7 @@ bool IsNewGame()
         && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
 
-bool SurvivorsAreWinning()
+int GetWinningTeam()
 {
     int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
 
@@ -605,7 +620,7 @@ bool SurvivorsAreWinning()
     int survivorScore = L4D2Direct_GetVSCampaignScore(survivorIndex);
     int infectedScore = L4D2Direct_GetVSCampaignScore(infectedIndex);
 
-    return survivorScore >= infectedScore;
+    return survivorScore >= infectedScore ? L4D2_TEAM_SURVIVOR : L4D2_TEAM_INFECTED;
 }
 
 void ResetSequence()
