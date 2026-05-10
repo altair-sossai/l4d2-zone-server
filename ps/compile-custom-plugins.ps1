@@ -12,3 +12,4 @@ spcomp ..\addons\sourcemod\scripting\l4d2_no_skip_getup_animation.sp -o ..\addon
 spcomp ..\addons\sourcemod\scripting\l4d2_jockey_no_deadstops.sp -o ..\addons\sourcemod\plugins\optional\l4d2_jockey_no_deadstops.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_gameinfo_sync.sp -o ..\addons\sourcemod\plugins\l4d2_gameinfo_sync.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_changelevel.sp -o ..\addons\sourcemod\plugins\fixes\l4d2_changelevel.smx
+spcomp ..\addons\sourcemod\scripting\l4d2_admin_hp.sp -o ..\addons\sourcemod\plugins\optional\l4d2_admin_hp.smx
