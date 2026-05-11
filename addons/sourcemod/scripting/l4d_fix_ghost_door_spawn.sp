@@ -32,7 +32,7 @@ public void OnPluginStart()
 
 	g_hCvarDistance = CreateConVar(
 		"l4d_fix_ghost_door_spawn_distance",
-		"96.0",
+		"65.0",
 		"Distance around door positions where ghost infected materialization is blocked.",
 		FCVAR_NOTIFY,
 		true, 0.0,
