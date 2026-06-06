@@ -47,7 +47,13 @@ bool
     g_bL4D2BossPercentsAvailable = false,
     g_bHybridScoremodIsAvailable = false,
     g_bInTransition = false,
-    g_bTankIsDead = false;
+    g_bTankIsDead = false,
+    g_bConfigurationRequestPending = false,
+    g_bRoundRequestPending = false,
+    g_bScoreboardRequestPending = false,
+    g_bPlayersRequestPending = false,
+    g_bExternalMessagesRequestPending = false,
+    g_bServerCommandsRequestPending = false;
 
 int 
     g_iInfectedDamage[MAXPLAYERS + 1],
@@ -267,7 +273,7 @@ Action SyncData_Timer(Handle hTimer)
 
 void SendConfiguration()
 {
-    if (g_bInTransition)
+    if (g_bInTransition || g_bConfigurationRequestPending)
         return;
 
     JSONObject command = new JSONObject();
@@ -285,12 +291,14 @@ void SendConfiguration()
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/configuration");
     
-    request.Put(command, DoNothing);
+    g_bConfigurationRequestPending = true;
+
+    request.Put(command, SendConfigurationResponse);
 }
 
 void SendRound()
 {
-    if (g_bInTransition)
+    if (g_bInTransition || g_bRoundRequestPending)
         return;
 
     JSONObject command = new JSONObject();
@@ -310,12 +318,14 @@ void SendRound()
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/round");
 
-    request.Put(command, DoNothing);
+    g_bRoundRequestPending = true;
+
+    request.Put(command, SendRoundResponse);
 }
 
 void SendScoreboard()
 {
-    if (g_bInTransition)
+    if (g_bInTransition || g_bScoreboardRequestPending)
         return;
 
     JSONObject command = new JSONObject();
@@ -336,12 +346,14 @@ void SendScoreboard()
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/scoreboard");
 
-    request.Put(command, DoNothing);
+    g_bScoreboardRequestPending = true;
+
+    request.Put(command, SendScoreboardResponse);
 }
 
 void SendPlayers()
 {
-    if (g_bInTransition)
+    if (g_bInTransition || g_bPlayersRequestPending)
         return;
 
     JSONObject command = new JSONObject();
@@ -446,12 +458,14 @@ void SendPlayers()
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/players");
 
-    request.Put(command, DoNothing);
+    g_bPlayersRequestPending = true;
+
+    request.Put(command, SendPlayersResponse);
 }
 
 void CheckForNewExternalMessages()
 {
-    if (g_bInTransition)
+    if (g_bInTransition || g_bExternalMessagesRequestPending)
         return;
 
     char path[128] = "/api/external-chat";
@@ -461,11 +475,15 @@ void CheckForNewExternalMessages()
 
     HTTPRequest request = BuildHTTPRequest(path);
 
+    g_bExternalMessagesRequestPending = true;
+
     request.Get(CheckForNewExternalMessagesResponse);
 }
 
 void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
 {
+    g_bExternalMessagesRequestPending = false;
+
     if (httpResponse.Status != HTTPStatus_OK)
         return;
 
@@ -498,16 +516,20 @@ void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
 
 void CheckForNewServerCommands()
 {
-    if (g_bInTransition)
+    if (g_bInTransition || g_bServerCommandsRequestPending)
         return;
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/server-command/dequeue");
+
+    g_bServerCommandsRequestPending = true;
 
     request.Get(CheckForNewServerCommandsResponse);
 }
 
 void CheckForNewServerCommandsResponse(HTTPResponse httpResponse, any value)
 {
+    g_bServerCommandsRequestPending = false;
+
     if (httpResponse.Status != HTTPStatus_OK)
         return;
 
@@ -517,6 +539,26 @@ void CheckForNewServerCommandsResponse(HTTPResponse httpResponse, any value)
     response.GetString("fullCommand", fullCommand, sizeof(fullCommand));
 
     ServerCommand(fullCommand);
+}
+
+void SendConfigurationResponse(HTTPResponse httpResponse, any value)
+{
+    g_bConfigurationRequestPending = false;
+}
+
+void SendRoundResponse(HTTPResponse httpResponse, any value)
+{
+    g_bRoundRequestPending = false;
+}
+
+void SendScoreboardResponse(HTTPResponse httpResponse, any value)
+{
+    g_bScoreboardRequestPending = false;
+}
+
+void SendPlayersResponse(HTTPResponse httpResponse, any value)
+{
+    g_bPlayersRequestPending = false;
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
