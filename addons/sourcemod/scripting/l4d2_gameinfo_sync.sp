@@ -21,6 +21,8 @@
 #define L4D2_TEAM_INFECTED 3
 
 #define ZOMBIECLASS_TANK 8
+#define GAMEINFO_HTTP_CONNECT_TIMEOUT 3
+#define GAMEINFO_HTTP_TIMEOUT 5
 
 public Plugin myinfo =
 {
@@ -185,7 +187,7 @@ Action Say_Callback(int client, char[] command, int args)
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/messages");
     
-    request.Put(jObject, DoNothing);
+    request.Put(jObject, DoNothing, jObject);
 
     return Plugin_Continue; 
 }
@@ -293,7 +295,7 @@ void SendConfiguration()
     
     g_bConfigurationRequestPending = true;
 
-    request.Put(command, SendConfigurationResponse);
+    request.Put(command, SendConfigurationResponse, command);
 }
 
 void SendRound()
@@ -320,7 +322,7 @@ void SendRound()
 
     g_bRoundRequestPending = true;
 
-    request.Put(command, SendRoundResponse);
+    request.Put(command, SendRoundResponse, command);
 }
 
 void SendScoreboard()
@@ -348,7 +350,7 @@ void SendScoreboard()
 
     g_bScoreboardRequestPending = true;
 
-    request.Put(command, SendScoreboardResponse);
+    request.Put(command, SendScoreboardResponse, command);
 }
 
 void SendPlayers()
@@ -366,6 +368,7 @@ void SendPlayers()
     char name[MAX_NAME_LENGTH];
 
     bool isInReady = GetIsInReady();
+    bool isTankInPlay = IsTankInPlay();
 
     for (int client = 1; client <= MaxClients; client++)
     {
@@ -415,7 +418,7 @@ void SendPlayers()
                 player.SetBool("blackAndWhite", L4D_IsPlayerOnThirdStrike(client));
                 player.SetBool("incapacitated", IsIncapacitated(client));
 
-                if (!IsTankInPlay())
+                if (!isTankInPlay)
                 {
                     float progress = GetSurvivorProgress(client);
                     if (progress > g_fSurvivorProgress[client])
@@ -450,17 +453,23 @@ void SendPlayers()
         
         if (team == L4D2_TEAM_SPECTATOR)
             spectators.Push(player);
+
+        delete player;
     }
 
     command.Set("survivors", survivors);
     command.Set("infecteds", infecteds);
     command.Set("spectators", spectators);
 
+    delete survivors;
+    delete infecteds;
+    delete spectators;
+
     HTTPRequest request = BuildHTTPRequest("/api/game-info/players");
 
     g_bPlayersRequestPending = true;
 
-    request.Put(command, SendPlayersResponse);
+    request.Put(command, SendPlayersResponse, command);
 }
 
 void CheckForNewExternalMessages()
@@ -511,6 +520,8 @@ void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
 
         PrintToConsoleAll("[External] %s (%s): %s", name, steamId, text);
         PrintToConsoleAll(profileUrl);
+
+        delete message;
     }
 }
 
@@ -544,25 +555,34 @@ void CheckForNewServerCommandsResponse(HTTPResponse httpResponse, any value)
 void SendConfigurationResponse(HTTPResponse httpResponse, any value)
 {
     g_bConfigurationRequestPending = false;
+
+    delete view_as<JSONObject>(value);
 }
 
 void SendRoundResponse(HTTPResponse httpResponse, any value)
 {
     g_bRoundRequestPending = false;
+
+    delete view_as<JSONObject>(value);
 }
 
 void SendScoreboardResponse(HTTPResponse httpResponse, any value)
 {
     g_bScoreboardRequestPending = false;
+
+    delete view_as<JSONObject>(value);
 }
 
 void SendPlayersResponse(HTTPResponse httpResponse, any value)
 {
     g_bPlayersRequestPending = false;
+
+    delete view_as<JSONObject>(value);
 }
 
 void DoNothing(HTTPResponse httpResponse, any value)
 {
+    delete view_as<JSONObject>(value);
 }
 
 HTTPRequest BuildHTTPRequest(char[] path)
@@ -576,6 +596,8 @@ HTTPRequest BuildHTTPRequest(char[] path)
 
     HTTPRequest request = new HTTPRequest(url);
     request.SetHeader("Authorization", secretKey);
+    request.ConnectTimeout = GAMEINFO_HTTP_CONNECT_TIMEOUT;
+    request.Timeout = GAMEINFO_HTTP_TIMEOUT;
 
     return request;
 }
