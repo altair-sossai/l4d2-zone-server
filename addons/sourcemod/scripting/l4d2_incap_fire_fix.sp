@@ -24,7 +24,7 @@ public Action OnPlayerRunCmd(int client, int &buttons, int &impulse, float vel[3
 	if (GetEntProp(client, Prop_Send, "m_isIncapacitated", 1) > 0)
 	{
 		int wep = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-		if (wep != -1)
+		if (wep != -1 && GetEntProp(wep, Prop_Send, "m_iClip1") > 0)
 			SetEntPropFloat(wep, Prop_Send, "m_flNextSecondaryAttack", GetGameTime() + BUFFER_TIME);
 
 		g_bBlocked[client] = true;
