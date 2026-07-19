@@ -1,0 +1,7 @@
+"Phrases"
+{
+    "AdminSpecLockRemaining"
+    {
+        "pt"    "Um administrador te moveu para espectador. Faltam {green}%d segundos{default} para você poder voltar a um time."
+    }
+}

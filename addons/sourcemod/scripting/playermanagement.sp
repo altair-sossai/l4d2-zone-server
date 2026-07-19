@@ -15,7 +15,7 @@ public Plugin myinfo =
 	name		= "Player Management Plugin",
 	author		= "CanadaRox",
 	description = "Player management!  Swap players/teams and spectate!",
-	version		= "7.1.3",
+	version		= "7.1.4",
 	url			= ""
 };
 
@@ -42,11 +42,14 @@ ConVar	 survivor_limit;
 ConVar	 z_max_player_zombies;
 ConVar	 sm_allow_spectate_command;
 ConVar	 g_cvarBlockInTank;
+ConVar	 g_cvarAdminSpecLock;
+ConVar	 g_cvarAdminSpecLockTime;
 
 L4D2Team pendingSwaps[MAXPLAYERS + 1];
 bool	 blockVotes[MAXPLAYERS + 1];
 bool	 isMapActive;
 Handle	 SpecTimer[MAXPLAYERS + 1];
+float	 adminSpecLockUntil[MAXPLAYERS + 1];
 
 int		 m_queuedPummelAttacker = -1;
 ConVar	 l4d_pm_supress_spectate;
@@ -74,6 +77,8 @@ public void OnPluginStart()
 
 	sm_allow_spectate_command = CreateConVar("sm_allow_spectate_command", "1", "Allow players to use !spectate/!spec/!s");
 	g_cvarBlockInTank		  = CreateConVar("sm_blockspecintank", "0", "Block suvivors from switching to spect while in tank", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_cvarAdminSpecLock		  = CreateConVar("l4d_pm_admin_spec_lock", "0", "Prevent players moved to spectators with sm_swapto from immediately rejoining a team", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+	g_cvarAdminSpecLockTime  = CreateConVar("l4d_pm_admin_spec_lock_time", "30", "Seconds a player moved to spectators with sm_swapto must wait before rejoining a team", FCVAR_NOTIFY, true, 0.0);
 	AddCommandListener(TeamChange_Listener, "jointeam");
 
 	survivor_limit = FindConVar("survivor_limit");
@@ -117,6 +122,7 @@ public void OnPluginEnd()
 public void OnClientPutInServer(int client)
 {
 	blockVotes[client] = false;
+	adminSpecLockUntil[client] = 0.0;
 }
 
 public void OnMapStart()
@@ -240,6 +246,21 @@ Action TeamChange_Listener(int client, const char[] command, int argc)
 	if (!IsClientInGame(client) || argc < 1)
 		return Plugin_Handled;
 
+	if (GetClientTeamEx(client) == L4D2Team_Spectator)
+	{
+		int secondsRemaining = GetAdminSpecLockRemaining(client);
+		if (secondsRemaining > 0)
+		{
+			char teamArg[16];
+			GetCmdArg(1, teamArg, sizeof(teamArg));
+			if (!StrEqual(teamArg, "1") && !StrEqual(teamArg, "Spectator", false))
+			{
+				CPrintToChat(client, "%t %t", "Tag", "AdminSpecLockRemaining", secondsRemaining);
+				return Plugin_Handled;
+			}
+		}
+	}
+
 	// Not a jockey with a victim, don't care
 	if (GetClientTeamEx(client) != L4D2Team_Infected
 		|| GetZombieClass(client) != 5
@@ -346,6 +367,7 @@ Action SwapTo_Cmd(int client, int args)
 	}
 
 	int[] targets = new int[MaxClients + 1];
+	bool[] adminSpecLockTargets = new bool[MaxClients + 1];
 	int	 target, targetCount;
 	char target_name[MAX_TARGET_LENGTH];
 	bool tn_is_ml;
@@ -368,6 +390,14 @@ Action SwapTo_Cmd(int client, int args)
 			target = targets[j];
 			if (IsClientInGame(target))
 			{
+				if (team == L4D2Team_Spectator && GetClientTeamEx(target) != L4D2Team_Spectator)
+				{
+					adminSpecLockTargets[target] = true;
+				}
+				else if (team != L4D2Team_Spectator)
+				{
+					adminSpecLockUntil[target] = 0.0;
+				}
 				pendingSwaps[target] = team;
 			}
 		}
@@ -375,7 +405,35 @@ Action SwapTo_Cmd(int client, int args)
 
 	ApplySwaps(client, force);
 
+	if (g_cvarAdminSpecLock.BoolValue && g_cvarAdminSpecLockTime.FloatValue > 0.0)
+	{
+		for (int targetClient = 1; targetClient <= MaxClients; targetClient++)
+		{
+			if (adminSpecLockTargets[targetClient] && IsClientInGame(targetClient) && GetClientTeamEx(targetClient) == L4D2Team_Spectator)
+			{
+				adminSpecLockUntil[targetClient] = GetEngineTime() + g_cvarAdminSpecLockTime.FloatValue;
+			}
+		}
+	}
+
 	return Plugin_Handled;
+}
+
+int GetAdminSpecLockRemaining(int client)
+{
+	if (!g_cvarAdminSpecLock.BoolValue)
+	{
+		return 0;
+	}
+
+	float remaining = adminSpecLockUntil[client] - GetEngineTime();
+	if (remaining <= 0.0)
+	{
+		adminSpecLockUntil[client] = 0.0;
+		return 0;
+	}
+
+	return RoundToCeil(remaining);
 }
 
 stock void ApplySwaps(int sender, bool force)

@@ -36,4 +36,8 @@
     {
         "es"    "{teamcolor}%N{default} no pudo cambiarse porque el equipo objetivo estaba lleno o no tenía ningún bot para hacerse cargo."
     }
+    "AdminSpecLockRemaining"
+    {
+        "es"    "Un administrador te movió a espectador. Podrás volver a un equipo en {green}%d segundos{default}."
+    }
 }
