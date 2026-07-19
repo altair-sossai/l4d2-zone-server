@@ -36,8 +36,4 @@
     {
         "en"    "{teamcolor}%N{default} could not be switched because the target team was full or has no bot to take over."
     }
-    "AdminSpecLockRemaining"
-    {
-        "en"    "An admin moved you to spectators. You can return to a team in {green}%d seconds{default}."
-    }
 }
