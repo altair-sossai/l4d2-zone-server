@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "en"    "[{olive}!{default}]"
+    }
+    "LockRemaining"
+    {
+        "en"    "An admin moved you to spectators. You can return to a team in {green}%d seconds{default}."
+    }
+}

@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "es"    "[{olive}!{default}]"
+    }
+    "LockRemaining"
+    {
+        "es"    "Un administrador te movió a espectador. Podrás volver a un equipo en {green}%d segundos{default}."
+    }
+}
