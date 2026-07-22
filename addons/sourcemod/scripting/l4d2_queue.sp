@@ -6,16 +6,25 @@
 #include <readyup>
 #include <colors>
 
+// Room reserved for the "{orange}Queue: {default}" prefix added to the first chat message.
+#define QUEUE_PREFIX_RESERVE 32
+
 ConVar g_cvDisconnectTimeout;
+ConVar g_cvSurvivorLimit;
 
 ArrayList g_aQueue;
 ArrayList g_aTeamA;
 ArrayList g_aTeamB;
 
+Handle g_hEnableFixTeamTimer;
+Handle g_hDisableFixTeamTimer;
+
 int g_iWinningTeam = -1;
 
 bool g_bFixingTeams = false;
 bool g_bReorganizedThisGame = false;
+
+char g_sSteamIdCache[MAXPLAYERS + 1][64];
 
 enum struct Player
 {
@@ -28,7 +37,7 @@ public Plugin myinfo =
     name = "L4D2 - Queue",
     author = "Altair Sossai",
     description = "Arranges players in a queue, showing who are the next players who should play",
-    version = "2.0.0",
+    version = "2.0.1",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -37,6 +46,7 @@ public void OnPluginStart()
     LoadTranslations("l4d2_queue.phrases");
 
     g_cvDisconnectTimeout = CreateConVar("l4d2_queue_disconnect_timeout", "300", "How many seconds a disconnected player stays in the queue before being removed", FCVAR_NOTIFY, true, 0.0);
+    g_cvSurvivorLimit = FindConVar("survivor_limit");
 
     g_aQueue = new ArrayList(sizeof(Player));
     g_aTeamA = new ArrayList(ByteCountToCells(64));
@@ -49,6 +59,14 @@ public void OnPluginStart()
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
 
     CreateTimer(2.0, WinningTeam_Timer, _, TIMER_REPEAT);
+
+    // Late load (e.g. plugin reload): enqueue players who are already connected,
+    // otherwise they would stay out of the queue until they reconnect.
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (IsClientInGame(client) && IsClientAuthorized(client))
+            Enqueue(client);
+    }
 }
 
 public void OnMixStarted()
@@ -66,7 +84,32 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
         g_bReorganizedThisGame = true;
     }
 
-    CreateTimer(3.0, EnableFixTeam_Timer);
+    // Kill any fix-team window timers from a previous round so a stale
+    // DisableFixTeam_Timer cannot cut the new round's window short.
+    KillFixTeamWindowTimers();
+    g_hEnableFixTeamTimer = CreateTimer(3.0, EnableFixTeam_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+public void OnMapEnd()
+{
+    // TIMER_FLAG_NO_MAPCHANGE timers are destroyed on map change; drop the stale handles.
+    g_hEnableFixTeamTimer = null;
+    g_hDisableFixTeamTimer = null;
+}
+
+void KillFixTeamWindowTimers()
+{
+    if (g_hEnableFixTeamTimer != null)
+    {
+        KillTimer(g_hEnableFixTeamTimer);
+        g_hEnableFixTeamTimer = null;
+    }
+
+    if (g_hDisableFixTeamTimer != null)
+    {
+        KillTimer(g_hDisableFixTeamTimer);
+        g_hDisableFixTeamTimer = null;
+    }
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
@@ -78,7 +121,7 @@ void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
     if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
-    CreateTimer(1.0, FixTeam_Timer);
+    CreateTimer(1.0, FixTeam_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 Action WinningTeam_Timer(Handle timer)
@@ -94,18 +137,21 @@ Action WinningTeam_Timer(Handle timer)
 
 Action EnableFixTeam_Timer(Handle timer)
 {
+    g_hEnableFixTeamTimer = null;
+
     if (!IsNewGame())
         return Plugin_Continue;
 
     g_bFixingTeams = true;
     FixTeams();
-    CreateTimer(30.0, DisableFixTeam_Timer);
+    g_hDisableFixTeamTimer = CreateTimer(30.0, DisableFixTeam_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
 
     return Plugin_Continue;
 }
 
 Action DisableFixTeam_Timer(Handle timer)
 {
+    g_hDisableFixTeamTimer = null;
     g_bFixingTeams = false;
 
     return Plugin_Continue;
@@ -120,7 +166,8 @@ Action FixTeam_Timer(Handle timer)
 
 public Action PrintQueueCmd(int client, int args)
 {
-    if (!IsValidClient(client) || IsFakeClient(client))
+    // client 0 = server console: broadcasts the queue to everyone.
+    if (client != 0 && (!IsValidClient(client) || IsFakeClient(client)))
         return Plugin_Handled;
 
     PrintQueue(client);
@@ -136,6 +183,13 @@ public void OnRoundIsLive()
         SnapshotTeams();
 }
 
+public void OnClientConnected(int client)
+{
+    // Client indexes are reused; make sure a new occupant never inherits
+    // the previous player's cached SteamID.
+    g_sSteamIdCache[client][0] = '\0';
+}
+
 public void OnClientPostAdminCheck(int client)
 {
     Enqueue(client);
@@ -146,8 +200,16 @@ public void OnClientDisconnect(int client)
     if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
+    // If the SteamID cannot be read anymore (e.g. Steam connection dropped),
+    // fall back to the cached one so the queue entry still gets an expiration
+    // instead of staying in the queue forever.
     char steamId[64];
     if (!GetSteamId(client, steamId, sizeof(steamId)))
+        strcopy(steamId, sizeof(steamId), g_sSteamIdCache[client]);
+
+    g_sSteamIdCache[client][0] = '\0';
+
+    if (steamId[0] == '\0')
         return;
 
     int index = FindInQueue(steamId);
@@ -169,6 +231,8 @@ void Enqueue(int client)
     char steamId[64];
     if (!GetSteamId(client, steamId, sizeof(steamId)))
         return;
+
+    strcopy(g_sSteamIdCache[client], sizeof(g_sSteamIdCache[]), steamId);
 
     RemoveExpiredPlayers();
 
@@ -384,7 +448,9 @@ void PrintQueue(int target)
         Format(entry, sizeof(entry), "{olive}%dº %s%N", position, color, client);
 
         // If the next name no longer fits, flush the current message and start a new one.
-        if (strlen(output) != 0 && strlen(output) + 1 + strlen(entry) >= MAX_MESSAGE_LENGTH)
+        // The first message also carries the "Queue:" prefix, so reserve room for it.
+        int budget = firstMessage ? MAX_MESSAGE_LENGTH - QUEUE_PREFIX_RESERVE : MAX_MESSAGE_LENGTH;
+        if (strlen(output) != 0 && strlen(output) + 1 + strlen(entry) >= budget)
         {
             if (firstMessage)
             {
@@ -595,7 +661,7 @@ int Slots()
 
 int TeamSize()
 {
-    return GetConVarInt(FindConVar("survivor_limit"));
+    return g_cvSurvivorLimit != null ? g_cvSurvivorLimit.IntValue : 4;
 }
 
 bool IsValidClient(int client)
