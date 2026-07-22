@@ -6,25 +6,21 @@
 #include <readyup>
 #include <colors>
 
-#define L4D2_TEAM_SPECTATOR 1
-#define L4D2_TEAM_SURVIVOR 2
-#define L4D2_TEAM_INFECTED 3
-
-#define MAX_MESSAGE_NAMES 6
-
-ConVar g_cvDebug;
+ConVar g_cvDisconnectTimeout;
 
 ArrayList g_aQueue;
+ArrayList g_aTeamA;
+ArrayList g_aTeamB;
 
-int g_iSequence = 1;
+int g_iWinningTeam = -1;
 
-bool g_bFixTeam = false;
+bool g_bFixingTeams = false;
+bool g_bReorganizedThisGame = false;
 
 enum struct Player
 {
     char steamId[64];
-    int priority;
-    bool winning;
+    int expiresAt;
 }
 
 public Plugin myinfo =
@@ -32,16 +28,19 @@ public Plugin myinfo =
     name = "L4D2 - Queue",
     author = "Altair Sossai",
     description = "Arranges players in a queue, showing who are the next players who should play",
-    version = "1.0.0",
+    version = "2.0.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
 public void OnPluginStart()
 {
-    g_cvDebug = CreateConVar("l4d2_queue_debug", "0", "Debug info for the queue plugin", FCVAR_HIDDEN|FCVAR_SPONLY|FCVAR_CHEAT|FCVAR_NOTIFY, true, 0.0, true, 1.0);
-    g_aQueue = new ArrayList(sizeof(Player));
+    LoadTranslations("l4d2_queue.phrases");
 
-    AddCommandListener(Mix_Callback, "sm_mix");
+    g_cvDisconnectTimeout = CreateConVar("l4d2_queue_disconnect_timeout", "300", "How many seconds a disconnected player stays in the queue before being removed", FCVAR_NOTIFY, true, 0.0);
+
+    g_aQueue = new ArrayList(sizeof(Player));
+    g_aTeamA = new ArrayList(ByteCountToCells(64));
+    g_aTeamB = new ArrayList(ByteCountToCells(64));
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event);
@@ -49,32 +48,30 @@ public void OnPluginStart()
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
 
-    RegAdminCmd("sm_fixteams", FixTeamsCmd, ADMFLAG_BAN, "Fix teams using the queue");
+    CreateTimer(2.0, WinningTeam_Timer, _, TIMER_REPEAT);
 }
 
-Action Mix_Callback(int client, char[] command, int args)
+public void OnMixStarted()
 {
-    if (!g_bFixTeam || !IsNewGame())
-        return Plugin_Continue;
-
-    int teamSize = TeamSize();
-
-    if (NumberOfPlayersInTheTeam(L4D2_TEAM_SURVIVOR) == teamSize && NumberOfPlayersInTheTeam(L4D2_TEAM_INFECTED) == teamSize)
-        DisableFixTeam();
-
-    return Plugin_Continue; 
+    g_bFixingTeams = false;
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
-    DisableFixTeam();
+    g_bFixingTeams = false;
+
+    if (L4D_HasMapStarted() && IsNewGame() && !g_bReorganizedThisGame)
+    {
+        ReorganizeQueue();
+        g_bReorganizedThisGame = true;
+    }
 
     CreateTimer(3.0, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
 {
-    if (!g_bFixTeam || !IsNewGame())
+    if (!g_bFixingTeams || !IsNewGame())
         return;
 
     int client = GetClientOfUserId(event.GetInt("userid"));
@@ -84,12 +81,23 @@ void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
     CreateTimer(1.0, FixTeam_Timer);
 }
 
+Action WinningTeam_Timer(Handle timer)
+{
+    if (!L4D_HasMapStarted() || IsNewGame())
+        return Plugin_Continue;
+
+    g_bReorganizedThisGame = false;
+    g_iWinningTeam = GetWinningTeam();
+
+    return Plugin_Continue;
+}
+
 Action EnableFixTeam_Timer(Handle timer)
 {
     if (!IsNewGame())
         return Plugin_Continue;
 
-    EnableFixTeam();
+    g_bFixingTeams = true;
     FixTeams();
     CreateTimer(30.0, DisableFixTeam_Timer);
 
@@ -98,7 +106,7 @@ Action EnableFixTeam_Timer(Handle timer)
 
 Action DisableFixTeam_Timer(Handle timer)
 {
-    DisableFixTeam();
+    g_bFixingTeams = false;
 
     return Plugin_Continue;
 }
@@ -120,24 +128,12 @@ public Action PrintQueueCmd(int client, int args)
     return Plugin_Handled;
 }
 
-public Action FixTeamsCmd(int client, int args)
-{
-    if (!IsValidClient(client) || IsFakeClient(client) || !IsNewGame() || !IsInReady())
-        return Plugin_Handled;
-
-    bool fixTeaam = g_bFixTeam;
-
-    EnableFixTeam();
-    FixTeams();
-
-    g_bFixTeam = fixTeaam;
-
-    return Plugin_Handled;
-}
-
 public void OnRoundIsLive()
 {
-    DisableFixTeam();
+    g_bFixingTeams = false;
+
+    if (IsNewGame())
+        SnapshotTeams();
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -145,11 +141,24 @@ public void OnClientPostAdminCheck(int client)
     Enqueue(client);
 }
 
-public void L4D2_OnEndVersusModeRound_Post()
+public void OnClientDisconnect(int client)
 {
-    UnqueueAllDisconnected();
-    RequeuePlayers();
-    PrintQueue(0);
+    if (!IsValidClient(client) || IsFakeClient(client))
+        return;
+
+    char steamId[64];
+    if (!GetSteamId(client, steamId, sizeof(steamId)))
+        return;
+
+    int index = FindInQueue(steamId);
+    if (index == -1)
+        return;
+
+    Player player;
+    g_aQueue.GetArray(index, player);
+
+    player.expiresAt = GetTime() + g_cvDisconnectTimeout.IntValue;
+    g_aQueue.SetArray(index, player);
 }
 
 void Enqueue(int client)
@@ -158,11 +167,150 @@ void Enqueue(int client)
         return;
 
     char steamId[64];
-    GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
-
-    if (strlen(steamId) == 0 || StrEqual(steamId, "BOT"))
+    if (!GetSteamId(client, steamId, sizeof(steamId)))
         return;
 
+    RemoveExpiredPlayers();
+
+    Player player;
+
+    int index = FindInQueue(steamId);
+    if (index != -1)
+    {
+        g_aQueue.GetArray(index, player);
+        player.expiresAt = 0;
+        g_aQueue.SetArray(index, player);
+        return;
+    }
+
+    strcopy(player.steamId, sizeof(player.steamId), steamId);
+    player.expiresAt = 0;
+
+    g_aQueue.PushArray(player);
+}
+
+int ExpiresAtFor(const char[] steamId)
+{
+    if (GetClientUsingSteamId(steamId) != -1)
+        return 0;
+
+    return GetTime() + g_cvDisconnectTimeout.IntValue;
+}
+
+void RemoveExpiredPlayers()
+{
+    int now = GetTime();
+    Player player;
+
+    for (int i = 0; i < g_aQueue.Length; )
+    {
+        g_aQueue.GetArray(i, player);
+
+        if (player.expiresAt != 0 && now >= player.expiresAt)
+            g_aQueue.Erase(i);
+        else
+            i++;
+    }
+}
+
+void SnapshotTeams()
+{
+    g_aTeamA.Clear();
+    g_aTeamB.Clear();
+
+    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+
+    int teamA = flipped ? L4D_TEAM_INFECTED : L4D_TEAM_SURVIVOR;
+    int teamB = flipped ? L4D_TEAM_SURVIVOR : L4D_TEAM_INFECTED;
+
+    char steamId[64];
+
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (!IsValidClient(client) || IsFakeClient(client))
+            continue;
+
+        if (!GetSteamId(client, steamId, sizeof(steamId)))
+            continue;
+
+        int team = GetClientTeam(client);
+
+        if (team == teamA)
+            g_aTeamA.PushString(steamId);
+        else if (team == teamB)
+            g_aTeamB.PushString(steamId);
+    }
+}
+
+void ReorganizeQueue()
+{
+    RemoveExpiredPlayers();
+
+    if (g_aTeamA.Length == 0 && g_aTeamB.Length == 0)
+        return;
+
+    ArrayList winners = (g_iWinningTeam == 1) ? g_aTeamB : g_aTeamA;
+    ArrayList losers = (g_iWinningTeam == 1) ? g_aTeamA : g_aTeamB;
+
+    char steamId[64];
+    Player player;
+
+    // Remove winners and losers from the queue.
+    for (int i = 0; i < g_aQueue.Length; )
+    {
+        g_aQueue.GetArray(i, player);
+
+        if (winners.FindString(player.steamId) != -1)
+        {
+            g_aQueue.Erase(i);
+            continue;
+        }
+
+        if (losers.FindString(player.steamId) != -1)
+        {
+            g_aQueue.Erase(i);
+            continue;
+        }
+
+        i++;
+    }
+
+    // Add winners to the front of the queue.
+    for (int i = 0; i < winners.Length; i++)
+    {
+        winners.GetString(i, steamId, sizeof(steamId));
+
+        strcopy(player.steamId, sizeof(player.steamId), steamId);
+        player.expiresAt = ExpiresAtFor(steamId);
+
+        if (g_aQueue.Length == 0)
+        {
+            g_aQueue.PushArray(player);
+        }
+        else
+        {
+            g_aQueue.ShiftUp(0);
+            g_aQueue.SetArray(0, player);
+        }
+    }
+
+    // Add losers to the end of the queue.
+    for (int i = 0; i < losers.Length; i++)
+    {
+        losers.GetString(i, steamId, sizeof(steamId));
+
+        strcopy(player.steamId, sizeof(player.steamId), steamId);
+        player.expiresAt = ExpiresAtFor(steamId);
+
+        g_aQueue.PushArray(player);
+    }
+
+    g_aTeamA.Clear();
+    g_aTeamB.Clear();
+}
+
+int FindInQueue(const char[] steamId)
+{
     Player player;
 
     for (int i = 0; i < g_aQueue.Length; i++)
@@ -170,376 +318,189 @@ void Enqueue(int client)
         g_aQueue.GetArray(i, player);
 
         if (StrEqual(player.steamId, steamId))
-            return;
+            return i;
     }
 
-    strcopy(player.steamId, sizeof(player.steamId), steamId);
-
-    player.priority = NextSequence();
-    player.winning = false;
-
-    g_aQueue.PushArray(player);
+    return -1;
 }
 
-void UnqueueAllDisconnected()
+bool IsStarter(const char[] steamId)
 {
-    Player player;
-    
-    for (int i = 0; i < g_aQueue.Length; )
-    {
-        g_aQueue.GetArray(i, player);
-
-        if (GetClientUsingSteamId(player.steamId) != -1)
-        {
-            i++;
-            continue;
-        }
-
-        g_aQueue.Erase(i);
-    }
+    return g_aTeamA.FindString(steamId) != -1 || g_aTeamB.FindString(steamId) != -1;
 }
 
-void RequeuePlayers()
-{
-    if (IsNewGame())
-        return;
-
-    Player player;
-
-    int winningTeam = GetWinningTeam();
-
-    ResetSequence();
-
-    for (int i = 0; i < g_aQueue.Length; i++)
-    {
-        g_aQueue.GetArray(i, player);
-
-        int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
-            continue;
-
-        int team = GetClientTeam(client);
-        bool winner = team == winningTeam;
-
-        if (!winner)
-            continue;
-
-        player.priority = NextSequence();
-        player.winning = true;
-        g_aQueue.SetArray(i, player);
-    }
-
-    for (int i = 0; i < g_aQueue.Length; i++)
-    {
-        g_aQueue.GetArray(i, player);
-
-        int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
-            continue;
-
-        int team = GetClientTeam(client);
-        bool activeTeam = team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED;
-
-        if (activeTeam)
-            continue;
-
-        player.priority = NextSequence();
-        player.winning = false;
-        g_aQueue.SetArray(i, player);
-    }
-
-    for (int i = 0; i < g_aQueue.Length; i++)
-    {
-        g_aQueue.GetArray(i, player);
-
-        int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
-            continue;
-
-        int team = GetClientTeam(client);
-        bool loser = (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED) && team != winningTeam;
-
-        if (!loser)
-            continue;
-
-        player.priority = NextSequence();
-        player.winning = false;
-        g_aQueue.SetArray(i, player);
-    }
-
-    SortQueue();
-}
-
-void SortQueue()
-{
-    g_aQueue.SortCustom(SortByPriority);
-}
-
-int SortByPriority(int index1, int index2, Handle array, Handle hndl)
-{
-    Player player1, player2;
-
-    g_aQueue.GetArray(index1, player1);
-    g_aQueue.GetArray(index2, player2);
-
-    if (player1.priority < player2.priority)
-        return -1;
-
-    if (player1.priority > player2.priority)
-        return 1;
-
-    return 0;
-}
-
-int GetClientUsingSteamId(const char[] steamId) 
+int GetClientUsingSteamId(const char[] steamId)
 {
     char current[64];
-   
-    for (int client = 1; client <= MaxClients; client++) 
+
+    for (int client = 1; client <= MaxClients; client++)
     {
         if (!IsValidClient(client) || IsFakeClient(client))
             continue;
-        
-        GetClientAuthId(client, AuthId_Steam2, current, sizeof(current));     
-        
+
+        if (!GetSteamId(client, current, sizeof(current)))
+            continue;
+
         if (StrEqual(steamId, current))
             return client;
     }
-    
+
     return -1;
 }
 
 void PrintQueue(int target)
 {
-    if (IsNewGame())
-        PrintWinners(target);
+    RemoveExpiredPlayers();
 
-    PrintOtherPlayers(target);
-}
-
-void PrintWinners(int target)
-{
-    if (g_aQueue.Length == 0)
+    if (g_aQueue.Length == 0 || g_aQueue.Length <= Slots())
         return;
 
     Player player;
-    char output[512];
+    char output[MAX_MESSAGE_LENGTH];
+    bool firstMessage = true;
 
-    for (int i = 0; i < g_aQueue.Length; i++)
+    for (int i = 0, position = 1; i < g_aQueue.Length; i++)
     {
         g_aQueue.GetArray(i, player);
 
-        if (!player.winning)
-            break;
-
-        int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
-            continue;
-
-        if (strlen(output) == 0)
-            FormatEx(output, sizeof(output), "{orange}Winners: {default}%N", client);
-        else
-            Format(output, sizeof(output), "%s{green}, {default}%N", output, client);
-    }
-
-    if (strlen(output) == 0)
-        return;
-
-    if (target == 0)
-        CPrintToChatAll(output);
-    else
-        CPrintToChat(target, output);
-}
-
-void PrintOtherPlayers(int target)
-{
-    if (g_aQueue.Length == 0)
-        return;
-
-    Player player;
-    char output[512];
-
-    bool isNewGame = IsNewGame();
-
-    for (int i = 0, count = 0, position = 1; i < g_aQueue.Length; i++)
-    {
-        g_aQueue.GetArray(i, player);
-
-        if (isNewGame && player.winning)
+        if (IsStarter(player.steamId))
             continue;
 
         int client = GetClientUsingSteamId(player.steamId);
         if (client == -1)
             continue;
 
-        if (!isNewGame)
+        char color[16] = "{default}";
+
+        switch (GetClientTeam(client))
         {
-            int team = GetClientTeam(client);
-            if (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED)
-                continue;
+            case L4D_TEAM_INFECTED:
+                color = "{red}";
+            case L4D_TEAM_SURVIVOR:
+                color = "{blue}";
         }
 
-        if (position == 1)
-            FormatEx(output, sizeof(output), "{orange}Fila: {blue}%dº {default}%N", position, client);
-        else
-            Format(output, sizeof(output), "%s {blue}%dº {default}%N", output, position, client);
+        char entry[128];
+        Format(entry, sizeof(entry), "{olive}%dº %s%N", position, color, client);
 
-        count++;
-        position++;
-
-        if (count == MAX_MESSAGE_NAMES)
+        // If the next name no longer fits, flush the current message and start a new one.
+        if (strlen(output) != 0 && strlen(output) + 1 + strlen(entry) >= MAX_MESSAGE_LENGTH)
         {
-            if (target == 0)
-                CPrintToChatAll(output);
+            if (firstMessage)
+            {
+                if (target == 0)
+                    CPrintToChatAll("{orange}%t {default}%s", "Queue", output);
+                else
+                    CPrintToChat(target, "{orange}%t {default}%s", "Queue", output);
+            }
+            else if (target == 0)
+                CPrintToChatAll("%s", output);
             else
-                CPrintToChat(target, output);
+                CPrintToChat(target, "%s", output);
 
             output = "";
-            count = 0;
+            firstMessage = false;
         }
+
+        if (strlen(output) == 0)
+            strcopy(output, sizeof(output), entry);
+        else
+            Format(output, sizeof(output), "%s %s", output, entry);
+
+        position++;
     }
 
     if (strlen(output) == 0)
         return;
 
-    if (target == 0)
-        CPrintToChatAll(output);
+    if (firstMessage)
+    {
+        if (target == 0)
+            CPrintToChatAll("{orange}%t {default}%s", "Queue", output);
+        else
+            CPrintToChat(target, "{orange}%t {default}%s", "Queue", output);
+    }
+    else if (target == 0)
+        CPrintToChatAll("%s", output);
     else
-        CPrintToChat(target, output);
+        CPrintToChat(target, "%s", output);
 }
 
 void FixTeams()
 {
-    PrintDebug("FixTeams() called");
+    RemoveExpiredPlayers();
 
-    bool mustFixTheTeams = MustFixTheTeams();
-
-    PrintDebug("MustFixTheTeams() returned %s", mustFixTheTeams ? "true" : "false");
-
-    if (!mustFixTheTeams) 
+    if (!MustFixTheTeams())
         return;
 
-    DisableFixTeam();
+    g_bFixingTeams = false;
 
     int slots = Slots();
     int[] nextPlayers = new int[slots];
-
-    PrintDebug("Slots: %d", slots);
-    PrintDebug("Queue length: %d", g_aQueue.Length);
 
     for (int np = 0; np < slots; np++)
         nextPlayers[np] = -1;
 
     Player player;
 
-    PrintDebug("Filling nextPlayers[]");
-
     for (int i = 0, np = 0; i < g_aQueue.Length && np < slots; i++)
     {
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
-
-        if (client == -1)
-            PrintDebug("#%d - Client: %d, SteamId: %s", i, client, player.steamId);
-        else
-            PrintDebug("#%d - Client: %d (%N), SteamId: %s", i, client, client, player.steamId);
-
         if (client == -1)
             continue;
 
         nextPlayers[np++] = client;
     }
 
-    PrintDebug("nextPlayers[] filled");
-
-    for (int np = 0; np < slots; np++)
-    {
-        if (nextPlayers[np] == -1)
-            PrintDebug("nextPlayers[%d]: %d", np, nextPlayers[np]);
-        else
-            PrintDebug("nextPlayers[%d]: %d (%N)", np, nextPlayers[np], nextPlayers[np]);
-    }
-
     bool found = false;
-
-    PrintDebug("Moving players to spectator team");
 
     for (int client = 1; client <= MaxClients; client++)
     {
         if (!IsValidClient(client))
             continue;
 
-        PrintDebug("Client %d (%N), IsValidClient: %d, IsFakeClient: %d, Team: %d", client, client, IsValidClient(client), IsFakeClient(client), GetClientTeam(client));
-
-        if (IsFakeClient(client) || GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
+        if (IsFakeClient(client) || GetClientTeam(client) == L4D_TEAM_SPECTATOR)
             continue;
 
         found = false;
 
         for (int np = 0; !found && np < slots; np++)
             found = nextPlayers[np] == client;
-        
-        PrintDebug("Client %d (%N), found: %s", client, client, found ? "true" : "false");
 
         if (!found)
-        {
-            PrintDebug("Moving client %d (%N) to spectator team", client, client);
-            MovePlayerToTeam(client, L4D2_TEAM_SPECTATOR);
-        }
+            MovePlayerToTeam(client, L4D_TEAM_SPECTATOR);
     }
 
     int teamSize = TeamSize();
-
-    PrintDebug("Team size: %d", teamSize);
-    PrintDebug("Moving players to teams");
 
     for (int np = 0; np < slots; np++)
     {
         int client = nextPlayers[np];
 
-        if (client == -1)
-            PrintDebug("#%d - Client: %d", np, client);
-        else
-            PrintDebug("#%d - Client: %d (%N), Team: %d", np, client, client, GetClientTeam(client));
-
-        if (client == -1 || GetClientTeam(client) != L4D2_TEAM_SPECTATOR)
+        if (client == -1 || GetClientTeam(client) != L4D_TEAM_SPECTATOR)
             continue;
 
-        for (int team = L4D2_TEAM_SURVIVOR; team <= L4D2_TEAM_INFECTED; team++)
+        for (int team = L4D_TEAM_SURVIVOR; team <= L4D_TEAM_INFECTED; team++)
         {
-            PrintDebug("Team %d - Count: %d", team, NumberOfPlayersInTheTeam(team));
-
             if (NumberOfPlayersInTheTeam(team) < teamSize)
             {
-                PrintDebug("Moving client %d (%N) to team %d", client, client, team);
                 MovePlayerToTeam(client, team);
                 break;
-            }
-            else
-            {
-                PrintDebug("Team %d is full", team);
             }
         }
     }
 
-    EnableFixTeam();
-
-    PrintDebug("FixTeams() finished");
+    g_bFixingTeams = true;
 }
 
 bool MustFixTheTeams()
 {
-    PrintDebug("MustFixTheTeams() called");
-    PrintDebug("g_bFixTeam: %s", g_bFixTeam ? "true" : "false");
-
-    if (!g_bFixTeam)
+    if (!g_bFixingTeams)
         return false;
 
     int availableSlots = Slots();
-
-    PrintDebug("Queue length: %d", g_aQueue.Length);
-    PrintDebug("Available slots: %d", availableSlots);
 
     if (g_aQueue.Length <= availableSlots)
         return false;
@@ -551,21 +512,13 @@ bool MustFixTheTeams()
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
-
-        if (client == -1)
-            PrintDebug("#%d - Client: %d, SteamId: %s", i, client, player.steamId);
-        else
-            PrintDebug("#%d - Client: %d (%N), SteamId: %s, Team: %d", i, client, client, player.steamId, GetClientTeam(client));
-
         if (client == -1)
             continue;
 
-        if (GetClientTeam(client) == L4D2_TEAM_SPECTATOR)
+        if (GetClientTeam(client) == L4D_TEAM_SPECTATOR)
             return true;
 
         availableSlots--;
-
-        PrintDebug("Available slots: %d", availableSlots);
     }
 
     return false;
@@ -573,19 +526,19 @@ bool MustFixTheTeams()
 
 void MovePlayerToTeam(int client, int team)
 {
-    if (team != L4D2_TEAM_SPECTATOR && NumberOfPlayersInTheTeam(team) >= TeamSize())
+    if (team != L4D_TEAM_SPECTATOR && NumberOfPlayersInTheTeam(team) >= TeamSize())
         return;
 
     switch (team)
     {
-        case L4D2_TEAM_SPECTATOR:
-            ChangeClientTeam(client, L4D2_TEAM_SPECTATOR); 
+        case L4D_TEAM_SPECTATOR:
+            ChangeClientTeam(client, L4D_TEAM_SPECTATOR);
 
-        case L4D2_TEAM_SURVIVOR:
+        case L4D_TEAM_SURVIVOR:
             FakeClientCommand(client, "jointeam 2");
 
-        case L4D2_TEAM_INFECTED:
-            ChangeClientTeam(client, L4D2_TEAM_INFECTED);
+        case L4D_TEAM_INFECTED:
+            ChangeClientTeam(client, L4D_TEAM_INFECTED);
     }
 }
 
@@ -606,31 +559,33 @@ int NumberOfPlayersInTheTeam(int team)
 
 bool IsNewGame()
 {
-    return L4D2Direct_GetVSCampaignScore(0) == 0 
+    return L4D2Direct_GetVSCampaignScore(0) == 0
         && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
 
 int GetWinningTeam()
 {
-    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+    int mapScoreA = L4D_GetTeamScore(1);
+    int mapScoreB = L4D_GetTeamScore(2);
 
-    int survivorIndex = flipped ? 1 : 0;
-    int infectedIndex = flipped ? 0 : 1;
+    if (mapScoreA < 0)
+        mapScoreA = 0;
 
-    int survivorScore = L4D2Direct_GetVSCampaignScore(survivorIndex);
-    int infectedScore = L4D2Direct_GetVSCampaignScore(infectedIndex);
+    if (mapScoreB < 0)
+        mapScoreB = 0;
 
-    return survivorScore >= infectedScore ? L4D2_TEAM_SURVIVOR : L4D2_TEAM_INFECTED;
+    int teamAScore = L4D2Direct_GetVSCampaignScore(0) + mapScoreA;
+    int teamBScore = L4D2Direct_GetVSCampaignScore(1) + mapScoreB;
+
+    return teamAScore >= teamBScore ? 0 : 1;
 }
 
-void ResetSequence()
+bool GetSteamId(int client, char[] buffer, int maxlength)
 {
-    g_iSequence = 1;
-}
+    if (!GetClientAuthId(client, AuthId_Steam2, buffer, maxlength))
+        return false;
 
-int NextSequence()
-{
-    return g_iSequence++;
+    return strlen(buffer) != 0 && !StrEqual(buffer, "BOT");
 }
 
 int Slots()
@@ -643,30 +598,10 @@ int TeamSize()
     return GetConVarInt(FindConVar("survivor_limit"));
 }
 
-void EnableFixTeam()
-{
-    g_bFixTeam = true;
-}
-
-void DisableFixTeam()
-{
-    g_bFixTeam = false;
-}
-
 bool IsValidClient(int client)
 {
-    if (client <= 0 || client > MaxClients) 
+    if (client <= 0 || client > MaxClients)
         return false;
 
     return IsClientInGame(client);
-}
-
-void PrintDebug(const char[] format, any ...)
-{
-    if (!g_cvDebug.BoolValue)
-        return;
-
-    char msg[256];
-    VFormat(msg, sizeof(msg), format, 2);
-    PrintToConsoleAll("[QUEUE] %s", msg);
 }

@@ -1,0 +1,7 @@
+"Phrases"
+{
+    "Queue"
+    {
+        "es"    "Cola:"
+    }
+}
