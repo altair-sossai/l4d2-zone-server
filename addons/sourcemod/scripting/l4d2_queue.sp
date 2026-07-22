@@ -6,7 +6,6 @@
 #include <readyup>
 #include <colors>
 
-// Room reserved for the "{orange}Queue: {default}" prefix added to the first chat message.
 #define QUEUE_PREFIX_RESERVE 32
 
 ConVar g_cvDisconnectTimeout;
@@ -60,8 +59,6 @@ public void OnPluginStart()
 
     CreateTimer(2.0, WinningTeam_Timer, _, TIMER_REPEAT);
 
-    // Late load (e.g. plugin reload): enqueue players who are already connected,
-    // otherwise they would stay out of the queue until they reconnect.
     for (int client = 1; client <= MaxClients; client++)
     {
         if (IsClientInGame(client) && IsClientAuthorized(client))
@@ -84,15 +81,12 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
         g_bReorganizedThisGame = true;
     }
 
-    // Kill any fix-team window timers from a previous round so a stale
-    // DisableFixTeam_Timer cannot cut the new round's window short.
     KillFixTeamWindowTimers();
     g_hEnableFixTeamTimer = CreateTimer(3.0, EnableFixTeam_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public void OnMapEnd()
 {
-    // TIMER_FLAG_NO_MAPCHANGE timers are destroyed on map change; drop the stale handles.
     g_hEnableFixTeamTimer = null;
     g_hDisableFixTeamTimer = null;
 }
@@ -166,7 +160,6 @@ Action FixTeam_Timer(Handle timer)
 
 public Action PrintQueueCmd(int client, int args)
 {
-    // client 0 = server console: broadcasts the queue to everyone.
     if (client != 0 && (!IsValidClient(client) || IsFakeClient(client)))
         return Plugin_Handled;
 
@@ -185,8 +178,6 @@ public void OnRoundIsLive()
 
 public void OnClientConnected(int client)
 {
-    // Client indexes are reused; make sure a new occupant never inherits
-    // the previous player's cached SteamID.
     g_sSteamIdCache[client][0] = '\0';
 }
 
@@ -200,9 +191,6 @@ public void OnClientDisconnect(int client)
     if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
-    // If the SteamID cannot be read anymore (e.g. Steam connection dropped),
-    // fall back to the cached one so the queue entry still gets an expiration
-    // instead of staying in the queue forever.
     char steamId[64];
     if (!GetSteamId(client, steamId, sizeof(steamId)))
         strcopy(steamId, sizeof(steamId), g_sSteamIdCache[client]);
@@ -448,7 +436,6 @@ void PrintQueue(int target)
         Format(entry, sizeof(entry), "{olive}%dº %s%N", position, color, client);
 
         // If the next name no longer fits, flush the current message and start a new one.
-        // The first message also carries the "Queue:" prefix, so reserve room for it.
         int budget = firstMessage ? MAX_MESSAGE_LENGTH - QUEUE_PREFIX_RESERVE : MAX_MESSAGE_LENGTH;
         if (strlen(output) != 0 && strlen(output) + 1 + strlen(entry) >= budget)
         {
