@@ -69,19 +69,23 @@ def fit_image(img, size, mode):
     return canvas
 
 
-def make_vmt(relpath, shader, translucent):
+def make_vmt(relpath, shader, translucent, scale):
+    # $decalscale controla o tamanho na parede (menor = menor). Tamanho do decal
+    # ~= dimensoes da textura (px) * $decalscale. Sem ele, o padrao (1.0) fica enorme.
     if shader == "modulate":
         # spray/multiply: branco fica invisivel, escuro "mancha" a parede
         return (
             "DecalModulate\n{\n"
             '\t"$basetexture" "%s"\n'
             '\t"$decal" 1\n'
+            '\t"$decalscale" %s\n'
             '\t"$vertexcolor" 1\n'
             '\t"$vertexalpha" 1\n'
-            "}\n" % relpath
+            "}\n" % (relpath, scale)
         )
     head = "UnlitGeneric" if shader == "unlit" else "LightmappedGeneric"
-    lines = ["%s\n{" % head, '\t"$basetexture" "%s"' % relpath, '\t"$decal" 1']
+    lines = ["%s\n{" % head, '\t"$basetexture" "%s"' % relpath,
+             '\t"$decal" 1', '\t"$decalscale" %s' % scale]
     if translucent:
         lines.append('\t"$translucent" 1')
     lines.append("}\n")
@@ -99,6 +103,9 @@ def main():
     ap.add_argument("--shader", choices=["lit", "unlit", "modulate"], default="lit",
                     help="lit=LightmappedGeneric (default, recebe luz do mapa); "
                          "unlit=UnlitGeneric (sempre brilhante); modulate=spray/multiply")
+    ap.add_argument("--scale", default="0.15",
+                    help="$decalscale: tamanho na parede (menor = menor). default 0.15. "
+                         "escala linear: 0.075 = metade, 0.30 = dobro")
     args = ap.parse_args()
 
     src_path = args.imagem if os.path.isabs(args.imagem) else os.path.join(REPO, args.imagem)
@@ -125,7 +132,7 @@ def main():
         vtf.get(mipmap=mip).copy_from(fitted.resize((mw, mh), Image.LANCZOS).tobytes(),
                                       ImageFormats.RGBA8888)
 
-    vmt = make_vmt(relpath, args.shader, translucent)
+    vmt = make_vmt(relpath, args.shader, translucent, args.scale)
 
     dests = [
         os.path.join(REPO, "materials", "decals", args.sub),
