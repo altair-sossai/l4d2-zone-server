@@ -15,3 +15,4 @@ spcomp ..\addons\sourcemod\scripting\l4d2_changelevel.sp -o ..\addons\sourcemod\
 spcomp ..\addons\sourcemod\scripting\l4d2_admin_hp.sp -o ..\addons\sourcemod\plugins\optional\l4d2_admin_hp.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_admin_spec_lock.sp -o ..\addons\sourcemod\plugins\optional\l4d2_admin_spec_lock.smx
 spcomp ..\addons\sourcemod\scripting\map-decals.sp -o ..\addons\sourcemod\plugins\optional\map-decals.smx
+spcomp ..\addons\sourcemod\scripting\RestoreVocals.sp -o ..\addons\sourcemod\plugins\optional\RestoreVocals.smx
