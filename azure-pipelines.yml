@@ -1,98 +1,100 @@
 trigger:
-- master
+  - master
+
+pr: none
 
 pool:
-  vmImage: 'ubuntu-latest'
+  vmImage: "ubuntu-latest"
 
 variables:
-  sshServiceConnection: 'L4D2 - Server'
+  sshServiceConnection: "L4D2 - Server"
 
 stages:
-- stage: Deploy
-  jobs:
-  - job: CompressAndUpload
-    steps:
-    - script: |
-        tar -czf addons.tar.gz -C $(Build.Repository.LocalPath)/addons .
-        tar -czf cfg.tar.gz -C $(Build.Repository.LocalPath)/cfg .
-        tar -czf bash.tar.gz -C $(Build.Repository.LocalPath)/bash .
-        tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
-        tar -czf materials.tar.gz -C $(Build.Repository.LocalPath)/materials .
-      displayName: '📦 Compress folders into .tar.gz files'
+  - stage: Deploy
+    jobs:
+      - job: CompressAndUpload
+        steps:
+          - script: |
+              tar -czf addons.tar.gz -C $(Build.Repository.LocalPath)/addons .
+              tar -czf cfg.tar.gz -C $(Build.Repository.LocalPath)/cfg .
+              tar -czf bash.tar.gz -C $(Build.Repository.LocalPath)/bash .
+              tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
+              tar -czf materials.tar.gz -C $(Build.Repository.LocalPath)/materials .
+            displayName: "📦 Compress folders into .tar.gz files"
 
-    - task: SSH@0
-      displayName: '🧹 Clean remote .tar.gz files'
-      inputs:
-        sshEndpoint: $(sshServiceConnection)
-        readyTimeout: '20000'
-        commands: |
-          rm -f /home/devops/*.tar.gz
+          - task: SSH@0
+            displayName: "🧹 Clean remote .tar.gz files"
+            inputs:
+              sshEndpoint: $(sshServiceConnection)
+              readyTimeout: "20000"
+              commands: |
+                rm -f /home/devops/*.tar.gz
 
-    - task: CopyFilesOverSSH@0
-      displayName: '📤 Upload compressed files to server'
-      inputs:
-        sshEndpoint: $(sshServiceConnection)
-        sourceFolder: '$(Build.Repository.LocalPath)'
-        contents: '*.tar.gz'
-        targetFolder: '/home/devops'
-        cleanTargetFolder: false
-        overwrite: true
-        readyTimeout: '20000'
+          - task: CopyFilesOverSSH@0
+            displayName: "📤 Upload compressed files to server"
+            inputs:
+              sshEndpoint: $(sshServiceConnection)
+              sourceFolder: "$(Build.Repository.LocalPath)"
+              contents: "*.tar.gz"
+              targetFolder: "/home/devops"
+              cleanTargetFolder: false
+              overwrite: true
+              readyTimeout: "20000"
 
-    - task: CopyFilesOverSSH@0
-      displayName: '📄 Upload host and motd files to game directory'
-      inputs:
-        sshEndpoint: $(sshServiceConnection)
-        sourceFolder: '$(Build.Repository.LocalPath)'
-        contents: |
-          host.txt
-          motd.txt
-        targetFolder: '/home/steam/l4d2/left4dead2'
-        cleanTargetFolder: false
-        overwrite: true
-        readyTimeout: '20000'
+          - task: CopyFilesOverSSH@0
+            displayName: "📄 Upload host and motd files to game directory"
+            inputs:
+              sshEndpoint: $(sshServiceConnection)
+              sourceFolder: "$(Build.Repository.LocalPath)"
+              contents: |
+                host.txt
+                motd.txt
+              targetFolder: "/home/steam/l4d2/left4dead2"
+              cleanTargetFolder: false
+              overwrite: true
+              readyTimeout: "20000"
 
-    - task: SSH@0
-      displayName: '🛠️ Extract files on server and set permissions'
-      inputs:
-        sshEndpoint: $(sshServiceConnection)
-        readyTimeout: '20000'
-        commands: |
-          tar -xzf /home/devops/addons.tar.gz -C /home/steam/l4d2/left4dead2/addons
-          mkdir -p /home/steam/l4d2/left4dead2/bash
-          tar -xzf /home/devops/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
-          tar -xzf /home/devops/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
-          tar -xzf /home/devops/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
-          mkdir -p /home/steam/l4d2/left4dead2/materials
-          tar -xzf /home/devops/materials.tar.gz -C /home/steam/l4d2/left4dead2/materials
-          dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
-          chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
-          rm /home/devops/*.tar.gz
+          - task: SSH@0
+            displayName: "🛠️ Extract files on server and set permissions"
+            inputs:
+              sshEndpoint: $(sshServiceConnection)
+              readyTimeout: "20000"
+              commands: |
+                tar -xzf /home/devops/addons.tar.gz -C /home/steam/l4d2/left4dead2/addons
+                mkdir -p /home/steam/l4d2/left4dead2/bash
+                tar -xzf /home/devops/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
+                tar -xzf /home/devops/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
+                tar -xzf /home/devops/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
+                mkdir -p /home/steam/l4d2/left4dead2/materials
+                tar -xzf /home/devops/materials.tar.gz -C /home/steam/l4d2/left4dead2/materials
+                dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
+                chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
+                rm /home/devops/*.tar.gz
 
-    - task: AzureCLI@2
-      displayName: '☁️ Upload game assets to Azure Blob Storage'
-      inputs:
-        azureSubscription: 'PessoalSubscription'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          az storage blob upload-batch \
-            --account-name l4d2playstats \
-            --destination assets \
-            --source "$(Build.Repository.LocalPath)/assets" \
-            --pattern "*" \
-            --overwrite
+          - task: AzureCLI@2
+            displayName: "☁️ Upload game assets to Azure Blob Storage"
+            inputs:
+              azureSubscription: "PessoalSubscription"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az storage blob upload-batch \
+                  --account-name l4d2playstats \
+                  --destination assets \
+                  --source "$(Build.Repository.LocalPath)/assets" \
+                  --pattern "*" \
+                  --overwrite
 
-    - task: AzureCLI@2
-      displayName: '⚡ Upload FastDL files to Azure Blob Storage'
-      inputs:
-        azureSubscription: 'PessoalSubscription'
-        scriptType: 'bash'
-        scriptLocation: 'inlineScript'
-        inlineScript: |
-          az storage blob upload-batch \
-            --account-name l4d2playstats \
-            --destination fastdl \
-            --source "$(Build.Repository.LocalPath)/fastdl" \
-            --pattern "*" \
-            --overwrite
+          - task: AzureCLI@2
+            displayName: "⚡ Upload FastDL files to Azure Blob Storage"
+            inputs:
+              azureSubscription: "PessoalSubscription"
+              scriptType: "bash"
+              scriptLocation: "inlineScript"
+              inlineScript: |
+                az storage blob upload-batch \
+                  --account-name l4d2playstats \
+                  --destination fastdl \
+                  --source "$(Build.Repository.LocalPath)/fastdl" \
+                  --pattern "*" \
+                  --overwrite
