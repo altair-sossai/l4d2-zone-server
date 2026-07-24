@@ -6,6 +6,8 @@
 #include <readyup>
 #include <colors>
 
+#define MAX_QUEUE_MESSAGE_LENGTH 80
+
 ConVar g_cvDisconnectTimeout;
 
 ArrayList g_aQueue;
@@ -15,7 +17,6 @@ ArrayList g_aTeamB;
 int g_iWinningTeam = -1;
 
 bool g_bFixingTeams = false;
-bool g_bReorganizedThisGame = false;
 
 enum struct Player
 {
@@ -48,25 +49,14 @@ public void OnPluginStart()
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
 
-    CreateTimer(2.0, WinningTeam_Timer, _, TIMER_REPEAT);
-}
-
-public void OnMixStarted()
-{
-    g_bFixingTeams = false;
+    CreateTimer(2.5, WinningTeam_Timer, _, TIMER_REPEAT);
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     g_bFixingTeams = false;
 
-    if (L4D_HasMapStarted() && IsNewGame() && !g_bReorganizedThisGame)
-    {
-        ReorganizeQueue();
-        g_bReorganizedThisGame = true;
-    }
-
-    CreateTimer(3.0, EnableFixTeam_Timer);
+    CreateTimer(5.0, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
@@ -78,15 +68,14 @@ void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
     if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
-    CreateTimer(1.0, FixTeam_Timer);
+    CreateTimer(1.5, FixTeam_Timer);
 }
 
 Action WinningTeam_Timer(Handle timer)
 {
-    if (!L4D_HasMapStarted() || IsNewGame())
+    if (IsNewGame() || !L4D_HasMapStarted())
         return Plugin_Continue;
 
-    g_bReorganizedThisGame = false;
     g_iWinningTeam = GetWinningTeam();
 
     return Plugin_Continue;
@@ -94,12 +83,14 @@ Action WinningTeam_Timer(Handle timer)
 
 Action EnableFixTeam_Timer(Handle timer)
 {
-    if (!IsNewGame())
+    if (!IsNewGame() || g_iWinningTeam == -1)
         return Plugin_Continue;
+    
+    ReorganizeQueue();
 
     g_bFixingTeams = true;
     FixTeams();
-    CreateTimer(30.0, DisableFixTeam_Timer);
+    CreateTimer(40.0, DisableFixTeam_Timer);
 
     return Plugin_Continue;
 }
@@ -118,14 +109,22 @@ Action FixTeam_Timer(Handle timer)
     return Plugin_Continue;
 }
 
-public Action PrintQueueCmd(int client, int args)
+Action PrintQueueCmd(int client, int args)
 {
     if (!IsValidClient(client) || IsFakeClient(client))
         return Plugin_Handled;
 
     PrintQueue(client);
 
+    if (CheckCommandAccess(client, "sm_ban", ADMFLAG_BAN))
+        PrintDebugQueue(client);
+
     return Plugin_Handled;
+}
+
+public void OnMixStarted()
+{
+    g_bFixingTeams = false;
 }
 
 public void OnRoundIsLive()
@@ -215,6 +214,7 @@ void RemoveExpiredPlayers()
 
 void SnapshotTeams()
 {
+    g_iWinningTeam = -1;
     g_aTeamA.Clear();
     g_aTeamB.Clear();
 
@@ -246,7 +246,7 @@ void ReorganizeQueue()
 {
     RemoveExpiredPlayers();
 
-    if (g_aTeamA.Length == 0 && g_aTeamB.Length == 0)
+    if (g_iWinningTeam == -1 || (g_aTeamA.Length == 0 && g_aTeamB.Length == 0))
         return;
 
     ArrayList winners = (g_iWinningTeam == 1) ? g_aTeamB : g_aTeamA;
@@ -255,7 +255,6 @@ void ReorganizeQueue()
     char steamId[64];
     Player player;
 
-    // Remove winners and losers from the queue.
     for (int i = 0; i < g_aQueue.Length; )
     {
         g_aQueue.GetArray(i, player);
@@ -275,7 +274,6 @@ void ReorganizeQueue()
         i++;
     }
 
-    // Add winners to the front of the queue.
     for (int i = 0; i < winners.Length; i++)
     {
         winners.GetString(i, steamId, sizeof(steamId));
@@ -294,7 +292,6 @@ void ReorganizeQueue()
         }
     }
 
-    // Add losers to the end of the queue.
     for (int i = 0; i < losers.Length; i++)
     {
         losers.GetString(i, steamId, sizeof(steamId));
@@ -305,6 +302,7 @@ void ReorganizeQueue()
         g_aQueue.PushArray(player);
     }
 
+    g_iWinningTeam = -1;
     g_aTeamA.Clear();
     g_aTeamB.Clear();
 }
@@ -356,7 +354,7 @@ void PrintQueue(int target)
         return;
 
     Player player;
-    char output[MAX_MESSAGE_LENGTH];
+    char output[MAX_QUEUE_MESSAGE_LENGTH];
     bool firstMessage = true;
 
     for (int i = 0, position = 1; i < g_aQueue.Length; i++)
@@ -383,8 +381,7 @@ void PrintQueue(int target)
         char entry[128];
         Format(entry, sizeof(entry), "{olive}%dº %s%N", position, color, client);
 
-        // If the next name no longer fits, flush the current message and start a new one.
-        if (strlen(output) != 0 && strlen(output) + 1 + strlen(entry) >= MAX_MESSAGE_LENGTH)
+        if (strlen(output) != 0 && strlen(output) + 1 + strlen(entry) >= MAX_QUEUE_MESSAGE_LENGTH)
         {
             if (firstMessage)
             {
@@ -565,19 +562,27 @@ bool IsNewGame()
 
 int GetWinningTeam()
 {
-    int mapScoreA = L4D_GetTeamScore(1);
-    int mapScoreB = L4D_GetTeamScore(2);
+    return GetTeamAScore() >= GetTeamBScore() ? 0 : 1;
+}
 
-    if (mapScoreA < 0)
-        mapScoreA = 0;
+int GetTeamAScore()
+{
+    int score = L4D_GetTeamScore(1);
 
-    if (mapScoreB < 0)
-        mapScoreB = 0;
+    if (score < 0)
+        score = 0;
 
-    int teamAScore = L4D2Direct_GetVSCampaignScore(0) + mapScoreA;
-    int teamBScore = L4D2Direct_GetVSCampaignScore(1) + mapScoreB;
+    return L4D2Direct_GetVSCampaignScore(0) + score;
+}
 
-    return teamAScore >= teamBScore ? 0 : 1;
+int GetTeamBScore()
+{
+    int score = L4D_GetTeamScore(2);
+
+    if (score < 0)
+        score = 0;
+
+    return L4D2Direct_GetVSCampaignScore(1) + score;
 }
 
 bool GetSteamId(int client, char[] buffer, int maxlength)
@@ -604,4 +609,116 @@ bool IsValidClient(int client)
         return false;
 
     return IsClientInGame(client);
+}
+
+void PrintDebugQueue(int client)
+{
+    int now = GetTime();
+
+    DebugPrint(client, "===== L4D2 Queue Debug =====");
+    DebugPrint(client, "Now (GetTime): %d", now);
+    DebugPrint(client, "MapStarted: %s | IsNewGame: %s", L4D_HasMapStarted() ? "yes" : "no", IsNewGame() ? "yes" : "no");
+    DebugPrint(client, "Flags -> FixingTeams: %s", g_bFixingTeams ? "true" : "false");
+    DebugPrint(client, "WinningTeam -> cached g_iWinningTeam: %d | GetWinningTeam(now): %d", g_iWinningTeam, GetWinningTeam());
+    
+    DebugPrint(client, "Scores -> TeamA: %d (campaign %d + map %d) | TeamB: %d (campaign %d + map %d)",
+        GetTeamAScore(), L4D2Direct_GetVSCampaignScore(0), L4D_GetTeamScore(1),
+        GetTeamBScore(), L4D2Direct_GetVSCampaignScore(1), L4D_GetTeamScore(2));
+
+    DebugPrint(client, "TeamsFlipped: %d", GameRules_GetProp("m_bAreTeamsFlipped"));
+    DebugPrint(client, "TeamSize: %d | Slots: %d | DisconnectTimeout: %d | MustFixTheTeams: %s",
+        TeamSize(), Slots(), g_cvDisconnectTimeout.IntValue, MustFixTheTeams() ? "yes" : "no");
+
+    DebugPrint(client, "--- Queue (%d entries) ---", g_aQueue.Length);
+
+    Player player;
+    for (int i = 0; i < g_aQueue.Length; i++)
+    {
+        g_aQueue.GetArray(i, player);
+
+        int c = GetClientUsingSteamId(player.steamId);
+
+        char status[48];
+        if (player.expiresAt == 0)
+            strcopy(status, sizeof(status), "active");
+        else
+            Format(status, sizeof(status), "expires in %ds", player.expiresAt - now);
+
+        if (c == -1)
+        {
+            DebugPrint(client, "  [%d] %s | DISCONNECTED | %s | starter: %s",
+                i, player.steamId, status, IsStarter(player.steamId) ? "yes" : "no");
+        }
+        else
+        {
+            int team = GetClientTeam(c);
+            char teamName[16];
+            TeamName(team, teamName, sizeof(teamName));
+
+            DebugPrint(client, "  [%d] %s | %N | team %d (%s) | %s | starter: %s",
+                i, player.steamId, c, team, teamName, status, IsStarter(player.steamId) ? "yes" : "no");
+        }
+    }
+
+    DebugPrint(client, "--- Snapshot TeamA (%d entries) ---", g_aTeamA.Length);
+    DumpTeamSnapshot(client, g_aTeamA);
+
+    DebugPrint(client, "--- Snapshot TeamB (%d entries) ---", g_aTeamB.Length);
+    DumpTeamSnapshot(client, g_aTeamB);
+
+    DebugPrint(client, "============================");
+}
+
+void DumpTeamSnapshot(int client, ArrayList list)
+{
+    char steamId[64];
+
+    for (int i = 0; i < list.Length; i++)
+    {
+        list.GetString(i, steamId, sizeof(steamId));
+
+        int c = GetClientUsingSteamId(steamId);
+
+        if (c == -1)
+        {
+            DebugPrint(client, "  [%d] %s | DISCONNECTED", i, steamId);
+        }
+        else
+        {
+            int team = GetClientTeam(c);
+            char teamName[16];
+            TeamName(team, teamName, sizeof(teamName));
+
+            DebugPrint(client, "  [%d] %s | %N | team %d (%s)", i, steamId, c, team, teamName);
+        }
+    }
+}
+
+void TeamName(int team, char[] buffer, int maxlength)
+{
+    switch (team)
+    {
+        case L4D_TEAM_SPECTATOR:
+            strcopy(buffer, maxlength, "spectator");
+
+        case L4D_TEAM_SURVIVOR:
+            strcopy(buffer, maxlength, "survivor");
+
+        case L4D_TEAM_INFECTED:
+            strcopy(buffer, maxlength, "infected");
+
+        default:
+            strcopy(buffer, maxlength, "none");
+    }
+}
+
+void DebugPrint(int client, const char[] format, any ...)
+{
+    char buffer[512];
+    VFormat(buffer, sizeof(buffer), format, 3);
+
+    if (client == 0)
+        PrintToServer("%s", buffer);
+    else
+        PrintToConsole(client, "%s", buffer);
 }
