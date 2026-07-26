@@ -1,0 +1,156 @@
+---
+# ============================================================================
+# Full setup for the L4D2 Zone server
+#
+# Runs the whole thing every time (this is meant to be run once when creating
+# the server; any later change goes through the Azure DevOps pipeline):
+#   - installs dependencies, SteamCMD and downloads/updates L4D2
+#   - deploys the files from the main repo and from the "check" repo
+#   - sets up a crontab entry to run bootstrap.sh on server boot
+#
+# Usage:
+#   ansible-playbook setup-server.yml
+#
+# Overriding parameters on the command line:
+#   ansible-playbook setup-server.yml \
+#     -e "ansible_host=1.2.3.4 ansible_user=devops ansible_password=xxx" \
+#     -e "check_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server-check"
+#
+# NOTE: not tested against a real server yet — review before production use.
+# ============================================================================
+
+- name: Configure L4D2 Zone server
+  hosts: l4d2
+  become: true
+
+  vars:
+    # LOCAL paths (on the machine running Ansible) of the two repositories.
+    # By default the "check" repo is assumed to be a sibling of the main repo.
+    # On Windows via WSL use e.g. /mnt/d/Pessoal/L4D2/l4d2-zone-server-check
+    repo_path: "{{ playbook_dir }}/.."
+    check_path: "{{ playbook_dir }}/../../l4d2-zone-server-check"
+
+  tasks:
+    # ------------------------------------------------------------ PROVISIONING
+    - name: Enable i386 architecture
+      command: dpkg --add-architecture i386
+      register: add_arch
+      changed_when: "'already' not in add_arch.stderr | default('')"
+
+    - name: Update apt cache and upgrade
+      apt:
+        update_cache: true
+        upgrade: dist
+
+    - name: Install server dependencies
+      apt:
+        name:
+          - screen
+          - libc6:i386
+          - lib32z1
+          - wget
+          - tar
+          - dos2unix
+        state: present
+
+    - name: Ensure the steam folder exists
+      file:
+        path: /home/steam
+        state: directory
+        mode: "0755"
+
+    - name: Download SteamCMD
+      get_url:
+        url: http://media.steampowered.com/installer/steamcmd_linux.tar.gz
+        dest: /home/steam/steamcmd_linux.tar.gz
+        mode: "0644"
+
+    - name: Extract SteamCMD
+      unarchive:
+        src: /home/steam/steamcmd_linux.tar.gz
+        dest: /home/steam
+        remote_src: true
+        creates: /home/steam/steamcmd.sh
+
+    - name: Install/update L4D2 files
+      command: >
+        ./steamcmd.sh
+        +force_install_dir ./l4d2/
+        +login anonymous
+        +@sSteamCmdForcePlatformType linux
+        +app_update 222860 validate
+        +quit
+      args:
+        chdir: /home/steam
+      changed_when: true
+
+    # ------------------------------------------------------------- DEPLOY FILES
+    - name: Check that the main repo exists locally
+      delegate_to: localhost
+      become: false
+      stat:
+        path: "{{ repo_path }}/addons"
+      register: repo_check
+
+    - name: Fail if the main repo path is wrong
+      assert:
+        that: repo_check.stat.exists
+        fail_msg: "Invalid repo_path ({{ repo_path }}). Pass -e repo_path=/path/to/l4d2-zone-server"
+
+    # assets/ and fastdl/ are intentionally left out — in the pipeline they go
+    # to Azure Blob Storage, not to the server.
+    - name: Copy main-repo folders
+      copy:
+        src: "{{ repo_path }}/{{ item }}/"
+        dest: "/home/steam/l4d2/left4dead2/{{ item }}/"
+      loop:
+        - addons
+        - cfg
+        - bash
+        - scripts
+        - materials
+
+    - name: Copy loose main-repo files (host/motd)
+      copy:
+        src: "{{ repo_path }}/{{ item }}"
+        dest: "/home/steam/l4d2/left4dead2/{{ item }}"
+      loop:
+        - host.txt
+        - motd.txt
+
+    - name: Normalize line endings on bash scripts (dos2unix)
+      shell: dos2unix /home/steam/l4d2/left4dead2/bash/*.sh
+      changed_when: false
+
+    - name: Make bash scripts executable
+      shell: chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
+      changed_when: false
+
+    - name: Check that the check repo exists locally
+      delegate_to: localhost
+      become: false
+      stat:
+        path: "{{ check_path }}/whitelist.cfg"
+      register: check_check
+
+    - name: Fail if the check repo path is wrong
+      assert:
+        that: check_check.stat.exists
+        fail_msg: "Invalid check_path ({{ check_path }}). Pass -e check_path=/path/to/l4d2-zone-server-check"
+
+    - name: Copy the sound folder from the check repo
+      copy:
+        src: "{{ check_path }}/sound/"
+        dest: /home/steam/l4d2/left4dead2/sound/
+
+    - name: Copy whitelist.cfg from the check repo
+      copy:
+        src: "{{ check_path }}/whitelist.cfg"
+        dest: /home/steam/l4d2/left4dead2/whitelist.cfg
+
+    # ------------------------------------------------------------------ CRONTAB
+    - name: Run bootstrap.sh on server boot (5s delay)
+      cron:
+        name: l4d2-bootstrap
+        special_time: reboot
+        job: "sleep 5 && /home/steam/l4d2/left4dead2/bash/bootstrap.sh"
