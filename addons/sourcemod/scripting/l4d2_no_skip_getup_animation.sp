@@ -74,6 +74,9 @@ void ClearLastDamageReceivedOn()
 
 bool CanGoToSpec(int client)
 {
+    if (client <= 0 || client > MaxClients || !IsClientInGame(client))
+        return true;
+
     if (GetClientTeam(client) != TEAM_SURVIVOR)
         return true;
 

@@ -49,6 +49,8 @@ public void OnPluginStart()
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
 
+    RegAdminCmd("sm_fixfila", FixQueueCmd, ADMFLAG_BAN, "Force the queue fix");
+
     CreateTimer(2.5, WinningTeam_Timer, _, TIMER_REPEAT);
 }
 
@@ -107,6 +109,20 @@ Action FixTeam_Timer(Handle timer)
     FixTeams();
 
     return Plugin_Continue;
+}
+
+Action FixQueueCmd(int client, int args)
+{
+    if (!IsNewGame())
+        return Plugin_Handled;
+
+    bool wasFixingTeams = g_bFixingTeams;
+
+    g_bFixingTeams = true;
+    FixTeams();
+    g_bFixingTeams = wasFixingTeams;
+
+    return Plugin_Handled;
 }
 
 Action PrintQueueCmd(int client, int args)
@@ -370,13 +386,10 @@ void PrintQueue(int target)
 
         char color[16] = "{default}";
 
-        switch (GetClientTeam(client))
-        {
-            case L4D_TEAM_INFECTED:
-                color = "{red}";
-            case L4D_TEAM_SURVIVOR:
-                color = "{blue}";
-        }
+        int team = GetClientTeam(client);
+
+        if (team == L4D_TEAM_SURVIVOR || team == L4D_TEAM_INFECTED)
+            color = "{green}";
 
         char entry[128];
         Format(entry, sizeof(entry), "{olive}%dº %s%N", position, color, client);
