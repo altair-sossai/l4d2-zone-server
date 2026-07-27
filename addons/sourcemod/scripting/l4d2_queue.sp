@@ -49,7 +49,7 @@ public void OnPluginStart()
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
 
-    RegAdminCmd("sm_fixfila", FixQueueCmd, ADMFLAG_BAN, "Force the queue fix");
+    RegAdminCmd("sm_fixteams", FixQueueCmd, ADMFLAG_BAN, "Force the queue fix");
 
     CreateTimer(2.5, WinningTeam_Timer, _, TIMER_REPEAT);
 }
