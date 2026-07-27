@@ -44,21 +44,21 @@ public void OnPluginStart()
     g_aTeamB = new ArrayList(ByteCountToCells(64));
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
-    HookEvent("player_team", PlayerTeam_Event);
+    HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
 
     RegAdminCmd("sm_fixteams", FixQueueCmd, ADMFLAG_BAN, "Force the queue fix");
 
-    CreateTimer(2.5, WinningTeam_Timer, _, TIMER_REPEAT);
+    CreateTimer(3.0, WinningTeam_Timer, _, TIMER_REPEAT);
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     g_bFixingTeams = false;
 
-    CreateTimer(5.0, EnableFixTeam_Timer);
+    CreateTimer(2.5, EnableFixTeam_Timer);
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
@@ -70,7 +70,7 @@ void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
     if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
-    CreateTimer(1.5, FixTeam_Timer);
+    CreateTimer(1.0, FixTeam_Timer);
 }
 
 Action WinningTeam_Timer(Handle timer)
@@ -92,7 +92,7 @@ Action EnableFixTeam_Timer(Handle timer)
 
     g_bFixingTeams = true;
     FixTeams();
-    CreateTimer(40.0, DisableFixTeam_Timer);
+    CreateTimer(60.0, DisableFixTeam_Timer);
 
     return Plugin_Continue;
 }
