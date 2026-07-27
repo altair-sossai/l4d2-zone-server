@@ -6,7 +6,7 @@
 #include <readyup>
 #include <colors>
 
-#define MAX_QUEUE_MESSAGE_LENGTH 80
+#define MAX_QUEUE_MESSAGE_LENGTH 140
 
 ConVar g_cvDisconnectTimeout;
 
