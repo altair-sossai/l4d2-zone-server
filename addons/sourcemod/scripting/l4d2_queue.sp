@@ -389,7 +389,7 @@ void PrintQueue(int target)
         int team = GetClientTeam(client);
 
         if (team == L4D_TEAM_SURVIVOR || team == L4D_TEAM_INFECTED)
-            color = "{green}";
+            color = "{blue}";
 
         char entry[128];
         Format(entry, sizeof(entry), "{olive}%dº %s%N", position, color, client);
