@@ -48,7 +48,6 @@ public void OnPluginStart()
     g_aTeamB = new ArrayList(ByteCountToCells(64));
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
-    HookEvent("round_end", RoundEnd_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
@@ -72,7 +71,7 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
     CreateTimer(10.0, SuggestSlotCommand_Timer);
 }
 
-void RoundEnd_Event(Handle event, const char[] name, bool dontBroadcast)
+public void L4D2_OnEndVersusModeRound_Post()
 {
     if (!GameRules_GetProp("m_bInSecondHalfOfRound"))
         return;
