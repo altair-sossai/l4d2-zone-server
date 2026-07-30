@@ -18,7 +18,8 @@ ArrayList g_aTeamB;
 int g_iWinningTeam = -1;
 
 bool g_bFixingTeams = false,
-     g_bQueueShown = false;
+     g_bQueueShown = false,
+     g_bMixInProgress = false;
 
 enum struct Player
 {
@@ -53,6 +54,9 @@ public void OnPluginStart()
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
 
+    RegConsoleCmd("sm_vaga", RequestSlotCmd, "Request a slot in the game");
+    RegConsoleCmd("sm_slot", RequestSlotCmd, "Request a slot in the game");
+
     RegAdminCmd("sm_fixteams", FixQueueCmd, ADMFLAG_BAN, "Force the queue fix");
 
     CreateTimer(3.0, WinningTeam_Timer, _, TIMER_REPEAT);
@@ -62,8 +66,10 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     g_bFixingTeams = false;
     g_bQueueShown = false;
+    g_bMixInProgress = false;
 
     CreateTimer(2.5, EnableFixTeam_Timer);
+    CreateTimer(10.0, SuggestSlotCommand_Timer);
 }
 
 void RoundEnd_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -163,14 +169,92 @@ Action PrintQueueCmd(int client, int args)
     return Plugin_Handled;
 }
 
+Action RequestSlotCmd(int client, int args)
+{
+    if (!IsValidClient(client) || IsFakeClient(client))
+        return Plugin_Handled;
+
+    if (!IsInReady() || !IsNewGame() || g_bMixInProgress)
+    {
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotNotAvailable");
+        return Plugin_Handled;
+    }
+
+    int currentTeam = GetClientTeam(client);
+    if (currentTeam == L4D_TEAM_SURVIVOR || currentTeam == L4D_TEAM_INFECTED)
+        return Plugin_Handled;
+
+    if (HasFreeTeamSlot())
+        return Plugin_Handled;
+
+    if (g_bFixingTeams)
+    {
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotFixing");
+        return Plugin_Handled;
+    }
+
+    RemoveExpiredPlayers();
+
+    char steamId[64];
+    if (!GetSteamId(client, steamId, sizeof(steamId)))
+        return Plugin_Handled;
+
+    int requesterIndex = FindInQueue(steamId);
+    if (requesterIndex == -1)
+        return Plugin_Handled;
+
+    int lastClient = -1;
+
+    Player player;
+
+    for (int i = g_aQueue.Length - 1; i > requesterIndex; i--)
+    {
+        g_aQueue.GetArray(i, player);
+
+        int c = GetClientUsingSteamId(player.steamId);
+        if (c == -1)
+            continue;
+
+        int team = GetClientTeam(c);
+        if (team == L4D_TEAM_SURVIVOR || team == L4D_TEAM_INFECTED)
+        {
+            lastClient = c;
+            break;
+        }
+    }
+
+    if (lastClient == -1)
+    {
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotAllAhead");
+        return Plugin_Handled;
+    }
+
+    int lastClientTeam = GetClientTeam(lastClient);
+
+    MovePlayerToTeam(lastClient, L4D_TEAM_SPECTATOR);
+    MovePlayerToTeam(client, lastClientTeam);
+
+    CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotClaimed", lastClient);
+    CPrintToChat(lastClient, "{orange}[%t] {default}%t", "Slot", "SlotLost", client);
+
+    return Plugin_Handled;
+}
+
 public void OnMixStarted()
 {
     g_bFixingTeams = false;
+    g_bMixInProgress = true;
+}
+
+public void OnMixStopped()
+{
+    g_bMixInProgress = false;
 }
 
 public void OnRoundIsLive()
 {
     g_bFixingTeams = false;
+    g_bMixInProgress = false;
 
     if (IsNewGame())
         SnapshotTeams();
@@ -179,6 +263,28 @@ public void OnRoundIsLive()
 public void OnClientPostAdminCheck(int client)
 {
     Enqueue(client);
+}
+
+Action SuggestSlotCommand_Timer(Handle timer)
+{
+    if (!IsInReady() || !IsNewGame() || ConnectedPlayers() <= Slots())
+        return Plugin_Stop;
+
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (!IsValidClient(client) || IsFakeClient(client))
+            continue;
+
+        if (GetClientTeam(client) != L4D_TEAM_SPECTATOR)
+            continue;
+
+        if (!DeservesSlot(client))
+            continue;
+
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotSuggestion");
+    }
+
+    return Plugin_Stop;
 }
 
 public void OnClientDisconnect(int client)
@@ -366,6 +472,33 @@ int FindInQueue(const char[] steamId)
 bool IsStarter(const char[] steamId)
 {
     return g_aTeamA.FindString(steamId) != -1 || g_aTeamB.FindString(steamId) != -1;
+}
+
+bool DeservesSlot(int client)
+{
+    char steamId[64];
+    if (!GetSteamId(client, steamId, sizeof(steamId)))
+        return false;
+
+    int slots = Slots();
+    int position = 1;
+
+    Player player;
+
+    for (int i = 0; i < g_aQueue.Length && position <= slots; i++)
+    {
+        g_aQueue.GetArray(i, player);
+
+        if (GetClientUsingSteamId(player.steamId) == -1)
+            continue;
+
+        if (StrEqual(player.steamId, steamId))
+            return true;
+
+        position++;
+    }
+
+    return false;
 }
 
 int GetClientUsingSteamId(const char[] steamId)
@@ -590,6 +723,27 @@ int NumberOfPlayersInTheTeam(int team)
     }
 
     return count;
+}
+
+int ConnectedPlayers()
+{
+    int count = 0;
+
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (IsValidClient(client) && !IsFakeClient(client))
+            count++;
+    }
+
+    return count;
+}
+
+bool HasFreeTeamSlot()
+{
+    int teamSize = TeamSize();
+
+    return NumberOfPlayersInTheTeam(L4D_TEAM_SURVIVOR) < teamSize
+        || NumberOfPlayersInTheTeam(L4D_TEAM_INFECTED) < teamSize;
 }
 
 bool IsNewGame()

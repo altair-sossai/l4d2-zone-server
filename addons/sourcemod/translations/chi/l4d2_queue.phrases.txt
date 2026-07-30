@@ -4,4 +4,34 @@
     {
         "chi"    "队列:"
     }
+    "Slot"
+    {
+        "chi"    "名额"
+    }
+    "SlotClaimed"
+    {
+        "#format"    "{1:N}"
+        "chi"        "你已获得一个名额，{blue}{1}{default} 已被移至观众席。"
+    }
+    "SlotLost"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{blue}{1}{default} 因在队列中排在你前面而抢走了你的名额。"
+    }
+    "SlotAllAhead"
+    {
+        "chi"    "队伍中的所有人在队列中都排在你前面。"
+    }
+    "SlotNotAvailable"
+    {
+        "chi"    "只有在新一局开始且没有正在进行的 mix 时，你才能申请名额。"
+    }
+    "SlotSuggestion"
+    {
+        "chi"    "游戏中有一个名额等着你！输入 {olive}!slot{default} 加入。"
+    }
+    "SlotFixing"
+    {
+        "chi"    "队伍正在自动整理中，请稍候。"
+    }
 }

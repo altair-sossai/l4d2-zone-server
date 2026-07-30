@@ -4,4 +4,34 @@
     {
         "zho"    "隊列:"
     }
+    "Slot"
+    {
+        "zho"    "名額"
+    }
+    "SlotClaimed"
+    {
+        "#format"    "{1:N}"
+        "zho"        "你已獲得一個名額，{blue}{1}{default} 已被移至觀眾席。"
+    }
+    "SlotLost"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{blue}{1}{default} 因在隊列中排在你前面而搶走了你的名額。"
+    }
+    "SlotAllAhead"
+    {
+        "zho"    "隊伍中的所有人在隊列中都排在你前面。"
+    }
+    "SlotNotAvailable"
+    {
+        "zho"    "只有在新一局開始且沒有正在進行的 mix 時，你才能申請名額。"
+    }
+    "SlotSuggestion"
+    {
+        "zho"    "遊戲中有一個名額等著你！輸入 {olive}!slot{default} 加入。"
+    }
+    "SlotFixing"
+    {
+        "zho"    "隊伍正在自動整理中，請稍候。"
+    }
 }

@@ -4,4 +4,34 @@
     {
         "es"    "Cola:"
     }
+    "Slot"
+    {
+        "es"    "Plaza"
+    }
+    "SlotClaimed"
+    {
+        "#format"    "{1:N}"
+        "es"         "Has reclamado una plaza, {blue}{1}{default} fue movido a espectadores."
+    }
+    "SlotLost"
+    {
+        "#format"    "{1:N}"
+        "es"         "{blue}{1}{default} ha reclamado tu plaza por estar delante de ti en la cola."
+    }
+    "SlotAllAhead"
+    {
+        "es"    "Todos los que estan en los equipos estan delante de ti en la cola."
+    }
+    "SlotNotAvailable"
+    {
+        "es"    "Solo puedes solicitar una plaza al inicio de una nueva partida y mientras no haya un mix en curso."
+    }
+    "SlotSuggestion"
+    {
+        "es"    "¡Hay una plaza para ti en la partida! Escribe {olive}!slot{default} para ocuparla."
+    }
+    "SlotFixing"
+    {
+        "es"    "Los equipos se están organizando automáticamente, espera un momento."
+    }
 }

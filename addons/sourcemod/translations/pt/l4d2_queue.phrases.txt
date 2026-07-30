@@ -4,4 +4,34 @@
     {
         "pt"    "Fila:"
     }
+    "Slot"
+    {
+        "pt"    "Vaga"
+    }
+    "SlotClaimed"
+    {
+        "#format"    "{1:N}"
+        "pt"         "Você assumiu uma vaga, {blue}{1}{default} foi movido para os espectadores."
+    }
+    "SlotLost"
+    {
+        "#format"    "{1:N}"
+        "pt"         "{blue}{1}{default} assumiu a sua vaga por estar à frente de você na fila."
+    }
+    "SlotAllAhead"
+    {
+        "pt"    "Todos que estão nas equipes estão à frente de você na fila."
+    }
+    "SlotNotAvailable"
+    {
+        "pt"    "Você só pode solicitar uma vaga no início de um novo jogo e enquanto não houver um mix em andamento."
+    }
+    "SlotSuggestion"
+    {
+        "pt"    "Existe uma vaga para você no jogo! Digite {olive}!vaga{default} para assumir."
+    }
+    "SlotFixing"
+    {
+        "pt"    "As equipes estão sendo organizadas automaticamente, aguarde um instante."
+    }
 }
