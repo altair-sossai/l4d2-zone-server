@@ -9,6 +9,7 @@
 #define MAX_QUEUE_MESSAGE_LENGTH 140
 
 ConVar g_cvDisconnectTimeout;
+ConVar g_cvEndMapDelay;
 
 ArrayList g_aQueue;
 ArrayList g_aTeamA;
@@ -16,7 +17,8 @@ ArrayList g_aTeamB;
 
 int g_iWinningTeam = -1;
 
-bool g_bFixingTeams = false;
+bool g_bFixingTeams = false,
+     g_bQueueShown = false;
 
 enum struct Player
 {
@@ -38,12 +40,14 @@ public void OnPluginStart()
     LoadTranslations("l4d2_queue.phrases");
 
     g_cvDisconnectTimeout = CreateConVar("l4d2_queue_disconnect_timeout", "300", "How many seconds a disconnected player stays in the queue before being removed", FCVAR_NOTIFY, true, 0.0);
+    g_cvEndMapDelay = CreateConVar("l4d2_queue_endmap_delay", "8.0", "How many seconds after the map's second round ends before showing the queue to everyone (waits for the MVP/stats to be shown first)", FCVAR_NOTIFY, true, 0.0);
 
     g_aQueue = new ArrayList(sizeof(Player));
     g_aTeamA = new ArrayList(ByteCountToCells(64));
     g_aTeamB = new ArrayList(ByteCountToCells(64));
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
+    HookEvent("round_end", RoundEnd_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
@@ -57,8 +61,29 @@ public void OnPluginStart()
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     g_bFixingTeams = false;
+    g_bQueueShown = false;
 
     CreateTimer(2.5, EnableFixTeam_Timer);
+}
+
+void RoundEnd_Event(Handle event, const char[] name, bool dontBroadcast)
+{
+    if (!GameRules_GetProp("m_bInSecondHalfOfRound"))
+        return;
+
+    if (g_bQueueShown)
+        return;
+
+    g_bQueueShown = true;
+
+    CreateTimer(g_cvEndMapDelay.FloatValue, ShowQueueEndMap_Timer);
+}
+
+Action ShowQueueEndMap_Timer(Handle timer)
+{
+    PrintQueue(0);
+
+    return Plugin_Stop;
 }
 
 void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
