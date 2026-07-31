@@ -107,6 +107,13 @@ void StopMix()
     {
         KillTimer(g_hCaptainVoteTimer);
     }
+
+    g_iMixCallsCount = 0;
+
+    if (g_smVoteResults != null)
+    {
+        g_smVoteResults.Clear();
+    }
 }
 
 void ResetMixVoteProgress()

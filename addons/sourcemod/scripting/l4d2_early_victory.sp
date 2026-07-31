@@ -92,6 +92,9 @@ Action Check_Timer(Handle timer)
     if (ScoringTeamScore() <= AlreadyPlayedTeamScore())
         return Plugin_Continue;
 
+    if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
+        return Plugin_Continue;
+
     g_bTriggered = true;
 
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", ScoringTeamScore(), AlreadyPlayedTeamScore());
@@ -217,9 +220,6 @@ bool InSecondHalfOfRound()
 
 void StartContinueVote()
 {
-    if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
-        return;
-
     g_iEligibleVoters = 0;
 
     int[] players = new int[MaxClients];
@@ -242,7 +242,10 @@ void StartContinueVote()
     g_hVote = CreateBuiltinVote(ContinueVoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
 
     if (g_hVote == null)
+    {
+        ScheduleEarlyVictory();
         return;
+    }
 
     char title[128];
     FormatEx(title, sizeof(title), "%T", "VoteTitle", LANG_SERVER);
@@ -254,6 +257,7 @@ void StartContinueVote()
     {
         CloseHandle(g_hVote);
         g_hVote = null;
+        ScheduleEarlyVictory();
     }
 }
 
