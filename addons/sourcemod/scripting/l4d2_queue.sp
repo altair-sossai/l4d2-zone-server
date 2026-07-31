@@ -8,6 +8,9 @@
 
 #define MAX_QUEUE_MESSAGE_LENGTH 140
 
+#define QUEUE_FILE "data/l4d2_queue.txt"
+#define QUEUE_MAX_AGE (30 * 60)
+
 ConVar g_cvDisconnectTimeout;
 ConVar g_cvEndMapDelay;
 
@@ -47,6 +50,8 @@ public void OnPluginStart()
     g_aTeamA = new ArrayList(ByteCountToCells(64));
     g_aTeamB = new ArrayList(ByteCountToCells(64));
 
+    LoadQueue();
+
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 
@@ -80,6 +85,8 @@ public void L4D2_OnEndVersusModeRound_Post()
         return;
 
     g_bQueueShown = true;
+
+    SaveQueue();
 
     CreateTimer(g_cvEndMapDelay.FloatValue, ShowQueueEndMap_Timer);
 }
@@ -257,6 +264,8 @@ public void OnRoundIsLive()
 
     if (IsNewGame())
         SnapshotTeams();
+
+    SaveQueue();
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -912,4 +921,88 @@ void DebugPrint(int client, const char[] format, any ...)
         PrintToServer("%s", buffer);
     else
         PrintToConsole(client, "%s", buffer);
+}
+
+void LoadQueue()
+{
+    char path[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, path, sizeof(path), QUEUE_FILE);
+
+    if (!FileExists(path))
+        return;
+
+    File file = OpenFile(path, "r");
+    if (file == null)
+        return;
+
+    char line[128];
+
+    if (!file.ReadLine(line, sizeof(line)))
+    {
+        delete file;
+        DeleteFile(path);
+        return;
+    }
+
+    int now = GetTime();
+    int savedAt = StringToInt(line);
+
+    if (now - savedAt > QUEUE_MAX_AGE)
+    {
+        delete file;
+        DeleteFile(path);
+        return;
+    }
+
+    int expiresAt = now + g_cvDisconnectTimeout.IntValue;
+
+    Player player;
+
+    while (file.ReadLine(line, sizeof(line)))
+    {
+        TrimString(line);
+
+        if (strlen(line) == 0)
+            continue;
+
+        strcopy(player.steamId, sizeof(player.steamId), line);
+        player.expiresAt = GetClientUsingSteamId(line) != -1 ? 0 : expiresAt;
+
+        g_aQueue.PushArray(player);
+    }
+
+    delete file;
+    DeleteFile(path);
+}
+
+void SaveQueue()
+{
+    RemoveExpiredPlayers();
+
+    char path[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, path, sizeof(path), QUEUE_FILE);
+
+    if (g_aQueue.Length == 0)
+    {
+        if (FileExists(path))
+            DeleteFile(path);
+
+        return;
+    }
+
+    File file = OpenFile(path, "w");
+    if (file == null)
+        return;
+
+    file.WriteLine("%d", GetTime());
+
+    Player player;
+
+    for (int i = 0; i < g_aQueue.Length; i++)
+    {
+        g_aQueue.GetArray(i, player);
+        file.WriteLine("%s", player.steamId);
+    }
+
+    delete file;
 }
