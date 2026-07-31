@@ -6,7 +6,6 @@
 #include <l4d2util_constants>
 
 #define MAX_STR_LEN 30
-#define MIN_MIX_START_COUNT 2
 
 #define COND_HAS_ALREADY_VOTED 0
 #define COND_NEED_MORE_VOTES 1
@@ -18,6 +17,8 @@
 #define STATE_SECOND_CAPT 1
 #define STATE_NO_MIX 2
 #define STATE_PICK_TEAMS 3
+
+ConVar g_cvStartVotes;
 
 Menu g_mMixMenu;
 
@@ -53,6 +54,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+    g_cvStartVotes = CreateConVar("l4d2_mix_start_votes", "2", "Number of votes required to start a mix", FCVAR_NOTIFY, true, 1.0, true, 8.0);
+
     RegConsoleCmd("sm_mix", Cmd_MixStart, "Mix command");
     RegAdminCmd("sm_stopmix", Cmd_MixStop, ADMFLAG_CHANGEMAP, "Mix command");
 
@@ -224,7 +227,7 @@ Action Cmd_MixStart(int client, int args)
     }
     else if (mixConditions == COND_NEED_MORE_VOTES)
     {
-        PrintToChatAll("\x04Mix Manager: \x03%N \x01has voted to start a Mix. (\x05%d \x01more to start)", client, MIN_MIX_START_COUNT - g_iMixCallsCount);
+        PrintToChatAll("\x04Mix Manager: \x03%N \x01has voted to start a Mix. (\x05%d \x01more to start)", client, g_cvStartVotes.IntValue - g_iMixCallsCount);
 
     }
     else if (mixConditions == COND_HAS_ALREADY_VOTED)
@@ -262,7 +265,7 @@ int GetMixConditionsAfterVote(int client)
         return COND_HAS_ALREADY_VOTED;
 
     }
-    else if (++g_iMixCallsCount >= MIN_MIX_START_COUNT)
+    else if (++g_iMixCallsCount >= g_cvStartVotes.IntValue)
     {
         return COND_START_MIX; 
 
