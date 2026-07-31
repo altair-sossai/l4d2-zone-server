@@ -4,16 +4,23 @@
 #include <sourcemod>
 #include <sdktools>
 #include <left4dhooks>
+#include <builtinvotes>
 #include <colors>
 
 #define TRANSLATION_FILE "l4d2_early_victory.phrases"
 
-ConVar g_cvEnabled;
-ConVar g_cvChapter;
-ConVar g_cvSlayDelay;
-ConVar g_cvChangeDelay;
+ConVar g_cvEnabled,
+       g_cvChapter,
+       g_cvVoteDuration,
+       g_cvSlayDelay,
+       g_cvChangeDelay;
 
-bool g_bTriggered = false;
+bool g_bTriggered = false,
+     g_bVoteResolved = false;
+
+Handle g_hVote = null;
+
+int g_iEligibleVoters = 0;
 
 char g_sOfficialFirstMaps[][] =
 {
@@ -38,7 +45,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.0.0",
+    version = "1.1.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -48,6 +55,7 @@ public void OnPluginStart()
 
     g_cvEnabled = CreateConVar("l4d2_early_victory_enabled", "1", "Enable/disable the early victory (skip last map when the game is already decided)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
     g_cvChapter = CreateConVar("l4d2_early_victory_chapter", "4", "Chapter (map index) that triggers the early victory", FCVAR_NOTIFY, true, 1.0);
+    g_cvVoteDuration = CreateConVar("l4d2_early_victory_vote_duration", "15", "How many seconds the losing team has to vote whether to continue playing", FCVAR_NOTIFY, true, 5.0);
     g_cvSlayDelay = CreateConVar("l4d2_early_victory_slay_delay", "5.0", "How many seconds after announcing the victory before slaying everyone", FCVAR_NOTIFY, true, 0.0);
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
 
@@ -57,11 +65,17 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     g_bTriggered = false;
+    g_bVoteResolved = false;
+    g_hVote = null;
+    g_iEligibleVoters = 0;
 }
 
 public void OnMapEnd()
 {
     g_bTriggered = false;
+    g_bVoteResolved = false;
+    g_hVote = null;
+    g_iEligibleVoters = 0;
 }
 
 Action Check_Timer(Handle timer)
@@ -81,8 +95,7 @@ Action Check_Timer(Handle timer)
     g_bTriggered = true;
 
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", ScoringTeamScore(), AlreadyPlayedTeamScore());
-
-    CreateTimer(g_cvSlayDelay.FloatValue, Slay_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
+    StartContinueVote();
 
     return Plugin_Continue;
 }
@@ -200,4 +213,107 @@ bool AreTeamsFlipped()
 bool InSecondHalfOfRound()
 {
     return GameRules_GetProp("m_bInSecondHalfOfRound") != 0;
+}
+
+void StartContinueVote()
+{
+    if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
+        return;
+
+    g_iEligibleVoters = 0;
+
+    int[] players = new int[MaxClients];
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i) || GetClientTeam(i) != L4D_TEAM_INFECTED)
+            continue;
+
+        players[g_iEligibleVoters++] = i;
+    }
+
+    if (g_iEligibleVoters == 0)
+    {
+        CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteEnd");
+        ScheduleEarlyVictory();
+        return;
+    }
+
+    g_hVote = CreateBuiltinVote(ContinueVoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
+
+    if (g_hVote == null)
+        return;
+
+    char title[128];
+    FormatEx(title, sizeof(title), "%T", "VoteTitle", LANG_SERVER);
+    SetBuiltinVoteArgument(g_hVote, title);
+    SetBuiltinVoteInitiator(g_hVote, BUILTINVOTES_SERVER_INDEX);
+    SetBuiltinVoteResultCallback(g_hVote, ContinueVoteResultHandler);
+
+    if (!DisplayBuiltinVote(g_hVote, players, g_iEligibleVoters, g_cvVoteDuration.IntValue))
+    {
+        CloseHandle(g_hVote);
+        g_hVote = null;
+    }
+}
+
+void ContinueVoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
+{
+    switch (action)
+    {
+        case BuiltinVoteAction_End:
+        {
+            if (vote == g_hVote)
+                g_hVote = null;
+
+            CloseHandle(vote);
+        }
+        case BuiltinVoteAction_Cancel:
+        {
+            if (!g_bVoteResolved)
+            {
+                g_bVoteResolved = true;
+                DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Generic);
+                CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteCancelled");
+            }
+        }
+    }
+}
+
+void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+{
+    if (g_bVoteResolved)
+        return;
+
+    int yesVotes = 0;
+
+    for (int i = 0; i < num_items; i++)
+    {
+        if (item_info[i][BUILTINVOTEINFO_ITEM_INDEX] == BUILTINVOTES_VOTE_YES)
+        {
+            yesVotes = item_info[i][BUILTINVOTEINFO_ITEM_VOTES];
+            break;
+        }
+    }
+
+    g_bVoteResolved = true;
+
+    int noVotes = g_iEligibleVoters - yesVotes;
+    if (noVotes * 2 > g_iEligibleVoters)
+    {
+        DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+        CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteEnd");
+        ScheduleEarlyVictory();
+        return;
+    }
+
+    char message[128];
+    FormatEx(message, sizeof(message), "%T", "VoteContinue", LANG_SERVER);
+    DisplayBuiltinVotePass(vote, message);
+    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteContinue");
+}
+
+void ScheduleEarlyVictory()
+{
+    CreateTimer(g_cvSlayDelay.FloatValue, Slay_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
 }

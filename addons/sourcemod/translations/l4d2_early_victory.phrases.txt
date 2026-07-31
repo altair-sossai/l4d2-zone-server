@@ -7,7 +7,23 @@
     "Decided"
     {
         "#format"    "{1:d},{2:d}"
-        "en"         "The game is decided ({1} x {2})! A comeback is no longer possible, starting a new map."
+        "en"         "The game is decided ({1} x {2}) and a comeback is no longer possible. The losing team will vote whether to continue playing."
+    }
+    "VoteTitle"
+    {
+        "en"    "The score is decided. Do you want to continue playing?"
+    }
+    "VoteEnd"
+    {
+        "en"    "Most of the losing team does not want to continue. Ending the match."
+    }
+    "VoteContinue"
+    {
+        "en"    "The losing team chose to continue playing."
+    }
+    "VoteCancelled"
+    {
+        "en"    "The vote was cancelled. The match will continue."
     }
     "NextMap"
     {
