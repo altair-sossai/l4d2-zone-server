@@ -1,0 +1,17 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "es"    "Victoria"
+    }
+    "Decided"
+    {
+        "#format"    "{1:d},{2:d}"
+        "es"         "¡El juego está decidido ({1} x {2})! Ya no es posible remontar, iniciando un nuevo mapa."
+    }
+    "NextMap"
+    {
+        "#format"    "{1:s}"
+        "es"         "Todos fueron eliminados. Iniciando una nueva campaña aleatoria: {olive}{1}"
+    }
+}

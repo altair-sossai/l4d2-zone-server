@@ -1,0 +1,17 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "en"    "Victory"
+    }
+    "Decided"
+    {
+        "#format"    "{1:d},{2:d}"
+        "en"         "The game is decided ({1} x {2})! A comeback is no longer possible, starting a new map."
+    }
+    "NextMap"
+    {
+        "#format"    "{1:s}"
+        "en"         "Everyone was slain. Starting a new random campaign: {olive}{1}"
+    }
+}
