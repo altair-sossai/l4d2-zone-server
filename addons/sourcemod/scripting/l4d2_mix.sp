@@ -56,7 +56,7 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
-    g_cvStartVotes = CreateConVar("l4d2_mix_start_votes", "2", "Number of votes required to start a mix", FCVAR_NOTIFY, true, 1.0);
+    g_cvStartVotes = CreateConVar("l4d2_mix_start_votes", "2", "Number of votes required to start a mix", FCVAR_NOTIFY, true, 1.0, true, 8.0);
     g_cvAdditionalPlayersAfterMix = CreateConVar("l4d2_mix_additional_players_after_mix", "2", "Additional players required to vote after each mix starts before the game goes live (0 disables)", FCVAR_NOTIFY, true, 0.0);
     g_iRequiredStartVotes = Clamp(g_cvStartVotes.IntValue, 1, Slots());
 
@@ -107,6 +107,9 @@ void StopMix()
     {
         KillTimer(g_hCaptainVoteTimer);
     }
+
+    g_hCaptainVoteTimer = null;
+    g_bIsPickingCaptain = false;
 
     g_iMixCallsCount = 0;
 
@@ -201,6 +204,7 @@ Action Cmd_MixStart(int client, int args)
 {
     if (TeamSize() == 1)
     {
+        PrintToChat(client, "\x04Mix Manager: \x01Mix is not available in 1v1 matches.");
         return Plugin_Handled;
     }
 
