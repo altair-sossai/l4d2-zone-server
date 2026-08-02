@@ -98,6 +98,9 @@ Action Check_Timer(Handle timer)
     if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
         return Plugin_Continue;
 
+    if (!HasHumanOnLosingTeam())
+        return Plugin_Continue;
+
     g_bTriggered = true;
 
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", scoringScore, alreadyPlayedScore);
@@ -214,6 +217,20 @@ int GetTeamBScore()
 bool AreTeamsFlipped()
 {
     return GameRules_GetProp("m_bAreTeamsFlipped") != 0;
+}
+
+bool HasHumanOnLosingTeam()
+{
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i))
+            continue;
+
+        if (GetClientTeam(i) == L4D_TEAM_INFECTED)
+            return true;
+    }
+
+    return false;
 }
 
 bool InSecondHalfOfRound()
