@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools>
 #include <left4dhooks>
+#include <readyup>
 #include <builtinvotes>
 #include <colors>
 
@@ -83,13 +84,19 @@ Action Check_Timer(Handle timer)
     if (!g_cvEnabled.BoolValue || g_bTriggered || !L4D_HasMapStarted())
         return Plugin_Continue;
 
+    if (IsInReady())
+        return Plugin_Continue;
+
     if (L4D_GetCurrentChapter() != g_cvChapter.IntValue || L4D_IsMissionFinalMap())
         return Plugin_Continue;
 
     if (!InSecondHalfOfRound())
         return Plugin_Continue;
 
-    if (ScoringTeamScore() <= AlreadyPlayedTeamScore())
+    int scoringScore = ScoringTeamScore();
+    int alreadyPlayedScore = AlreadyPlayedTeamScore();
+
+    if (scoringScore <= alreadyPlayedScore)
         return Plugin_Continue;
 
     if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
@@ -97,7 +104,7 @@ Action Check_Timer(Handle timer)
 
     g_bTriggered = true;
 
-    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", ScoringTeamScore(), AlreadyPlayedTeamScore());
+    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", scoringScore, alreadyPlayedScore);
     StartContinueVote();
 
     return Plugin_Continue;
