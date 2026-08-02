@@ -606,6 +606,12 @@ void FixTeams()
 {
     RemoveExpiredPlayers();
 
+    if (TeamsAreExactlyQueueFront())
+    {
+        g_bFixingTeams = false;
+        return;
+    }
+
     if (!MustFixTheTeams())
         return;
 
@@ -668,7 +674,7 @@ void FixTeams()
         }
     }
 
-    g_bFixingTeams = true;
+    g_bFixingTeams = !TeamsAreExactlyQueueFront();
 }
 
 bool MustFixTheTeams()
@@ -698,6 +704,34 @@ bool MustFixTheTeams()
     }
 
     return false;
+}
+
+bool TeamsAreExactlyQueueFront()
+{
+    int slots = Slots();
+
+    if (g_aQueue.Length < slots)
+        return false;
+
+    if (NumberOfPlayersInTheTeam(L4D_TEAM_SURVIVOR) + NumberOfPlayersInTheTeam(L4D_TEAM_INFECTED) != slots)
+        return false;
+
+    Player player;
+
+    for (int i = 0; i < slots; i++)
+    {
+        g_aQueue.GetArray(i, player);
+
+        int client = GetClientUsingSteamId(player.steamId);
+        if (client == -1)
+            return false;
+
+        int team = GetClientTeam(client);
+        if (team != L4D_TEAM_SURVIVOR && team != L4D_TEAM_INFECTED)
+            return false;
+    }
+
+    return true;
 }
 
 void MovePlayerToTeam(int client, int team)
