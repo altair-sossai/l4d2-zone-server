@@ -1,5 +1,7 @@
 # **L4D2 Competitive Rework**
 
+[![Build Status](https://dev.azure.com/altairsossai/L4D2%20-%20Play%20Stats/_apis/build/status%2Fl4d2-zone-server?branchName=master)](https://dev.azure.com/altairsossai/L4D2%20-%20Play%20Stats/_build/latest?definitionId=36&branchName=master)
+
 > [!IMPORTANT]
 > It is recommended to host servers on Linux, but Windows is supported.  
 > When running Linux ensure that your setup is running a minimum of **`GLIBC 2.35`** (Ubuntu 22.04 or higher) or you will run into issues loading certain extensions.  
