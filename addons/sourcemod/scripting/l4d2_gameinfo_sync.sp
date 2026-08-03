@@ -302,7 +302,9 @@ void SendPlayerConnectionInfo(int client)
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/player-connection-info");
 
-    request.Post(connectionInfo, DoNothing, connectionInfo);
+    request.Post(connectionInfo, SendPlayerConnectionInfoResponse, GetClientUserId(client));
+
+    delete connectionInfo;
 }
 
 void SendConfiguration()
@@ -582,6 +584,62 @@ void CheckForNewServerCommandsResponse(HTTPResponse httpResponse, any value)
     response.GetString("fullCommand", fullCommand, sizeof(fullCommand));
 
     ServerCommand(fullCommand);
+}
+
+void SendPlayerConnectionInfoResponse(HTTPResponse httpResponse, any value)
+{
+    if (httpResponse.Status != HTTPStatus_OK)
+        return;
+
+    JSONArray relatedPlayers = view_as<JSONArray>(httpResponse.Data);
+
+    if (relatedPlayers.Length == 0)
+        return;
+
+    int client = GetClientOfUserId(value);
+
+    if (client == 0 || !IsClientInGame(client) || IsFakeClient(client))
+        return;
+
+    JSONObject firstRelatedPlayer = view_as<JSONObject>(relatedPlayers.Get(0));
+    char firstRelatedPlayerName[MAX_NAME_LENGTH];
+    firstRelatedPlayer.GetString("name", firstRelatedPlayerName, sizeof(firstRelatedPlayerName));
+    delete firstRelatedPlayer;
+
+    int additionalAccounts = relatedPlayers.Length - 1;
+
+    if (additionalAccounts == 0)
+        CPrintToChatAll("{default}[IP] {orange}%N{default} também conectou como {orange}%s{default}. Mais detalhes no console.", client, firstRelatedPlayerName);
+    else if (additionalAccounts == 1)
+        CPrintToChatAll("{default}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +1 conta. Mais detalhes no console.", client, firstRelatedPlayerName);
+    else
+        CPrintToChatAll("{default}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +%d contas. Mais detalhes no console.", client, firstRelatedPlayerName, additionalAccounts);
+
+    PrintToConsoleAll("[IP] Contas relacionadas a %N:", client);
+
+    for (int i = 0; i < relatedPlayers.Length; i++)
+    {
+        JSONObject relatedPlayer = view_as<JSONObject>(relatedPlayers.Get(i));
+
+        char relatedPlayerName[MAX_NAME_LENGTH];
+        relatedPlayer.GetString("name", relatedPlayerName, sizeof(relatedPlayerName));
+
+        char communityId[25];
+        relatedPlayer.GetString("communityId", communityId, sizeof(communityId));
+
+        char steamId[64];
+        steamId[0] = '\0';
+        relatedPlayer.GetString("steamId", steamId, sizeof(steamId));
+
+        char profileUrl[256];
+        profileUrl[0] = '\0';
+        relatedPlayer.GetString("profileUrl", profileUrl, sizeof(profileUrl));
+
+        PrintToConsoleAll("[IP] %s | %s | %s", relatedPlayerName, communityId, steamId);
+        PrintToConsoleAll("[IP] %s", profileUrl);
+
+        delete relatedPlayer;
+    }
 }
 
 void SendConfigurationResponse(HTTPResponse httpResponse, any value)
