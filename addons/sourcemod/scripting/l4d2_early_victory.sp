@@ -97,10 +97,10 @@ Action Check_Timer(Handle timer)
     if (IsInReady())
         return Plugin_Continue;
 
-    if (L4D_GetCurrentChapter() != g_cvChapter.IntValue || L4D_IsMissionFinalMap())
+    if (!InSecondHalfOfRound())
         return Plugin_Continue;
 
-    if (!InSecondHalfOfRound())
+    if (L4D_GetCurrentChapter() != g_cvChapter.IntValue || L4D_IsMissionFinalMap())
         return Plugin_Continue;
 
     int scoringScore = ScoringTeamScore();
