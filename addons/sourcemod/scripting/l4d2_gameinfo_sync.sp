@@ -609,11 +609,11 @@ void SendPlayerConnectionInfoResponse(HTTPResponse httpResponse, any value)
     int additionalAccounts = relatedPlayers.Length - 1;
 
     if (additionalAccounts == 0)
-        CPrintToChatAll("{default}[IP] {orange}%N{default} também conectou como {orange}%s{default}. Mais detalhes no console.", client, firstRelatedPlayerName);
+        CPrintToChatAll("{green}[IP] {orange}%N{default} também conectou como {orange}%s{default}. Mais detalhes no console.", client, firstRelatedPlayerName);
     else if (additionalAccounts == 1)
-        CPrintToChatAll("{default}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +1 conta. Mais detalhes no console.", client, firstRelatedPlayerName);
+        CPrintToChatAll("{green}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +1 conta. Mais detalhes no console.", client, firstRelatedPlayerName);
     else
-        CPrintToChatAll("{default}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +%d contas. Mais detalhes no console.", client, firstRelatedPlayerName, additionalAccounts);
+        CPrintToChatAll("{green}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +%d contas. Mais detalhes no console.", client, firstRelatedPlayerName, additionalAccounts);
 
     PrintToConsoleAll("[IP] Contas relacionadas a %N:", client);
 
