@@ -22,7 +22,8 @@ int g_iWinningTeam = -1;
 
 bool g_bFixingTeams = false,
      g_bQueueShown = false,
-     g_bMixInProgress = false;
+     g_bMixInProgress = false,
+     g_bRoundOver = false;
 
 enum struct Player
 {
@@ -71,6 +72,7 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
     g_bFixingTeams = false;
     g_bQueueShown = false;
     g_bMixInProgress = false;
+    g_bRoundOver = false;
 
     CreateTimer(2.5, EnableFixTeam_Timer);
     CreateTimer(10.0, SuggestSlotCommand_Timer);
@@ -78,6 +80,8 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 
 public void L4D2_OnEndVersusModeRound_Post()
 {
+    g_bRoundOver = true;
+
     if (!GameRules_GetProp("m_bInSecondHalfOfRound"))
         return;
 
@@ -801,22 +805,27 @@ int GetWinningTeam()
 
 int GetTeamAScore()
 {
-    int score = L4D_GetTeamScore(1);
-
-    if (score < 0)
-        score = 0;
-
-    return L4D2Direct_GetVSCampaignScore(0) + score;
+    return GetTeamTotalScore(0, 1);
 }
 
 int GetTeamBScore()
 {
-    int score = L4D_GetTeamScore(2);
+    return GetTeamTotalScore(1, 2);
+}
 
-    if (score < 0)
-        score = 0;
+int GetTeamTotalScore(int campaignTeam, int logicalTeam)
+{
+    int score = L4D2Direct_GetVSCampaignScore(campaignTeam);
 
-    return L4D2Direct_GetVSCampaignScore(1) + score;
+    if (g_bRoundOver)
+        return score;
+
+    int mapScore = L4D_GetTeamScore(logicalTeam);
+
+    if (mapScore > 0)
+        score += mapScore;
+
+    return score;
 }
 
 bool GetSteamId(int client, char[] buffer, int maxlength)

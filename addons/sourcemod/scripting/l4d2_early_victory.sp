@@ -17,7 +17,8 @@ ConVar g_cvEnabled,
        g_cvChangeDelay;
 
 bool g_bTriggered = false,
-     g_bVoteResolved = false;
+     g_bVoteResolved = false,
+     g_bRoundOver = false;
 
 Handle g_hVote = null;
 
@@ -56,6 +57,8 @@ public void OnPluginStart()
     g_cvSlayDelay = CreateConVar("l4d2_early_victory_slay_delay", "5.0", "How many seconds after announcing the victory before slaying everyone", FCVAR_NOTIFY, true, 0.0);
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
 
+    HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
+
     CreateTimer(3.0, Check_Timer, _, TIMER_REPEAT);
 }
 
@@ -63,6 +66,7 @@ public void OnMapStart()
 {
     g_bTriggered = false;
     g_bVoteResolved = false;
+    g_bRoundOver = false;
     g_hVote = null;
     g_iEligibleVoters = 0;
 }
@@ -73,6 +77,16 @@ public void OnMapEnd()
     g_bVoteResolved = false;
     g_hVote = null;
     g_iEligibleVoters = 0;
+}
+
+void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
+{
+    g_bRoundOver = false;
+}
+
+public void L4D2_OnEndVersusModeRound_Post()
+{
+    g_bRoundOver = true;
 }
 
 Action Check_Timer(Handle timer)
@@ -196,22 +210,27 @@ int AlreadyPlayedTeamScore()
 
 int GetTeamAScore()
 {
-    int score = L4D_GetTeamScore(1);
-
-    if (score < 0)
-        score = 0;
-
-    return L4D2Direct_GetVSCampaignScore(0) + score;
+    return GetTeamTotalScore(0, 1);
 }
 
 int GetTeamBScore()
 {
-    int score = L4D_GetTeamScore(2);
+    return GetTeamTotalScore(1, 2);
+}
 
-    if (score < 0)
-        score = 0;
+int GetTeamTotalScore(int campaignTeam, int logicalTeam)
+{
+    int score = L4D2Direct_GetVSCampaignScore(campaignTeam);
 
-    return L4D2Direct_GetVSCampaignScore(1) + score;
+    if (g_bRoundOver)
+        return score;
+
+    int mapScore = L4D_GetTeamScore(logicalTeam);
+
+    if (mapScore > 0)
+        score += mapScore;
+
+    return score;
 }
 
 bool AreTeamsFlipped()
