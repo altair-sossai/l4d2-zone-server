@@ -7,27 +7,27 @@
     "Decided"
     {
         "#format"    "{1:d},{2:d}"
-        "pt"         "O jogo está decidido ({1} x {2}) e não é mais possível virar. A equipe derrotada votará se deseja continuar jogando."
+        "pt"         "Jogo decidido ({green}{1}{default} x {green}{2}{default}) — não dá mais pra virar. A equipe perdedora vai votar se continua."
     }
     "VoteTitle"
     {
-        "pt"    "O placar está definido. Deseja continuar jogando?"
+        "pt"    "Placar definido. Continuar jogando?"
     }
     "VoteEnd"
     {
-        "pt"    "A maioria da equipe derrotada não deseja continuar. Encerrando a partida."
+        "pt"    "A equipe perdedora escolheu parar. Encerrando a partida."
     }
     "VoteContinue"
     {
-        "pt"    "A equipe derrotada escolheu continuar jogando."
+        "pt"    "A equipe perdedora escolheu continuar."
     }
     "VoteCancelled"
     {
-        "pt"    "A votação foi cancelada. A partida continuará."
+        "pt"    "Votação cancelada. A partida continua."
     }
     "NextMap"
     {
         "#format"    "{1:s}"
-        "pt"         "Todos foram eliminados. Iniciando uma nova campanha aleatória: {olive}{1}"
+        "pt"         "Todos eliminados. Iniciando a campanha: {green}{1}"
     }
 }

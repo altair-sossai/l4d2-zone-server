@@ -38,6 +38,20 @@ char g_sOfficialFirstMaps[][] =
     "c13m1_alpinecreek",
 };
 
+char g_sOfficialCampaigns[][] =
+{
+    "Dead Center",
+    "Dark Carnival",
+    "Swamp Fever",
+    "Hard Rain",
+    "The Parish",
+    "No Mercy",
+    "Death Toll",
+    "Dead Air",
+    "Blood Harvest",
+    "Cold Stream",
+};
+
 public Plugin myinfo =
 {
     name = "L4D2 - Early Victory",
@@ -134,68 +148,13 @@ Action Slay_Timer(Handle timer)
 
 Action ChangeMap_Timer(Handle timer)
 {
-    char nextMap[64];
-    PickRandomMap(nextMap, sizeof(nextMap));
+    int pick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
 
-    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", nextMap);
+    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", g_sOfficialCampaigns[pick]);
 
-    ServerCommand("changelevel %s", nextMap);
+    ServerCommand("changelevel %s", g_sOfficialFirstMaps[pick]);
 
     return Plugin_Stop;
-}
-
-void PickRandomMap(char[] buffer, int maxlength)
-{
-    char currentMap[64];
-    GetCurrentMap(currentMap, sizeof(currentMap));
-
-    char currentCampaign[8];
-    ExtractCampaignToken(currentMap, currentCampaign, sizeof(currentCampaign));
-
-    int total = sizeof(g_sOfficialFirstMaps);
-    int[] candidates = new int[total];
-    int count = 0;
-
-    char token[8];
-
-    for (int i = 0; i < total; i++)
-    {
-        ExtractCampaignToken(g_sOfficialFirstMaps[i], token, sizeof(token));
-
-        if (StrEqual(token, currentCampaign))
-            continue;
-
-        candidates[count++] = i;
-    }
-
-    int pick = candidates[GetRandomInt(0, count - 1)];
-
-    strcopy(buffer, maxlength, g_sOfficialFirstMaps[pick]);
-}
-
-void ExtractCampaignToken(const char[] map, char[] buffer, int maxlength)
-{
-    buffer[0] = '\0';
-
-    if (map[0] != 'c')
-    {
-        strcopy(buffer, maxlength, map);
-        return;
-    }
-
-    int j = 0;
-    buffer[j++] = 'c';
-
-    int length = strlen(map);
-    for (int i = 1; i < length && j < maxlength - 1; i++)
-    {
-        if (!IsCharNumeric(map[i]))
-            break;
-
-        buffer[j++] = map[i];
-    }
-
-    buffer[j] = '\0';
 }
 
 int ScoringTeamScore()
