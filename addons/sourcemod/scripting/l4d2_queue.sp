@@ -968,6 +968,16 @@ void DebugPrint(int client, const char[] format, any ...)
 
 void LoadQueue()
 {
+    g_aQueue.Clear();
+
+    LoadQueueFromFile();
+
+    for (int client = 1; client <= MaxClients; client++)
+        Enqueue(client);
+}
+
+void LoadQueueFromFile()
+{
     char path[PLATFORM_MAX_PATH];
     BuildPath(Path_SM, path, sizeof(path), QUEUE_FILE);
 
