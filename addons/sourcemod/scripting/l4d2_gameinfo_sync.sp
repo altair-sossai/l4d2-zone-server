@@ -124,6 +124,11 @@ public void OnLibraryAdded(const char[] name)
         g_bHybridScoremodIsAvailable = true;
 }
 
+public void OnClientPostAdminCheck(int client)
+{
+    SendPlayerConnectionInfo(client);
+}
+
 public void OnRoundIsLive()
 {
     g_bInTransition = false;
@@ -271,6 +276,33 @@ Action SyncData_Timer(Handle hTimer)
     CheckForNewServerCommands();
 
     return Plugin_Continue;
+}
+
+void SendPlayerConnectionInfo(int client)
+{
+    if (!IsClientInGame(client) || IsFakeClient(client))
+        return;
+
+    char communityId[25];
+    if (!GetClientAuthId(client, AuthId_SteamID64, communityId, sizeof(communityId)))
+        return;
+
+    char ipAddress[46];
+    if (!GetClientIP(client, ipAddress, sizeof(ipAddress)))
+        return;
+
+    JSONObject connectionInfo = new JSONObject();
+
+    connectionInfo.SetString("communityId", communityId);
+    connectionInfo.SetString("ipAddress", ipAddress);
+
+    char name[MAX_NAME_LENGTH];
+    GetClientName(client, name, sizeof(name));
+    connectionInfo.SetString("name", name);
+
+    HTTPRequest request = BuildHTTPRequest("/api/game-info/player-connection-info");
+
+    request.Post(connectionInfo, DoNothing, connectionInfo);
 }
 
 void SendConfiguration()
