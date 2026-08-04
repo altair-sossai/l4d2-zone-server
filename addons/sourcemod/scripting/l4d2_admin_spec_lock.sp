@@ -66,9 +66,6 @@ public void OnClientDisconnect(int client)
 	g_lockUntil[client] = 0.0;
 }
 
-/**
- * Global forwards provided by l4d2_mix.sp.
- */
 public void OnMixStarted()
 {
 	g_mixActive = true;
