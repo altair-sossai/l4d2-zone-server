@@ -25,6 +25,10 @@
     {
         "pt"    "Votação cancelada. A partida continua."
     }
+    "MapVoteBlocked"
+    {
+        "pt"    "Troca de mapa bloqueada: aguarde a virada ou entregue o round."
+    }
     "NextMap"
     {
         "#format"    "{1:s}"

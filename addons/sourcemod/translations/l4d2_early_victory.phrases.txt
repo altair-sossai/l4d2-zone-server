@@ -25,6 +25,10 @@
     {
         "en"    "Vote cancelled. The match continues."
     }
+    "MapVoteBlocked"
+    {
+        "en"    "Map change blocked: wait for the comeback or concede the round."
+    }
     "NextMap"
     {
         "#format"    "{1:s}"

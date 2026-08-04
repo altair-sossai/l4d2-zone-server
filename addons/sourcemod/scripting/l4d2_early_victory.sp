@@ -57,7 +57,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.1.0",
+    version = "1.2.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -72,6 +72,7 @@ public void OnPluginStart()
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
+    AddCommandListener(CallVote_Listener, "callvote");
 
     CreateTimer(3.0, Check_Timer, _, TIMER_REPEAT);
 }
@@ -101,6 +102,24 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 public void L4D2_OnEndVersusModeRound_Post()
 {
     g_bRoundOver = true;
+}
+
+Action CallVote_Listener(int client, const char[] command, int argc)
+{
+    if (!g_cvEnabled.BoolValue || client <= 0 || !IsClientInGame(client) || argc < 1)
+        return Plugin_Continue;
+
+    if (IsInReady() || !InSecondHalfOfRound() || L4D_GetCurrentChapter() != g_cvChapter.IntValue)
+        return Plugin_Continue;
+
+    char voteType[32];
+    GetCmdArg(1, voteType, sizeof(voteType));
+
+    if (!StrEqual(voteType, "ChangeMission", false))
+        return Plugin_Continue;
+
+    CPrintToChat(client, "{orange}[%t]{default} %t", "Tag", "MapVoteBlocked");
+    return Plugin_Handled;
 }
 
 Action Check_Timer(Handle timer)

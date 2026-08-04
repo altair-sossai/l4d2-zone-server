@@ -25,6 +25,10 @@
     {
         "zho"    "投票已取消，比賽繼續。"
     }
+    "MapVoteBlocked"
+    {
+        "zho"    "已禁止換圖：等待翻盤或放棄本回合。"
+    }
     "NextMap"
     {
         "#format"    "{1:s}"

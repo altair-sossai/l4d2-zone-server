@@ -25,6 +25,10 @@
     {
         "chi"    "投票已取消，比赛继续。"
     }
+    "MapVoteBlocked"
+    {
+        "chi"    "已禁止换图：等待翻盘或放弃本回合。"
+    }
     "NextMap"
     {
         "#format"    "{1:s}"
