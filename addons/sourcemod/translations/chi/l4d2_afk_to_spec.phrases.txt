@@ -1,0 +1,12 @@
+"Phrases"
+{
+    "AfkToSpec"
+    {
+        "chi"    "AFK"
+    }
+    "MovedToSpectator"
+    {
+        "#format"    "{1:N},{2:d}"
+        "chi"        "{blue}{1}{default} 因挂机 {olive}{2} 秒{default}，已被移至旁观者。"
+    }
+}

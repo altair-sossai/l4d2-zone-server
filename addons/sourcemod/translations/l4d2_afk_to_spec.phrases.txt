@@ -1,0 +1,12 @@
+"Phrases"
+{
+    "AfkToSpec"
+    {
+        "en"    "AFK"
+    }
+    "MovedToSpectator"
+    {
+        "#format"    "{1:N},{2:d}"
+        "en"         "{blue}{1}{default} was moved to spectators after being AFK for {olive}{2} seconds{default}."
+    }
+}

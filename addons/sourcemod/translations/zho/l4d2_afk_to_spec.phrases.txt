@@ -1,0 +1,12 @@
+"Phrases"
+{
+    "AfkToSpec"
+    {
+        "zho"    "AFK"
+    }
+    "MovedToSpectator"
+    {
+        "#format"    "{1:N},{2:d}"
+        "zho"        "{blue}{1}{default} 因掛機 {olive}{2} 秒{default}，已被移至旁觀者。"
+    }
+}
