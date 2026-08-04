@@ -1,7 +1,11 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 #include <sdkhooks>
 #include <left4dhooks>
+#include <colors>
 
 #undef REQUIRE_PLUGIN
 #include <readyup>
@@ -20,6 +24,8 @@ ConVar cvar_alltalk;
 
 public void OnPluginStart()
 {
+    LoadTranslations("alltalk-before-round-start.phrases");
+
     cvar_alltalk = FindConVar("sv_alltalk");
 }
 
@@ -56,7 +62,7 @@ public void SetAllTalk(bool allTalk)
     SetConVarBool(cvar_alltalk, allTalk);
 
     if (allTalk)
-        PrintToChatAll("\x01All talk: \x04ON");
+        CPrintToChatAll("%t", "AllTalkEnabled");
     else
-        PrintToChatAll("\x01All talk: \x04OFF");
+        CPrintToChatAll("%t", "AllTalkDisabled");
 }

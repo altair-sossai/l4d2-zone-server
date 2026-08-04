@@ -3,6 +3,7 @@
 
 #include <sourcemod>
 #include <left4dhooks>
+#include <colors>
 
 public Plugin myinfo =
 {
@@ -22,6 +23,8 @@ bool displayed[MAXPLAYERS + 1] = { false, ... };
 
 public void OnPluginStart()
 {
+    LoadTranslations("l4d2_ranking.phrases");
+
     hUrl = CreateConVar("ranking_url", "", "Ranking site URL", FCVAR_PROTECTED);
     hShowMOTDPanel = CreateConVar("ranking_show_motd_panel", "1", "Show MOTD panel with the ranking site URL", FCVAR_NOTIFY, true, 0.0, true, 1.0);
 
@@ -69,8 +72,8 @@ Action DisplayRankingUrlTick(Handle timer)
     if (!showRankingEnabled)
         return Plugin_Continue;
 
-    PrintToChatAll("\x03l4d2.com.br");
-    PrintToChatAll("\x04!ranking \x01to check your position");
+    CPrintToChatAll("%t", "RankingWebsite");
+    CPrintToChatAll("%t", "RankingCommandHint");
 
     return Plugin_Continue;
 }
@@ -93,7 +96,10 @@ void ShowRanking(int client)
     char url[100];
     GetConVarString(hUrl, url, sizeof(url));
 
-    ShowMOTDPanel(client, "L4D2 | Players Ranking", url, MOTDPANEL_TYPE_URL);
+    char title[64];
+    FormatEx(title, sizeof(title), "%T", "RankingPanelTitle", client);
+
+    ShowMOTDPanel(client, title, url, MOTDPANEL_TYPE_URL);
 }
 
 bool IsNewGame()

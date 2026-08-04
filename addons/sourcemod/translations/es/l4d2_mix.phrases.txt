@@ -1,0 +1,129 @@
+"Phrases"
+{
+    "MixTag"
+    {
+        "es"    "{green}Mix Manager:{default}"
+    }
+    "JoinWithoutPick"
+    {
+        "es"    "No puedes unirte a un equipo sin haber sido elegido."
+    }
+    "StoppedByAdmin"
+    {
+        "#format"    "{1:N}"
+        "es"         "Interrumpido por el administrador {lightgreen}{1}{default}."
+    }
+    "NotStarted"
+    {
+        "es"    "No hay ningún mix en curso."
+    }
+    "UnavailableOneVsOne"
+    {
+        "es"    "El mix no está disponible en partidas 1v1."
+    }
+    "AlreadyStarted"
+    {
+        "es"    "El mix ya ha comenzado."
+    }
+    "NotAllowedLive"
+    {
+        "es"    "No se puede iniciar un mix durante una ronda en curso."
+    }
+    "SpectatorCannotStart"
+    {
+        "es"    "No puedes iniciar un mix como espectador."
+    }
+    "StartedByAdmin"
+    {
+        "#format"    "{1:N}"
+        "es"         "Iniciado por el administrador {lightgreen}{1}{default}."
+    }
+    "VoteCast"
+    {
+        "#format"    "{1:N}"
+        "es"         "{lightgreen}{1} {default}ha votado para iniciar un mix."
+    }
+    "StartedByVote"
+    {
+        "es"    "Iniciado por votación."
+    }
+    "VoteProgress"
+    {
+        "#format"    "{1:N},{2:d}"
+        "es"         "{lightgreen}{1} {default}ha votado para iniciar un mix. ({olive}votos necesarios: {2}{default})"
+    }
+    "AlreadyVoted"
+    {
+        "es"    "Ya has votado para iniciar un mix."
+    }
+    "JoinTeams"
+    {
+        "es"    "Ambos equipos deben estar completos para iniciar un mix."
+    }
+    "MenuPickFirstCaptain"
+    {
+        "es"    "Mix Manager - Elige al primer capitán"
+    }
+    "MenuPickSecondCaptain"
+    {
+        "es"    "Mix Manager - Elige al segundo capitán"
+    }
+    "MenuPickTeamMembers"
+    {
+        "es"    "Mix Manager - Elige a un miembro del equipo"
+    }
+    "CaptainWrongTeam"
+    {
+        "#format"    "{1:N}"
+        "es"         "El capitán {lightgreen}{1} {default}está en el equipo equivocado. Mix cancelado."
+    }
+    "TeamsPicked"
+    {
+        "es"    "Los equipos han sido elegidos."
+    }
+    "PickedMemberNotFound"
+    {
+        "es"    "No se encontró al jugador elegido. Mix cancelado."
+    }
+    "FirstCaptainNotFound"
+    {
+        "es"    "No se pudo elegir al primer capitán con al menos un voto de los espectadores. Mix cancelado."
+    }
+    "SecondCaptainNotFound"
+    {
+        "es"    "No se pudo elegir al segundo capitán con al menos un voto de los espectadores. Mix cancelado."
+    }
+    "NoSpectators"
+    {
+        "es"    "No quedan espectadores disponibles para elegir. Mix cancelado."
+    }
+    "CaptainNotFound"
+    {
+        "es"    "No se encontró al capitán. Mix cancelado."
+    }
+    "FirstCaptain"
+    {
+        "#format"    "{1:N},{2:d}"
+        "es"         "Primer capitán: {lightgreen}{1}{default} ({olive}votos: {2}{default})."
+    }
+    "SecondCaptain"
+    {
+        "#format"    "{1:N},{2:d}"
+        "es"         "Segundo capitán: {lightgreen}{1}{default} ({olive}votos: {2}{default})."
+    }
+    "PickedSurvivors"
+    {
+        "#format"    "{1:N}"
+        "es"         "{lightgreen}{1} {default}fue elegido para los supervivientes."
+    }
+    "PickedInfected"
+    {
+        "#format"    "{1:N}"
+        "es"         "{lightgreen}{1} {default}fue elegido para los infectados."
+    }
+    "PlayerLeft"
+    {
+        "#format"    "{1:N}"
+        "es"         "El jugador {lightgreen}{1} {default}abandonó la partida. Mix cancelado."
+    }
+}

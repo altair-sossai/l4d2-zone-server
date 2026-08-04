@@ -1,9 +1,13 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 #include <left4dhooks>
 #include <readyup>
 #include <pause>
 #include <l4d2_boss_percents>
+#include <colors>
 
 #define TEAM_SURVIVORS 2
 #define ALERT_MIN_INTERVAL 15
@@ -24,6 +28,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+	LoadTranslations("l4d2_tank_is_comming.phrases");
+
 	g_hVsBossBuffer = FindConVar("versus_boss_buffer");
 
 	HookEvent("tank_spawn", TankSpawn, EventHookMode_PostNoCopy);
@@ -61,7 +67,7 @@ public Action MapProgressTick(Handle timer)
 	if(remaining <= 0 || remaining > ALERT_MIN_INTERVAL || !mustAlert[remaining])
 		return Plugin_Continue;
 
-	PrintToChatAll("\x01Tank in: \x03%d%%", remaining);
+	CPrintToChatAll("%t", "TankDistance", remaining);
 
 	for (int i = ALERT_MIN_INTERVAL; i >= remaining; i--)
 		mustAlert[i] = false;

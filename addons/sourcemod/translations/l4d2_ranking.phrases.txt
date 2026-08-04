@@ -1,0 +1,15 @@
+"Phrases"
+{
+    "RankingWebsite"
+    {
+        "en"    "{lightgreen}l4d2.com.br"
+    }
+    "RankingCommandHint"
+    {
+        "en"    "Type {green}!ranking {default}to check your position."
+    }
+    "RankingPanelTitle"
+    {
+        "en"    "L4D2 | Player Rankings"
+    }
+}

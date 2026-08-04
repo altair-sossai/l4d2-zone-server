@@ -1,0 +1,8 @@
+"Phrases"
+{
+    "TankDistance"
+    {
+        "#format"    "{1:d}"
+        "chi"        "{green}坦克{default}将在 {lightgreen}{1}%% {default}后出现"
+    }
+}

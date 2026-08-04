@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "AllTalkEnabled"
+    {
+        "zho"    "{default}全域語音：{green}開啟"
+    }
+    "AllTalkDisabled"
+    {
+        "zho"    "{default}全域語音：{green}關閉"
+    }
+}

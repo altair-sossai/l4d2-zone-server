@@ -1,0 +1,8 @@
+"Phrases"
+{
+    "TankDistance"
+    {
+        "#format"    "{1:d}"
+        "en"         "{green}Tank{default} in {lightgreen}{1}%%"
+    }
+}

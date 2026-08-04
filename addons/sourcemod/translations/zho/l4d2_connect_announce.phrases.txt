@@ -3,6 +3,6 @@
 	"PlayerLoading"
 	{
 		"#format"	"{1:s}"
-		"en"		"{lightgreen}{1} {default}is connecting..."
+		"zho"		"{lightgreen}{1} {default}正在連線..."
 	}
 }

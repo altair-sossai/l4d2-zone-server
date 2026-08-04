@@ -67,6 +67,8 @@ float
 
 public void OnPluginStart()
 {
+    LoadTranslations("l4d2_gameinfo_sync.phrases");
+
     g_hVersusBossBuffer = FindConVar("versus_boss_buffer");
 
     g_hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
@@ -550,9 +552,9 @@ void CheckForNewExternalMessagesResponse(HTTPResponse httpResponse, any value)
         char text[250];
         message.GetString("text", text, sizeof(text));
 
-        CPrintToChatAll("{default}(External) {orange}%s{default} : %s", name, text);
+        CPrintToChatAll("%t", "ExternalChatMessage", name, text);
 
-        PrintToConsoleAll("[External] %s (%s): %s", name, steamId, text);
+        PrintToConsoleAll("%t", "ExternalConsoleMessage", name, steamId, text);
         PrintToConsoleAll(profileUrl);
 
         delete message;
@@ -609,13 +611,13 @@ void SendPlayerConnectionInfoResponse(HTTPResponse httpResponse, any value)
     int additionalAccounts = relatedPlayers.Length - 1;
 
     if (additionalAccounts == 0)
-        CPrintToChatAll("{green}[IP] {orange}%N{default} também conectou como {orange}%s{default}. Mais detalhes no console.", client, firstRelatedPlayerName);
+        CPrintToChatAll("%t", "RelatedAccount", client, firstRelatedPlayerName);
     else if (additionalAccounts == 1)
-        CPrintToChatAll("{green}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +1 conta. Mais detalhes no console.", client, firstRelatedPlayerName);
+        CPrintToChatAll("%t", "RelatedAccountOneAdditional", client, firstRelatedPlayerName);
     else
-        CPrintToChatAll("{green}[IP] {orange}%N{default} também conectou como {orange}%s{default} e +%d contas. Mais detalhes no console.", client, firstRelatedPlayerName, additionalAccounts);
+        CPrintToChatAll("%t", "RelatedAccountMultipleAdditional", client, firstRelatedPlayerName, additionalAccounts);
 
-    PrintToConsoleAll("[IP] Contas relacionadas a %N:", client);
+    PrintToConsoleAll("%t", "RelatedAccountsConsoleHeader", client);
 
     for (int i = 0; i < relatedPlayers.Length; i++)
     {

@@ -106,7 +106,7 @@ public void L4D2_OnEndVersusModeRound_Post()
 
 Action CallVote_Listener(int client, const char[] command, int argc)
 {
-    if (!g_cvEnabled.BoolValue || client <= 0 || !IsClientInGame(client) || argc < 1)
+    if (!g_cvEnabled.BoolValue || client <= 0 || !IsClientInGame(client) || IsFakeClient(client) || argc < 1)
         return Plugin_Continue;
 
     if (IsInReady() || !InSecondHalfOfRound() || L4D_GetCurrentChapter() != g_cvChapter.IntValue)
@@ -119,6 +119,7 @@ Action CallVote_Listener(int client, const char[] command, int argc)
         return Plugin_Continue;
 
     CPrintToChat(client, "{orange}[%t]{default} %t", "Tag", "MapVoteBlocked");
+
     return Plugin_Handled;
 }
 

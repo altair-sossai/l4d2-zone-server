@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "AllTalkEnabled"
+    {
+        "chi"    "{default}全局语音：{green}开启"
+    }
+    "AllTalkDisabled"
+    {
+        "chi"    "{default}全局语音：{green}关闭"
+    }
+}

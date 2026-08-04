@@ -1,0 +1,8 @@
+"Phrases"
+{
+    "TankDistance"
+    {
+        "#format"    "{1:d}"
+        "zho"        "{green}坦克{default}將在 {lightgreen}{1}%% {default}後出現"
+    }
+}

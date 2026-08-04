@@ -1,11 +1,14 @@
+#pragma semicolon 1
+#pragma newdecls required
+
 #include <sourcemod>
 #include <sdktools>
 #include <colors>
 
-char txtBufer[256];
 bool early;
 
-public Plugin:myinfo =  {
+public Plugin myinfo =
+{
 	name = "Connect Announce", 
 	author = "pa4H", 
 	description = "", 
@@ -13,7 +16,7 @@ public Plugin:myinfo =  {
 	url = "vk.com/pa4h1337"
 };
 
-public OnPluginStart()
+public void OnPluginStart()
 {
 	LoadTranslations("l4d2_connect_announce.phrases");
 
@@ -32,14 +35,13 @@ public Action EarlyTimer(Handle timer)
 	return Plugin_Stop;
 }
 
-public OnClientAuthorized(client)
+public void OnClientAuthorized(int client)
 {
 	if (early || IsFakeClient(client))
 		return;
 
-	char clientName[64]; 
+	char clientName[64];
 	GetClientName(client, clientName, sizeof(clientName));
-	
-	FormatEx(txtBufer, sizeof(txtBufer), "%t", "PlayerLoading", clientName);
-	CPrintToChatAll(txtBufer);
+
+	CPrintToChatAll("%t", "PlayerLoading", clientName);
 }

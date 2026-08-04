@@ -1,0 +1,129 @@
+"Phrases"
+{
+    "MixTag"
+    {
+        "zho"    "{green}Mix Manager:{default}"
+    }
+    "JoinWithoutPick"
+    {
+        "zho"    "你尚未被選中，無法加入隊伍。"
+    }
+    "StoppedByAdmin"
+    {
+        "#format"    "{1:N}"
+        "zho"        "管理員 {lightgreen}{1}{default} 已停止 Mix。"
+    }
+    "NotStarted"
+    {
+        "zho"    "目前沒有正在進行的 Mix。"
+    }
+    "UnavailableOneVsOne"
+    {
+        "zho"    "1v1 比賽中無法使用 Mix。"
+    }
+    "AlreadyStarted"
+    {
+        "zho"    "Mix 已經開始。"
+    }
+    "NotAllowedLive"
+    {
+        "zho"    "回合進行期間無法開始 Mix。"
+    }
+    "SpectatorCannotStart"
+    {
+        "zho"    "觀眾無法發起 Mix。"
+    }
+    "StartedByAdmin"
+    {
+        "#format"    "{1:N}"
+        "zho"        "管理員 {lightgreen}{1}{default} 已開始 Mix。"
+    }
+    "VoteCast"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{lightgreen}{1} {default}投票開始 Mix。"
+    }
+    "StartedByVote"
+    {
+        "zho"    "Mix 已透過投票開始。"
+    }
+    "VoteProgress"
+    {
+        "#format"    "{1:N},{2:d}"
+        "zho"        "{lightgreen}{1} {default}投票開始 Mix。（{olive}還需 {2} 票{default}）"
+    }
+    "AlreadyVoted"
+    {
+        "zho"    "你已經投票開始 Mix。"
+    }
+    "JoinTeams"
+    {
+        "zho"    "兩支隊伍必須滿員才能開始 Mix。"
+    }
+    "MenuPickFirstCaptain"
+    {
+        "zho"    "Mix Manager - 選擇第一位隊長"
+    }
+    "MenuPickSecondCaptain"
+    {
+        "zho"    "Mix Manager - 選擇第二位隊長"
+    }
+    "MenuPickTeamMembers"
+    {
+        "zho"    "Mix Manager - 選擇隊員"
+    }
+    "CaptainWrongTeam"
+    {
+        "#format"    "{1:N}"
+        "zho"        "隊長 {lightgreen}{1} {default}所在隊伍有誤。Mix 已取消。"
+    }
+    "TeamsPicked"
+    {
+        "zho"    "隊伍選擇完畢。"
+    }
+    "PickedMemberNotFound"
+    {
+        "zho"    "找不到選中的玩家。Mix 已取消。"
+    }
+    "FirstCaptainNotFound"
+    {
+        "zho"    "無法選出至少獲得一名觀眾投票的第一位隊長。Mix 已取消。"
+    }
+    "SecondCaptainNotFound"
+    {
+        "zho"    "無法選出至少獲得一名觀眾投票的第二位隊長。Mix 已取消。"
+    }
+    "NoSpectators"
+    {
+        "zho"    "沒有更多可供選擇的觀眾。Mix 已取消。"
+    }
+    "CaptainNotFound"
+    {
+        "zho"    "找不到隊長。Mix 已取消。"
+    }
+    "FirstCaptain"
+    {
+        "#format"    "{1:N},{2:d}"
+        "zho"        "第一位隊長：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
+    }
+    "SecondCaptain"
+    {
+        "#format"    "{1:N},{2:d}"
+        "zho"        "第二位隊長：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
+    }
+    "PickedSurvivors"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{lightgreen}{1} {default}被選入生還者隊。"
+    }
+    "PickedInfected"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{lightgreen}{1} {default}被選入感染者隊。"
+    }
+    "PlayerLeft"
+    {
+        "#format"    "{1:N}"
+        "zho"        "玩家 {lightgreen}{1} {default}已離開遊戲。Mix 已取消。"
+    }
+}

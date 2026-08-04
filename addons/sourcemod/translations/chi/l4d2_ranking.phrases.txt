@@ -1,0 +1,15 @@
+"Phrases"
+{
+    "RankingWebsite"
+    {
+        "chi"    "{lightgreen}l4d2.com.br"
+    }
+    "RankingCommandHint"
+    {
+        "chi"    "输入 {green}!ranking {default}查看你的排名。"
+    }
+    "RankingPanelTitle"
+    {
+        "chi"    "L4D2 | 玩家排名"
+    }
+}

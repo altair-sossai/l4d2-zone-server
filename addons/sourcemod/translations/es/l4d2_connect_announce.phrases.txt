@@ -1,0 +1,8 @@
+"Phrases"
+{
+	"PlayerLoading"
+	{
+		"#format"	"{1:s}"
+		"es"		"{lightgreen}{1} {default}se está conectando..."
+	}
+}

@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "AllTalkEnabled"
+    {
+        "en"    "{default}All talk: {green}ON"
+    }
+    "AllTalkDisabled"
+    {
+        "en"    "{default}All talk: {green}OFF"
+    }
+}

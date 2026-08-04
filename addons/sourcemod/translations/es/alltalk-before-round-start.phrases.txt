@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "AllTalkEnabled"
+    {
+        "es"    "{default}Chat de voz global: {green}ACTIVADO"
+    }
+    "AllTalkDisabled"
+    {
+        "es"    "{default}Chat de voz global: {green}DESACTIVADO"
+    }
+}

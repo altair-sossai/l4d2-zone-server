@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <sdktools_sound>
 #include <l4d2util_constants>
+#include <colors>
 
 #define MAX_STR_LEN 30
 
@@ -56,6 +57,8 @@ public Plugin myinfo =
 
 public void OnPluginStart()
 {
+    LoadTranslations("l4d2_mix.phrases");
+
     g_cvStartVotes = CreateConVar("l4d2_mix_start_votes", "2", "Number of votes required to start a mix", FCVAR_NOTIFY, true, 1.0, true, 8.0);
     g_cvAdditionalPlayersAfterMix = CreateConVar("l4d2_mix_additional_players_after_mix", "2", "Additional players required to vote after each mix starts before the game goes live (0 disables)", FCVAR_NOTIFY, true, 0.0);
     g_iRequiredStartVotes = Clamp(g_cvStartVotes.IntValue, 1, Slots());
@@ -166,7 +169,7 @@ Action Cmd_OnPlayerJoinTeam(int client, const char[] command, int argc)
 
             if (!g_smSwapWhitelist.GetValue(authId, allowedTeam) || allowedTeam != newTeam)
             {
-                PrintToChat(client, "\x04Mix Manager: \x01 You can not join a team without being picked.");
+                CPrintToChat(client, "%t %t", "MixTag", "JoinWithoutPick");
                 return Plugin_Stop;
             }
         }
@@ -191,11 +194,11 @@ Action Cmd_MixStop(int client, int args)
     if (g_iCurrentState != STATE_NO_MIX)
     {
         StopMix();
-        PrintToChatAll("\x04Mix Manager: \x01Stopped by admin \x03%N\x01.", client);
+        CPrintToChatAll("%t %t", "MixTag", "StoppedByAdmin", client);
     }
     else
     {
-        PrintToChat(client, "\x04Mix Manager: \x01Not currently started.");
+        CPrintToChat(client, "%t %t", "MixTag", "NotStarted");
     }
     return Plugin_Handled;
 }
@@ -204,25 +207,25 @@ Action Cmd_MixStart(int client, int args)
 {
     if (TeamSize() == 1)
     {
-        PrintToChat(client, "\x04Mix Manager: \x01Mix is not available in 1v1 matches.");
+        CPrintToChat(client, "%t %t", "MixTag", "UnavailableOneVsOne");
         return Plugin_Handled;
     }
 
     if (g_iCurrentState != STATE_NO_MIX)
     {
-        PrintToChat(client, "\x04Mix Manager: \x01Already started.");
+        CPrintToChat(client, "%t %t", "MixTag", "AlreadyStarted");
         return Plugin_Handled;
     } 
     
     if (!g_bIsMixAllowed)
     {
-        PrintToChat(client, "\x04Mix Manager: \x01Not allowed on live round.");
+        CPrintToChat(client, "%t %t", "MixTag", "NotAllowedLive");
         return Plugin_Handled;
     } 
     
     if (GetClientTeam(client) == L4D2Team_Spectator && !GetAdminFlag(GetUserAdmin(client), Admin_Changemap))
     {
-        PrintToChat(client, "\x04Mix Manager: \x01You can not start a mix as a spectator.");
+        CPrintToChat(client, "%t %t", "MixTag", "SpectatorCannotStart");
         return Plugin_Handled;
     }
 
@@ -232,12 +235,12 @@ Action Cmd_MixStart(int client, int args)
     {
         if (mixConditions == COND_START_MIX_ADMIN)
         {
-            PrintToChatAll("\x04Mix Manager: \x01Started by admin \x03%N\x01.", client);
+            CPrintToChatAll("%t %t", "MixTag", "StartedByAdmin", client);
         }
         else
         {
-            PrintToChatAll("\x04Mix Manager: \x03%N \x01has voted to start a Mix.", client);
-            PrintToChatAll("\x04Mix Manager: \x01Started by vote.");
+            CPrintToChatAll("%t %t", "MixTag", "VoteCast", client);
+            CPrintToChatAll("%t %t", "MixTag", "StartedByVote");
         }
 
         g_iCurrentState = STATE_FIRST_CAPT;
@@ -264,15 +267,15 @@ Action Cmd_MixStart(int client, int args)
     }
     else if (mixConditions == COND_NEED_MORE_VOTES)
     {
-        PrintToChatAll("\x04Mix Manager: \x03%N \x01has voted to start a Mix. (\x05%d \x01more to start)", client, g_iRequiredStartVotes - g_iMixCallsCount);
+        CPrintToChatAll("%t %t", "MixTag", "VoteProgress", client, g_iRequiredStartVotes - g_iMixCallsCount);
     }
     else if (mixConditions == COND_HAS_ALREADY_VOTED)
     {
-        PrintToChat(client, "\x04Mix Manager: \x01You already voted to start a Mix.");
+        CPrintToChat(client, "%t %t", "MixTag", "AlreadyVoted");
     }
     else if (mixConditions == COND_NO_PLAYERS)
     {
-        PrintToChat(client, "\x04Mix Manager: \x01Join teams to start a mix.");
+        CPrintToChat(client, "%t %t", "MixTag", "JoinTeams");
     }
 
     return Plugin_Handled;
@@ -346,19 +349,19 @@ bool Menu_Initialise()
     {
         case STATE_FIRST_CAPT:
         {
-            g_mMixMenu.SetTitle("Mix Manager - Pick first captain");
+            g_mMixMenu.SetTitle("%T", "MenuPickFirstCaptain", LANG_SERVER);
             return true;
         }
 
         case STATE_SECOND_CAPT:
         {
-            g_mMixMenu.SetTitle("Mix Manager - Pick second captain");
+            g_mMixMenu.SetTitle("%T", "MenuPickSecondCaptain", LANG_SERVER);
             return true;
         }
 
         case STATE_PICK_TEAMS:
         {
-            g_mMixMenu.SetTitle("Mix Manager - Pick team member(s)");
+            g_mMixMenu.SetTitle("%T", "MenuPickTeamMembers", LANG_SERVER);
             return true;
         }
     }
@@ -406,7 +409,26 @@ void Menu_DisplayToAllSpecs()
 
 int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
 {
-    if (action == MenuAction_Select)
+    if (action == MenuAction_Display)
+    {
+        char title[128];
+
+        switch (g_iCurrentState)
+        {
+            case STATE_FIRST_CAPT:
+                FormatEx(title, sizeof(title), "%T", "MenuPickFirstCaptain", param1);
+
+            case STATE_SECOND_CAPT:
+                FormatEx(title, sizeof(title), "%T", "MenuPickSecondCaptain", param1);
+
+            case STATE_PICK_TEAMS:
+                FormatEx(title, sizeof(title), "%T", "MenuPickTeamMembers", param1);
+        }
+
+        Panel panel = view_as<Panel>(param2);
+        panel.SetTitle(title);
+    }
+    else if (action == MenuAction_Select)
     {
         if (g_iCurrentState == STATE_FIRST_CAPT || g_iCurrentState == STATE_SECOND_CAPT)
         {
@@ -436,7 +458,7 @@ int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
 
             if (team == L4D2Team_Spectator || (team == L4D2Team_Infected && g_iSurvivorsPick == 1) || (team == L4D2Team_Survivor && g_iSurvivorsPick == 0))
             {
-                PrintToChatAll("\x04Mix Manager: \x01Captain \x03%N \x01found in the wrong team, aborting...", param1);
+                CPrintToChatAll("%t %t", "MixTag", "CaptainWrongTeam", param1);
                 StopMix();
             }
             else
@@ -448,7 +470,7 @@ int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
                     g_iPickCount++;
                     if (g_iPickCount >= requiredPicks)
                     {
-                        PrintToChatAll("\x04Mix Manager: \x01 Teams are picked.");
+                        CPrintToChatAll("%t %t", "MixTag", "TeamsPicked");
                         StopMix();
                     }
                     else if (g_iPickCount != requiredPicks - 2)
@@ -458,7 +480,7 @@ int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
                 }
                 else
                 {
-                    PrintToChatAll("\x04Mix Manager: \x01The team member who was picked was not found, aborting...", param1);
+                    CPrintToChatAll("%t %t", "MixTag", "PickedMemberNotFound");
                     StopMix();
                 }
             }
@@ -492,7 +514,7 @@ Action Menu_StateHandler(Handle timer, any data)
             }
             else
             {
-                PrintToChatAll("\x04Mix Manager: \x01Failed to find first captain with at least 1 vote from spectators, aborting...");
+                CPrintToChatAll("%t %t", "MixTag", "FirstCaptainNotFound");
                 StopMix();
             }
 
@@ -513,7 +535,7 @@ Action Menu_StateHandler(Handle timer, any data)
             }
             else
             {
-                PrintToChatAll("\x04Mix Manager: \x01Failed to find second captain with at least 1 vote from spectators, aborting...");
+                CPrintToChatAll("%t %t", "MixTag", "SecondCaptainNotFound");
                 StopMix();
             }
 
@@ -565,14 +587,14 @@ Action Menu_TeamPickHandler(Handle timer)
                 }
                 else
                 {
-                    PrintToChatAll("\x04Mix Manager: \x01No more spectators to choose from, aborting...");
+                    CPrintToChatAll("%t %t", "MixTag", "NoSpectators");
                     StopMix();
                     return Plugin_Stop;
                 }
             }
             else
             {
-                PrintToChatAll("\x04Mix Manager: \x01Failed to find the captain, aborting...");
+                CPrintToChatAll("%t %t", "MixTag", "CaptainNotFound");
                 StopMix();
                 return Plugin_Stop;
             }
@@ -608,23 +630,23 @@ bool SwapPlayerToTeam(const char[] authId, int team, int numVotes)
         {
             case STATE_FIRST_CAPT:
             {
-                PrintToChatAll("\x04Mix Manager: \x01First captain is \x03%N\x01. (\x05%d \x01votes)", client, numVotes);
+                CPrintToChatAll("%t %t", "MixTag", "FirstCaptain", client, numVotes);
             }
             
             case STATE_SECOND_CAPT:
             {
-                PrintToChatAll("\x04Mix Manager: \x01Second captain is \x03%N\x01. (\x05%d \x01votes)", client, numVotes);
+                CPrintToChatAll("%t %t", "MixTag", "SecondCaptain", client, numVotes);
             }
 
             case STATE_PICK_TEAMS:
             {
                 if (g_iSurvivorsPick == 1)
                 {
-                    PrintToChatAll("\x04Mix Manager: \x03%N \x01was picked (survivors).", client);
+                    CPrintToChatAll("%t %t", "MixTag", "PickedSurvivors", client);
                 }
                 else
                 {
-                    PrintToChatAll("\x04Mix Manager: \x03%N \x01was picked (infected).", client);
+                    CPrintToChatAll("%t %t", "MixTag", "PickedInfected", client);
                 }
             }
         }
@@ -637,7 +659,7 @@ public void OnClientDisconnect(int client)
 {
     if (g_iCurrentState != STATE_NO_MIX && IsClientInPlayers(client))
     {
-        PrintToChatAll("\x04Mix Manager: \x01Player \x03%N \x01has left the game, aborting...", client);
+        CPrintToChatAll("%t %t", "MixTag", "PlayerLeft", client);
         StopMix();
     }
 }

@@ -1,0 +1,15 @@
+"Phrases"
+{
+    "RankingWebsite"
+    {
+        "zho"    "{lightgreen}l4d2.com.br"
+    }
+    "RankingCommandHint"
+    {
+        "zho"    "輸入 {green}!ranking {default}查看你的排名。"
+    }
+    "RankingPanelTitle"
+    {
+        "zho"    "L4D2 | 玩家排名"
+    }
+}

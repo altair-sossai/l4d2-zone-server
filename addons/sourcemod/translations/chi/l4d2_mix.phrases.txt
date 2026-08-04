@@ -1,0 +1,129 @@
+"Phrases"
+{
+    "MixTag"
+    {
+        "chi"    "{green}Mix Manager:{default}"
+    }
+    "JoinWithoutPick"
+    {
+        "chi"    "你尚未被选中，无法加入队伍。"
+    }
+    "StoppedByAdmin"
+    {
+        "#format"    "{1:N}"
+        "chi"        "管理员 {lightgreen}{1}{default} 已停止 Mix。"
+    }
+    "NotStarted"
+    {
+        "chi"    "当前没有正在进行的 Mix。"
+    }
+    "UnavailableOneVsOne"
+    {
+        "chi"    "1v1 比赛中无法使用 Mix。"
+    }
+    "AlreadyStarted"
+    {
+        "chi"    "Mix 已经开始。"
+    }
+    "NotAllowedLive"
+    {
+        "chi"    "回合进行期间无法开始 Mix。"
+    }
+    "SpectatorCannotStart"
+    {
+        "chi"    "旁观者无法发起 Mix。"
+    }
+    "StartedByAdmin"
+    {
+        "#format"    "{1:N}"
+        "chi"        "管理员 {lightgreen}{1}{default} 已开始 Mix。"
+    }
+    "VoteCast"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{lightgreen}{1} {default}投票开始 Mix。"
+    }
+    "StartedByVote"
+    {
+        "chi"    "Mix 已通过投票开始。"
+    }
+    "VoteProgress"
+    {
+        "#format"    "{1:N},{2:d}"
+        "chi"        "{lightgreen}{1} {default}投票开始 Mix。（{olive}还需 {2} 票{default}）"
+    }
+    "AlreadyVoted"
+    {
+        "chi"    "你已经投票开始 Mix。"
+    }
+    "JoinTeams"
+    {
+        "chi"    "两支队伍必须满员才能开始 Mix。"
+    }
+    "MenuPickFirstCaptain"
+    {
+        "chi"    "Mix Manager - 选择第一位队长"
+    }
+    "MenuPickSecondCaptain"
+    {
+        "chi"    "Mix Manager - 选择第二位队长"
+    }
+    "MenuPickTeamMembers"
+    {
+        "chi"    "Mix Manager - 选择队员"
+    }
+    "CaptainWrongTeam"
+    {
+        "#format"    "{1:N}"
+        "chi"        "队长 {lightgreen}{1} {default}所在队伍有误。Mix 已取消。"
+    }
+    "TeamsPicked"
+    {
+        "chi"    "队伍选择完毕。"
+    }
+    "PickedMemberNotFound"
+    {
+        "chi"    "未找到选中的玩家。Mix 已取消。"
+    }
+    "FirstCaptainNotFound"
+    {
+        "chi"    "无法选出至少获得一名旁观者投票的第一位队长。Mix 已取消。"
+    }
+    "SecondCaptainNotFound"
+    {
+        "chi"    "无法选出至少获得一名旁观者投票的第二位队长。Mix 已取消。"
+    }
+    "NoSpectators"
+    {
+        "chi"    "没有更多可供选择的旁观者。Mix 已取消。"
+    }
+    "CaptainNotFound"
+    {
+        "chi"    "未找到队长。Mix 已取消。"
+    }
+    "FirstCaptain"
+    {
+        "#format"    "{1:N},{2:d}"
+        "chi"        "第一位队长：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
+    }
+    "SecondCaptain"
+    {
+        "#format"    "{1:N},{2:d}"
+        "chi"        "第二位队长：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
+    }
+    "PickedSurvivors"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{lightgreen}{1} {default}被选入生还者队。"
+    }
+    "PickedInfected"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{lightgreen}{1} {default}被选入感染者队。"
+    }
+    "PlayerLeft"
+    {
+        "#format"    "{1:N}"
+        "chi"        "玩家 {lightgreen}{1} {default}已离开游戏。Mix 已取消。"
+    }
+}

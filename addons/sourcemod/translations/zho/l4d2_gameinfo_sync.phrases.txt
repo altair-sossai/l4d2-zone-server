@@ -1,0 +1,33 @@
+"Phrases"
+{
+    "ExternalChatMessage"
+    {
+        "#format"    "{1:s},{2:s}"
+        "zho"        "{default}(外部) {orange}{1}{default}: {2}"
+    }
+    "ExternalConsoleMessage"
+    {
+        "#format"    "{1:s},{2:s},{3:s}"
+        "zho"        "[外部] {1} ({2}): {3}"
+    }
+    "RelatedAccount"
+    {
+        "#format"    "{1:N},{2:s}"
+        "zho"        "{green}[IP] {orange}{1}{default} 也曾使用 {orange}{2}{default} 連線。更多詳情請查看控制台。"
+    }
+    "RelatedAccountOneAdditional"
+    {
+        "#format"    "{1:N},{2:s}"
+        "zho"        "{green}[IP] {orange}{1}{default} 也曾使用 {orange}{2}{default} 連線，另有 1 個關聯帳號。更多詳情請查看控制台。"
+    }
+    "RelatedAccountMultipleAdditional"
+    {
+        "#format"    "{1:N},{2:s},{3:d}"
+        "zho"        "{green}[IP] {orange}{1}{default} 也曾使用 {orange}{2}{default} 連線，另有 {3} 個關聯帳號。更多詳情請查看控制台。"
+    }
+    "RelatedAccountsConsoleHeader"
+    {
+        "#format"    "{1:N}"
+        "zho"        "[IP] 與 {1} 相關的帳號："
+    }
+}

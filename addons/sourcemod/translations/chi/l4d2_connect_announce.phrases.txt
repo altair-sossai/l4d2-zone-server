@@ -3,6 +3,6 @@
 	"PlayerLoading"
 	{
 		"#format"	"{1:s}"
-		"en"		"{lightgreen}{1} {default}is connecting..."
+		"chi"		"{lightgreen}{1} {default}正在连接..."
 	}
 }

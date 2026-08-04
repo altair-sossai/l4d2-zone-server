@@ -1,0 +1,33 @@
+"Phrases"
+{
+    "ExternalChatMessage"
+    {
+        "#format"    "{1:s},{2:s}"
+        "es"         "{default}(Externo) {orange}{1}{default}: {2}"
+    }
+    "ExternalConsoleMessage"
+    {
+        "#format"    "{1:s},{2:s},{3:s}"
+        "es"         "[Externo] {1} ({2}): {3}"
+    }
+    "RelatedAccount"
+    {
+        "#format"    "{1:N},{2:s}"
+        "es"         "{green}[IP] {orange}{1}{default} también se ha conectado como {orange}{2}{default}. Detalles en la consola."
+    }
+    "RelatedAccountOneAdditional"
+    {
+        "#format"    "{1:N},{2:s}"
+        "es"         "{green}[IP] {orange}{1}{default} también se ha conectado como {orange}{2}{default} y tiene 1 cuenta relacionada más. Detalles en la consola."
+    }
+    "RelatedAccountMultipleAdditional"
+    {
+        "#format"    "{1:N},{2:s},{3:d}"
+        "es"         "{green}[IP] {orange}{1}{default} también se ha conectado como {orange}{2}{default} y tiene {3} cuentas relacionadas más. Detalles en la consola."
+    }
+    "RelatedAccountsConsoleHeader"
+    {
+        "#format"    "{1:N}"
+        "es"         "[IP] Cuentas relacionadas con {1}:"
+    }
+}
