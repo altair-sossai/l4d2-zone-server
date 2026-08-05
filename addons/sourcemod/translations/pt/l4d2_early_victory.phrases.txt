@@ -11,7 +11,7 @@
     }
     "VoteTitle"
     {
-        "pt"    "Placar decidido. Continuar? (Sim = continua / Não = encerra)"
+        "pt"    "Jogo decidido, deseja continuar?"
     }
     "VoteEnd"
     {

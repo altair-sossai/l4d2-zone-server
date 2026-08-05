@@ -12,6 +12,7 @@
 
 ConVar g_cvEnabled,
        g_cvChapter,
+       g_cvMinDiff,
        g_cvVoteDuration,
        g_cvSlayDelay,
        g_cvChangeDelay;
@@ -68,6 +69,7 @@ public void OnPluginStart()
 
     g_cvEnabled = CreateConVar("l4d2_early_victory_enabled", "1", "Enable/disable the early victory (skip last map when the game is already decided)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
     g_cvChapter = CreateConVar("l4d2_early_victory_chapter", "4", "Chapter (map index) that triggers the early victory", FCVAR_NOTIFY, true, 1.0);
+    g_cvMinDiff = CreateConVar("l4d2_early_victory_min_diff", "15", "Minimum score lead (scoring team over the already-played team) required to start the early victory vote", FCVAR_NOTIFY, true, 1.0);
     g_cvVoteDuration = CreateConVar("l4d2_early_victory_vote_duration", "15", "How many seconds the losing team has to vote whether to continue playing", FCVAR_NOTIFY, true, 5.0);
     g_cvSlayDelay = CreateConVar("l4d2_early_victory_slay_delay", "5.0", "How many seconds after announcing the victory before slaying everyone", FCVAR_NOTIFY, true, 0.0);
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
@@ -117,7 +119,7 @@ Action CallVote_Listener(int client, const char[] command, int argc)
     if (!StrEqual(voteType, "ChangeMission", false))
         return Plugin_Continue;
 
-    CPrintToChat(client, "{orange}[%t]{default} %t", "Tag", "MapVoteBlocked");
+    CPrintToChat(client, "%t", "MapVoteBlocked");
 
     return Plugin_Handled;
 }
@@ -153,6 +155,10 @@ Action Check_Timer(Handle timer)
     int alreadyPlayedScore = AlreadyPlayedTeamScore();
 
     if (scoringScore <= alreadyPlayedScore)
+        return Plugin_Continue;
+
+    int diff = scoringScore - alreadyPlayedScore;
+    if (diff < g_cvMinDiff.IntValue)
         return Plugin_Continue;
 
     if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
@@ -195,7 +201,7 @@ void StartContinueVote()
 
     if (g_iEligibleVoters == 0)
     {
-        CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteEnd");
+        CPrintToChatAll("%t", "VoteEnd");
         ScheduleEarlyVictory();
         return;
     }
@@ -239,7 +245,7 @@ void ContinueVoteActionHandler(Handle vote, BuiltinVoteAction action, int param1
             {
                 g_bVoteResolved = true;
                 DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Generic);
-                CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteCancelled");
+                CPrintToChatAll("%t", "VoteCancelled");
             }
         }
     }
@@ -267,7 +273,7 @@ void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, cons
     if (noVotes * 2 > g_iEligibleVoters)
     {
         DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-        CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteEnd");
+        CPrintToChatAll("%t", "VoteEnd");
         ScheduleEarlyVictory();
         return;
     }
@@ -275,7 +281,7 @@ void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, cons
     char message[128];
     FormatEx(message, sizeof(message), "%T", "VoteContinue", LANG_SERVER);
     DisplayBuiltinVotePass(vote, message);
-    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "VoteContinue");
+    CPrintToChatAll("%t", "VoteContinue");
 }
 
 void ScheduleEarlyVictory()

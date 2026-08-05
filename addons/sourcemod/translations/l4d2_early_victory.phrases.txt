@@ -11,7 +11,7 @@
     }
     "VoteTitle"
     {
-        "en"    "Score decided. Keep playing? (Yes = continue / No = end)"
+        "en"    "Game decided, keep playing?"
     }
     "VoteEnd"
     {

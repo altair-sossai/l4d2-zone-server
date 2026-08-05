@@ -11,7 +11,7 @@
     }
     "VoteTitle"
     {
-        "es"    "Marcador decidido. ¿Seguir? (Sí = continúa / No = termina)"
+        "es"    "Partida decidida, ¿seguir jugando?"
     }
     "VoteEnd"
     {
