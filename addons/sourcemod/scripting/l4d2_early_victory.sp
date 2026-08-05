@@ -20,7 +20,8 @@ bool g_bTriggered = false,
      g_bVoteResolved = false,
      g_bRoundOver = false;
 
-Handle g_hVote = null;
+Handle g_hVote = null,
+       g_hCheckTimer = null;
 
 int g_iEligibleVoters = 0;
 
@@ -57,7 +58,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.2.0",
+    version = "1.3.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -72,36 +73,34 @@ public void OnPluginStart()
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
+
     AddCommandListener(CallVote_Listener, "callvote");
-
-    CreateTimer(3.0, Check_Timer, _, TIMER_REPEAT);
-}
-
-public void OnMapStart()
-{
-    g_bTriggered = false;
-    g_bVoteResolved = false;
-    g_bRoundOver = false;
-    g_hVote = null;
-    g_iEligibleVoters = 0;
-}
-
-public void OnMapEnd()
-{
-    g_bTriggered = false;
-    g_bVoteResolved = false;
-    g_hVote = null;
-    g_iEligibleVoters = 0;
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
+    g_bTriggered = false;
+    g_bVoteResolved = false;
     g_bRoundOver = false;
+    g_hVote = null;
+    g_iEligibleVoters = 0;
+
+    KillCheckTimer();
+}
+
+public void OnRoundIsLive()
+{
+    if (g_hCheckTimer != null)
+        return;
+
+    CreateTimer(5.0, StartCheck_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
 {
     g_bRoundOver = true;
+
+    KillCheckTimer();
 }
 
 Action CallVote_Listener(int client, const char[] command, int argc)
@@ -123,19 +122,32 @@ Action CallVote_Listener(int client, const char[] command, int argc)
     return Plugin_Handled;
 }
 
-Action Check_Timer(Handle timer)
+Action StartCheck_Timer(Handle timer)
 {
-    if (!g_cvEnabled.BoolValue || g_bTriggered || !L4D_HasMapStarted())
-        return Plugin_Continue;
+    if (g_hCheckTimer != null)
+        return Plugin_Stop;
 
-    if (IsInReady())
-        return Plugin_Continue;
+    if (!g_cvEnabled.BoolValue || g_bTriggered || g_bRoundOver || !L4D_HasMapStarted())
+        return Plugin_Stop;
 
-    if (!InSecondHalfOfRound())
-        return Plugin_Continue;
+    if (IsInReady() || !InSecondHalfOfRound())
+        return Plugin_Stop;
 
     if (L4D_GetCurrentChapter() != g_cvChapter.IntValue || L4D_IsMissionFinalMap())
-        return Plugin_Continue;
+        return Plugin_Stop;
+
+    g_hCheckTimer = CreateTimer(5.0, Check_Timer, _, TIMER_REPEAT);
+
+    return Plugin_Stop;
+}
+
+Action Check_Timer(Handle timer)
+{
+    if (!g_cvEnabled.BoolValue || g_bTriggered || g_bRoundOver || !L4D_HasMapStarted())
+    {
+        g_hCheckTimer = null;
+        return Plugin_Stop;
+    }
 
     int scoringScore = ScoringTeamScore();
     int alreadyPlayedScore = AlreadyPlayedTeamScore();
@@ -150,90 +162,21 @@ Action Check_Timer(Handle timer)
         return Plugin_Continue;
 
     g_bTriggered = true;
+    g_hCheckTimer = null;
 
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", scoringScore, alreadyPlayedScore);
     StartContinueVote();
 
-    return Plugin_Continue;
-}
-
-Action Slay_Timer(Handle timer)
-{
-    ServerCommand("sm_slay @all");
-
-    CreateTimer(g_cvChangeDelay.FloatValue, ChangeMap_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
-
     return Plugin_Stop;
 }
 
-Action ChangeMap_Timer(Handle timer)
+void KillCheckTimer()
 {
-    int pick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
+    if (g_hCheckTimer == null)
+        return;
 
-    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", g_sOfficialCampaigns[pick]);
-
-    ServerCommand("changelevel %s", g_sOfficialFirstMaps[pick]);
-
-    return Plugin_Stop;
-}
-
-int ScoringTeamScore()
-{
-    return AreTeamsFlipped() ? GetTeamBScore() : GetTeamAScore();
-}
-
-int AlreadyPlayedTeamScore()
-{
-    return AreTeamsFlipped() ? GetTeamAScore() : GetTeamBScore();
-}
-
-int GetTeamAScore()
-{
-    return GetTeamTotalScore(0, 1);
-}
-
-int GetTeamBScore()
-{
-    return GetTeamTotalScore(1, 2);
-}
-
-int GetTeamTotalScore(int campaignTeam, int logicalTeam)
-{
-    int score = L4D2Direct_GetVSCampaignScore(campaignTeam);
-
-    if (g_bRoundOver)
-        return score;
-
-    int mapScore = L4D_GetTeamScore(logicalTeam);
-
-    if (mapScore > 0)
-        score += mapScore;
-
-    return score;
-}
-
-bool AreTeamsFlipped()
-{
-    return GameRules_GetProp("m_bAreTeamsFlipped") != 0;
-}
-
-bool HasHumanOnLosingTeam()
-{
-    for (int i = 1; i <= MaxClients; i++)
-    {
-        if (!IsClientInGame(i) || IsFakeClient(i))
-            continue;
-
-        if (GetClientTeam(i) == L4D_TEAM_INFECTED)
-            return true;
-    }
-
-    return false;
-}
-
-bool InSecondHalfOfRound()
-{
-    return GameRules_GetProp("m_bInSecondHalfOfRound") != 0;
+    KillTimer(g_hCheckTimer);
+    g_hCheckTimer = null;
 }
 
 void StartContinueVote()
@@ -338,4 +281,83 @@ void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, cons
 void ScheduleEarlyVictory()
 {
     CreateTimer(g_cvSlayDelay.FloatValue, Slay_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+Action Slay_Timer(Handle timer)
+{
+    ServerCommand("sm_slay @all");
+
+    CreateTimer(g_cvChangeDelay.FloatValue, ChangeMap_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
+
+    return Plugin_Stop;
+}
+
+Action ChangeMap_Timer(Handle timer)
+{
+    int pick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
+
+    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", g_sOfficialCampaigns[pick]);
+
+    ServerCommand("changelevel %s", g_sOfficialFirstMaps[pick]);
+
+    return Plugin_Stop;
+}
+
+int ScoringTeamScore()
+{
+    return AreTeamsFlipped() ? GetTeamBScore() : GetTeamAScore();
+}
+
+int AlreadyPlayedTeamScore()
+{
+    return AreTeamsFlipped() ? GetTeamAScore() : GetTeamBScore();
+}
+
+int GetTeamAScore()
+{
+    return GetTeamTotalScore(0, 1);
+}
+
+int GetTeamBScore()
+{
+    return GetTeamTotalScore(1, 2);
+}
+
+int GetTeamTotalScore(int campaignTeam, int logicalTeam)
+{
+    int score = L4D2Direct_GetVSCampaignScore(campaignTeam);
+
+    if (g_bRoundOver)
+        return score;
+
+    int mapScore = L4D_GetTeamScore(logicalTeam);
+
+    if (mapScore > 0)
+        score += mapScore;
+
+    return score;
+}
+
+bool AreTeamsFlipped()
+{
+    return GameRules_GetProp("m_bAreTeamsFlipped") != 0;
+}
+
+bool InSecondHalfOfRound()
+{
+    return GameRules_GetProp("m_bInSecondHalfOfRound") != 0;
+}
+
+bool HasHumanOnLosingTeam()
+{
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i))
+            continue;
+
+        if (GetClientTeam(i) == L4D_TEAM_INFECTED)
+            return true;
+    }
+
+    return false;
 }

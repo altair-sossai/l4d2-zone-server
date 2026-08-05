@@ -7,15 +7,15 @@
     "Decided"
     {
         "#format"    "{1:d},{2:d}"
-        "zho"        "勝負已定（{green}{1}{default} x {green}{2}{default}），無法翻盤。落敗隊將投票是否繼續。"
+        "zho"        "勝負已定（{green}{1}{default} x {green}{2}{default}），落敗隊投票。"
     }
     "VoteTitle"
     {
-        "zho"    "比分已定，是否繼續？"
+        "zho"    "比分已定，繼續嗎？（是=繼續 / 否=結束）"
     }
     "VoteEnd"
     {
-        "zho"    "落敗隊選擇停止，正在結束比賽。"
+        "zho"    "未過半同意，結束比賽。"
     }
     "VoteContinue"
     {
@@ -23,15 +23,15 @@
     }
     "VoteCancelled"
     {
-        "zho"    "投票已取消，比賽繼續。"
+        "zho"    "投票取消，比賽繼續。"
     }
     "MapVoteBlocked"
     {
-        "zho"    "已禁止換圖：等待翻盤或放棄本回合。"
+        "zho"    "比賽結束前禁止換圖。"
     }
     "NextMap"
     {
         "#format"    "{1:s}"
-        "zho"        "全員已處決。正在開始戰役：{green}{1}"
+        "zho"        "下一戰役：{green}{1}"
     }
 }

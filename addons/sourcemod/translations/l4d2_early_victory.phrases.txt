@@ -7,31 +7,31 @@
     "Decided"
     {
         "#format"    "{1:d},{2:d}"
-        "en"         "Game decided ({green}{1}{default} x {green}{2}{default}) — no comeback possible. The losing team will vote to continue."
+        "en"         "Game decided ({green}{1}{default} x {green}{2}{default}). Losing team will vote."
     }
     "VoteTitle"
     {
-        "en"    "Score decided. Continue playing?"
+        "en"    "Score decided. Keep playing? (Yes = continue / No = end)"
     }
     "VoteEnd"
     {
-        "en"    "The losing team chose to stop. Ending the match."
+        "en"    "No majority to continue. Ending match."
     }
     "VoteContinue"
     {
-        "en"    "The losing team chose to continue."
+        "en"    "Losing team chose to continue."
     }
     "VoteCancelled"
     {
-        "en"    "Vote cancelled. The match continues."
+        "en"    "Vote cancelled. Match continues."
     }
     "MapVoteBlocked"
     {
-        "en"    "Map change blocked: wait for the comeback or concede the round."
+        "en"    "Map change blocked until the match ends."
     }
     "NextMap"
     {
         "#format"    "{1:s}"
-        "en"         "Everyone slain. Starting campaign: {green}{1}"
+        "en"         "Next campaign: {green}{1}"
     }
 }

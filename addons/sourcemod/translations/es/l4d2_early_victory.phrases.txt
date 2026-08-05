@@ -7,19 +7,19 @@
     "Decided"
     {
         "#format"    "{1:d},{2:d}"
-        "es"         "Partida decidida ({green}{1}{default} x {green}{2}{default}) — ya no hay remontada. El equipo perdedor votará si continúa."
+        "es"         "Partida decidida ({green}{1}{default} x {green}{2}{default}). El equipo perdedor votará."
     }
     "VoteTitle"
     {
-        "es"    "Marcador decidido. ¿Continuar jugando?"
+        "es"    "Marcador decidido. ¿Seguir? (Sí = continúa / No = termina)"
     }
     "VoteEnd"
     {
-        "es"    "El equipo perdedor eligió parar. Terminando la partida."
+        "es"    "Sin mayoría para continuar. Terminando la partida."
     }
     "VoteContinue"
     {
-        "es"    "El equipo perdedor eligió continuar."
+        "es"    "El equipo perdedor decidió continuar."
     }
     "VoteCancelled"
     {
@@ -27,11 +27,11 @@
     }
     "MapVoteBlocked"
     {
-        "es"    "Cambio de mapa bloqueado: esperen la remontada o cedan la ronda."
+        "es"    "Cambio de mapa bloqueado hasta que termine la partida."
     }
     "NextMap"
     {
         "#format"    "{1:s}"
-        "es"         "Todos eliminados. Iniciando la campaña: {green}{1}"
+        "es"         "Próxima campaña: {green}{1}"
     }
 }
