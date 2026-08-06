@@ -162,7 +162,8 @@ Action Check_Timer(Handle timer)
     int scoringScore = ScoringTeamScore();
     int alreadyPlayedScore = AlreadyPlayedTeamScore();
 
-    bool scoringTeamTookTheLead = scoringScore > alreadyPlayedScore && (scoringScore - alreadyPlayedScore) >= g_cvMinDiff.IntValue;
+    int leadDiff = scoringScore - alreadyPlayedScore;
+    bool scoringTeamTookTheLead = leadDiff >= g_cvMinDiff.IntValue;
 
     int losingTeam = 0;
 
@@ -172,7 +173,8 @@ Action Check_Timer(Handle timer)
     }
     else
     {
-        bool scoringTeamCanNoLongerWin = ScoringTeamMaxScore() < alreadyPlayedScore;
+        int deficitDiff = alreadyPlayedScore - ScoringTeamMaxScore();
+        bool scoringTeamCanNoLongerWin = deficitDiff >= g_cvMinDiff.IntValue;
 
         if (scoringTeamCanNoLongerWin)
             losingTeam = L4D_TEAM_SURVIVOR;
@@ -200,7 +202,6 @@ Action Debug_Cmd(int client, int args)
 {
     int scoringScore = ScoringTeamScore();
     int alreadyPlayedScore = AlreadyPlayedTeamScore();
-    int diff = scoringScore - alreadyPlayedScore;
 
     int campaign = L4D2Direct_GetVSCampaignScore(AreTeamsFlipped() ? 1 : 0);
     int maxCompletion = L4D_GetVersusMaxCompletionScore();
@@ -220,14 +221,17 @@ Action Debug_Cmd(int client, int args)
 
     int maxScore = ScoringTeamMaxScore();
 
-    bool scoringTeamTookTheLead = scoringScore > alreadyPlayedScore && diff >= g_cvMinDiff.IntValue;
-    bool scoringTeamCanNoLongerWin = maxScore < alreadyPlayedScore;
+    int leadDiff = scoringScore - alreadyPlayedScore;
+    int deficitDiff = alreadyPlayedScore - maxScore;
+
+    bool scoringTeamTookTheLead = leadDiff >= g_cvMinDiff.IntValue;
+    bool scoringTeamCanNoLongerWin = deficitDiff >= g_cvMinDiff.IntValue;
 
     ReplyToCommand(client, "===== Early Victory Debug =====");
     ReplyToCommand(client, "Chapter: %d (trigger: %d) | 2nd half: %d | InReady: %d | RoundOver: %d | Flipped: %d", L4D_GetCurrentChapter(), g_cvChapter.IntValue, InSecondHalfOfRound(), IsInReady(), g_bRoundOver, AreTeamsFlipped());
     ReplyToCommand(client, "Scoring team score: %d", scoringScore);
     ReplyToCommand(client, "Already-played team score: %d", alreadyPlayedScore);
-    ReplyToCommand(client, "Diff: %d (min_diff: %d)", diff, g_cvMinDiff.IntValue);
+    ReplyToCommand(client, "min_diff: %d", g_cvMinDiff.IntValue);
     ReplyToCommand(client, "--- Bonus (scoremod) ---");
     ReplyToCommand(client, "Health: %d | Damage: %d | Pills: %d => Current total: %d", healthBonus, damageBonus, pillsBonus, currentBonus);
     ReplyToCommand(client, "Max pills bonus: %d | Team size: %d | Points per pill: %d", maxPillsBonus, teamSize, pointsPerPill);
@@ -235,8 +239,8 @@ Action Debug_Cmd(int client, int args)
     ReplyToCommand(client, "--- Max reachable (scoring team) ---");
     ReplyToCommand(client, "campaign(%d) + maxCompletion(%d) + currentBonus(%d) + pillsMargin(%d) = %d", campaign, maxCompletion, currentBonus, pillsMargin, maxScore);
     ReplyToCommand(client, "--- Verdict ---");
-    ReplyToCommand(client, "scoringTeamTookTheLead: %d", scoringTeamTookTheLead);
-    ReplyToCommand(client, "scoringTeamCanNoLongerWin: %d", scoringTeamCanNoLongerWin);
+    ReplyToCommand(client, "leadDiff: %d => scoringTeamTookTheLead: %d", leadDiff, scoringTeamTookTheLead);
+    ReplyToCommand(client, "deficitDiff: %d => scoringTeamCanNoLongerWin: %d", deficitDiff, scoringTeamCanNoLongerWin);
     ReplyToCommand(client, "===============================");
 
     return Plugin_Handled;
