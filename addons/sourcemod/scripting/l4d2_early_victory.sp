@@ -156,7 +156,7 @@ Action Check_Timer(Handle timer)
         return Plugin_Stop;
     }
 
-    if (IsTankInPlay())
+    if (IsTankInPlay() || IsAnySurvivorIncapacitated())
         return Plugin_Continue;
 
     int scoringScore = ScoringTeamScore();
@@ -432,6 +432,20 @@ bool IsTankInPlay()
             continue;
 
         if (GetEntProp(i, Prop_Send, "m_zombieClass") == ZOMBIECLASS_TANK)
+            return true;
+    }
+
+    return false;
+}
+
+bool IsAnySurvivorIncapacitated()
+{
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || GetClientTeam(i) != L4D_TEAM_SURVIVOR || !IsPlayerAlive(i))
+            continue;
+
+        if (GetEntProp(i, Prop_Send, "m_isIncapacitated") != 0)
             return true;
     }
 
