@@ -290,9 +290,6 @@ Action SuggestSlotCommand_Timer(Handle timer)
         if (GetClientTeam(client) != L4D_TEAM_SPECTATOR)
             continue;
 
-        if (!DeservesSlot(client))
-            continue;
-
         CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotSuggestion");
     }
 
@@ -484,33 +481,6 @@ int FindInQueue(const char[] steamId)
 bool IsStarter(const char[] steamId)
 {
     return g_aTeamA.FindString(steamId) != -1 || g_aTeamB.FindString(steamId) != -1;
-}
-
-bool DeservesSlot(int client)
-{
-    char steamId[64];
-    if (!GetSteamId(client, steamId, sizeof(steamId)))
-        return false;
-
-    int slots = Slots();
-    int position = 1;
-
-    Player player;
-
-    for (int i = 0; i < g_aQueue.Length && position <= slots; i++)
-    {
-        g_aQueue.GetArray(i, player);
-
-        if (GetClientUsingSteamId(player.steamId) == -1)
-            continue;
-
-        if (StrEqual(player.steamId, steamId))
-            return true;
-
-        position++;
-    }
-
-    return false;
 }
 
 int GetClientUsingSteamId(const char[] steamId)

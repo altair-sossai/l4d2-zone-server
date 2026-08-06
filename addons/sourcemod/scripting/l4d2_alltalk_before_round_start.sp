@@ -19,7 +19,7 @@ public Plugin myinfo =
 {
 	name		= "L4D2 - All Talk",
 	author		= "Altair Sossai",
-	description = "Enables all talk before the first round starts, then turns it off once the round goes live",
+	description = "Enables all talk before the first round starts, then turns it off once the live countdown begins",
 	version		= "1.1.0",
 	url			= "https://github.com/altair-sossai/l4d2-server-manager-client"
 };
@@ -46,7 +46,7 @@ Action EnableOnFirstMap_Timer(Handle timer)
 	return Plugin_Continue;
 }
 
-public void OnRoundIsLive()
+public void OnRoundLiveCountdown()
 {
 	SetAllTalk(false);
 }
