@@ -1,4 +1,4 @@
-spcomp ..\addons\sourcemod\scripting\alltalk-before-round-start.sp -o ..\addons\sourcemod\plugins\optional\alltalk-before-round-start.smx
+spcomp ..\addons\sourcemod\scripting\l4d2_alltalk_before_round_start.sp -o ..\addons\sourcemod\plugins\optional\l4d2_alltalk_before_round_start.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_queue.sp -o ..\addons\sourcemod\plugins\optional\l4d2_queue.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_mix.sp -o ..\addons\sourcemod\plugins\optional\l4d2_mix.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_spectating_cheat.sp -o ..\addons\sourcemod\plugins\optional\l4d2_spectating_cheat.smx
