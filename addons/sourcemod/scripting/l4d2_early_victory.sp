@@ -7,6 +7,7 @@
 #include <readyup>
 #include <builtinvotes>
 #include <colors>
+#include <l4d2_hybrid_scoremod>
 
 #define TRANSLATION_FILE "l4d2_early_victory.phrases"
 
@@ -77,6 +78,8 @@ public void OnPluginStart()
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
     AddCommandListener(CallVote_Listener, "callvote");
+
+    RegAdminCmd("sm_early_victory_debug", Debug_Cmd, ADMFLAG_ROOT, "Shows Early Victory internal values (scores and bonus breakdown) for debugging");
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -154,26 +157,84 @@ Action Check_Timer(Handle timer)
     int scoringScore = ScoringTeamScore();
     int alreadyPlayedScore = AlreadyPlayedTeamScore();
 
-    if (scoringScore <= alreadyPlayedScore)
-        return Plugin_Continue;
+    bool scoringTeamTookTheLead = scoringScore > alreadyPlayedScore && (scoringScore - alreadyPlayedScore) >= g_cvMinDiff.IntValue;
 
-    int diff = scoringScore - alreadyPlayedScore;
-    if (diff < g_cvMinDiff.IntValue)
+    int losingTeam = 0;
+
+    if (scoringTeamTookTheLead)
+    {
+        losingTeam = L4D_TEAM_INFECTED;
+    }
+    else
+    {
+        bool scoringTeamCanNoLongerWin = ScoringTeamMaxScore() < alreadyPlayedScore;
+
+        if (scoringTeamCanNoLongerWin)
+            losingTeam = L4D_TEAM_SURVIVOR;
+    }
+
+    if (losingTeam == 0)
         return Plugin_Continue;
 
     if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
         return Plugin_Continue;
 
-    if (!HasHumanOnLosingTeam())
+    if (!HasHumanOnLosingTeam(losingTeam))
         return Plugin_Continue;
 
     g_bTriggered = true;
     g_hCheckTimer = null;
 
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", scoringScore, alreadyPlayedScore);
-    StartContinueVote();
+    StartContinueVote(losingTeam);
 
     return Plugin_Stop;
+}
+
+Action Debug_Cmd(int client, int args)
+{
+    int scoringScore = ScoringTeamScore();
+    int alreadyPlayedScore = AlreadyPlayedTeamScore();
+    int diff = scoringScore - alreadyPlayedScore;
+
+    int campaign = L4D2Direct_GetVSCampaignScore(AreTeamsFlipped() ? 1 : 0);
+    int maxCompletion = L4D_GetVersusMaxCompletionScore();
+
+    int healthBonus = SMPlus_GetHealthBonus();
+    int damageBonus = SMPlus_GetDamageBonus();
+    int pillsBonus = SMPlus_GetPillsBonus();
+    int currentBonus = healthBonus + damageBonus + pillsBonus;
+
+    int teamSize = GetConVarInt(FindConVar("survivor_limit"));
+    int maxPillsBonus = SMPlus_GetMaxPillsBonus();
+    int pointsPerPill = teamSize > 0 ? maxPillsBonus / teamSize : 0;
+
+    ConVar cvPillsLimit = FindConVar("confogl_pills_limit");
+    int pillsLimit = cvPillsLimit != null ? cvPillsLimit.IntValue : -1;
+    int pillsMargin = MapPillsBonusMargin();
+
+    int maxScore = ScoringTeamMaxScore();
+
+    bool scoringTeamTookTheLead = scoringScore > alreadyPlayedScore && diff >= g_cvMinDiff.IntValue;
+    bool scoringTeamCanNoLongerWin = maxScore < alreadyPlayedScore;
+
+    ReplyToCommand(client, "===== Early Victory Debug =====");
+    ReplyToCommand(client, "Chapter: %d (trigger: %d) | 2nd half: %d | InReady: %d | RoundOver: %d | Flipped: %d", L4D_GetCurrentChapter(), g_cvChapter.IntValue, InSecondHalfOfRound(), IsInReady(), g_bRoundOver, AreTeamsFlipped());
+    ReplyToCommand(client, "Scoring team score: %d", scoringScore);
+    ReplyToCommand(client, "Already-played team score: %d", alreadyPlayedScore);
+    ReplyToCommand(client, "Diff: %d (min_diff: %d)", diff, g_cvMinDiff.IntValue);
+    ReplyToCommand(client, "--- Bonus (scoremod) ---");
+    ReplyToCommand(client, "Health: %d | Damage: %d | Pills: %d => Current total: %d", healthBonus, damageBonus, pillsBonus, currentBonus);
+    ReplyToCommand(client, "Max pills bonus: %d | Team size: %d | Points per pill: %d", maxPillsBonus, teamSize, pointsPerPill);
+    ReplyToCommand(client, "confogl_pills_limit: %d => Map pills margin: %d", pillsLimit, pillsMargin);
+    ReplyToCommand(client, "--- Max reachable (scoring team) ---");
+    ReplyToCommand(client, "campaign(%d) + maxCompletion(%d) + currentBonus(%d) + pillsMargin(%d) = %d", campaign, maxCompletion, currentBonus, pillsMargin, maxScore);
+    ReplyToCommand(client, "--- Verdict ---");
+    ReplyToCommand(client, "scoringTeamTookTheLead: %d", scoringTeamTookTheLead);
+    ReplyToCommand(client, "scoringTeamCanNoLongerWin: %d", scoringTeamCanNoLongerWin);
+    ReplyToCommand(client, "===============================");
+
+    return Plugin_Handled;
 }
 
 void KillCheckTimer()
@@ -185,7 +246,7 @@ void KillCheckTimer()
     g_hCheckTimer = null;
 }
 
-void StartContinueVote()
+void StartContinueVote(int losingTeam)
 {
     g_iEligibleVoters = 0;
 
@@ -193,7 +254,7 @@ void StartContinueVote()
 
     for (int i = 1; i <= MaxClients; i++)
     {
-        if (!IsClientInGame(i) || IsFakeClient(i) || GetClientTeam(i) != L4D_TEAM_INFECTED)
+        if (!IsClientInGame(i) || IsFakeClient(i) || GetClientTeam(i) != losingTeam)
             continue;
 
         players[g_iEligibleVoters++] = i;
@@ -354,16 +415,48 @@ bool InSecondHalfOfRound()
     return GameRules_GetProp("m_bInSecondHalfOfRound") != 0;
 }
 
-bool HasHumanOnLosingTeam()
+bool HasHumanOnLosingTeam(int losingTeam)
 {
     for (int i = 1; i <= MaxClients; i++)
     {
         if (!IsClientInGame(i) || IsFakeClient(i))
             continue;
 
-        if (GetClientTeam(i) == L4D_TEAM_INFECTED)
+        if (GetClientTeam(i) == losingTeam)
             return true;
     }
 
     return false;
+}
+
+int ScoringTeamMaxScore()
+{
+    int campaign = L4D2Direct_GetVSCampaignScore(AreTeamsFlipped() ? 1 : 0);
+    int currentBonus = SMPlus_GetHealthBonus() + SMPlus_GetDamageBonus() + SMPlus_GetPillsBonus();
+
+    return campaign + L4D_GetVersusMaxCompletionScore() + currentBonus + MapPillsBonusMargin();
+}
+
+int MapPillsBonusMargin()
+{
+    int teamSize = GetConVarInt(FindConVar("survivor_limit"));
+    if (teamSize <= 0)
+        return 0;
+
+    int maxPillsBonus = SMPlus_GetMaxPillsBonus();
+    int currentPillsBonus = SMPlus_GetPillsBonus();
+
+    int remainingPillsBonus = maxPillsBonus - currentPillsBonus;
+    if (remainingPillsBonus <= 0)
+        return 0;
+
+    ConVar cvPillsLimit = FindConVar("confogl_pills_limit");
+    int pillsLimit = cvPillsLimit != null ? cvPillsLimit.IntValue : -1;
+
+    if (pillsLimit < 0)
+        return remainingPillsBonus;
+
+    int margin = pillsLimit * (maxPillsBonus / teamSize);
+
+    return margin < remainingPillsBonus ? margin : remainingPillsBonus;
 }
