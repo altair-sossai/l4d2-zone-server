@@ -1,0 +1,23 @@
+"Phrases"
+{
+    "HearMenuTitle"
+    {
+        "chi"    "你想听谁的语音？"
+    }
+    "HearSurvivors"
+    {
+        "chi"    "幸存者 + 旁观者"
+    }
+    "HearInfected"
+    {
+        "chi"    "感染者 + 旁观者"
+    }
+    "HearOnlySpectators"
+    {
+        "chi"    "仅旁观者"
+    }
+    "HearAll"
+    {
+        "chi"    "所有人"
+    }
+}

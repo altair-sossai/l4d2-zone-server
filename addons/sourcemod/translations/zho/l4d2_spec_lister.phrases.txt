@@ -1,0 +1,23 @@
+"Phrases"
+{
+    "HearMenuTitle"
+    {
+        "zho"    "你想聽誰的語音？"
+    }
+    "HearSurvivors"
+    {
+        "zho"    "倖存者 + 觀眾"
+    }
+    "HearInfected"
+    {
+        "zho"    "感染者 + 觀眾"
+    }
+    "HearOnlySpectators"
+    {
+        "zho"    "僅觀眾"
+    }
+    "HearAll"
+    {
+        "zho"    "所有人"
+    }
+}

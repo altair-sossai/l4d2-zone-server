@@ -1,0 +1,23 @@
+"Phrases"
+{
+    "HearMenuTitle"
+    {
+        "pt"    "Quem você deseja ouvir?"
+    }
+    "HearSurvivors"
+    {
+        "pt"    "Sobreviventes + espectadores"
+    }
+    "HearInfected"
+    {
+        "pt"    "Infectados + espectadores"
+    }
+    "HearOnlySpectators"
+    {
+        "pt"    "Apenas os espectadores"
+    }
+    "HearAll"
+    {
+        "pt"    "Todos"
+    }
+}
