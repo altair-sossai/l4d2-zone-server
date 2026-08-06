@@ -11,6 +11,8 @@
 
 #define TRANSLATION_FILE "l4d2_early_victory.phrases"
 
+#define ZOMBIECLASS_TANK 8
+
 ConVar g_cvEnabled,
        g_cvChapter,
        g_cvMinDiff,
@@ -153,6 +155,9 @@ Action Check_Timer(Handle timer)
         g_hCheckTimer = null;
         return Plugin_Stop;
     }
+
+    if (IsTankInPlay())
+        return Plugin_Continue;
 
     int scoringScore = ScoringTeamScore();
     int alreadyPlayedScore = AlreadyPlayedTeamScore();
@@ -413,6 +418,20 @@ bool AreTeamsFlipped()
 bool InSecondHalfOfRound()
 {
     return GameRules_GetProp("m_bInSecondHalfOfRound") != 0;
+}
+
+bool IsTankInPlay()
+{
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || GetClientTeam(i) != L4D_TEAM_INFECTED || !IsPlayerAlive(i))
+            continue;
+
+        if (GetEntProp(i, Prop_Send, "m_zombieClass") == ZOMBIECLASS_TANK)
+            return true;
+    }
+
+    return false;
 }
 
 bool HasHumanOnLosingTeam(int losingTeam)
