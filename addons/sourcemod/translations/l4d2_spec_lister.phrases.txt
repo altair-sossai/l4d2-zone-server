@@ -20,4 +20,8 @@
     {
         "en"    "Everyone"
     }
+    "HearHint"
+    {
+        "en"    "You can use the {green}!hear{default} command to hear the players."
+    }
 }

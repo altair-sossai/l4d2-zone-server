@@ -20,4 +20,8 @@
     {
         "chi"    "所有人"
     }
+    "HearHint"
+    {
+        "chi"    "你可以使用 {green}!hear{default} 命令来收听玩家的语音。"
+    }
 }

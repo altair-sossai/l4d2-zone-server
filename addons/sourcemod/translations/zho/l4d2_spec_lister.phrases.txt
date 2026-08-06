@@ -20,4 +20,8 @@
     {
         "zho"    "所有人"
     }
+    "HearHint"
+    {
+        "zho"    "你可以使用 {green}!hear{default} 指令來收聽玩家的語音。"
+    }
 }

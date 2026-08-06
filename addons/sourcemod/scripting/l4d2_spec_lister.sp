@@ -3,7 +3,11 @@
 
 #include <sourcemod>
 #include <sdktools>
+#include <colors>
 #include <l4d2util_constants>
+#include <l4d2util_rounds>
+
+#define HEAR_HINT_DELAY 15.0
 
 enum HearMode
 {
@@ -49,6 +53,25 @@ public void OnClientPutInServer(int client)
 	g_HearMode[client] = Hear_All;
 
 	RefreshAllSpectators();
+}
+
+public void OnMapStart()
+{
+	CreateTimer(HEAR_HINT_DELAY, ShowHearHint_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+Action ShowHearHint_Timer(Handle timer)
+{
+	if (InSecondHalfOfRound())
+		return Plugin_Continue;
+
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && !IsFakeClient(client) && GetClientTeam(client) == TEAM_SPECTATOR)
+			CPrintToChat(client, "%t", "HearHint");
+	}
+
+	return Plugin_Continue;
 }
 
 
