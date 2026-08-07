@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "chi"    "坦克"
+    }
+    "BlockedTankAlive"
+    {
+        "chi"    "{olive}坦克存活{default}，请在 {olive}!pause{default} 期间换队。"
+    }
+}

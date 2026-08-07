@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "en"    "Tank"
+    }
+    "BlockedTankAlive"
+    {
+        "en"    "{olive}Tank is alive{default}, use {olive}!pause{default} to change team."
+    }
+}

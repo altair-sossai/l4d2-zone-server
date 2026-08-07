@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "zho"    "坦克"
+    }
+    "BlockedTankAlive"
+    {
+        "zho"    "{olive}坦克存活{default}，請在 {olive}!pause{default} 期間換隊。"
+    }
+}

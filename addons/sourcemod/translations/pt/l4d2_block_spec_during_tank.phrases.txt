@@ -1,0 +1,11 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "pt"    "Tank"
+    }
+    "BlockedTankAlive"
+    {
+        "pt"    "{olive}Tank vivo{default}, use {olive}!pause{default} para trocar de time."
+    }
+}

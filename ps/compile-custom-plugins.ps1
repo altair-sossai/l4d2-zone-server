@@ -18,3 +18,4 @@ spcomp ..\addons\sourcemod\scripting\map-decals.sp -o ..\addons\sourcemod\plugin
 spcomp ..\addons\sourcemod\scripting\l4d2_early_victory.sp -o ..\addons\sourcemod\plugins\optional\l4d2_early_victory.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_afk_to_spec.sp -o ..\addons\sourcemod\plugins\optional\l4d2_afk_to_spec.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_spec_lister.sp -o ..\addons\sourcemod\plugins\optional\l4d2_spec_lister.smx
+spcomp ..\addons\sourcemod\scripting\l4d2_block_spec_during_tank.sp -o ..\addons\sourcemod\plugins\optional\l4d2_block_spec_during_tank.smx
