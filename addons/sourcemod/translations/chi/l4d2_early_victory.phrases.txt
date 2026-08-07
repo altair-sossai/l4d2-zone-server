@@ -34,4 +34,14 @@
         "#format"    "{1:s}"
         "chi"        "下一战役：{green}{1}"
     }
+    "CeremonyTitle"
+    {
+        "#format"    "{1:d},{2:d}"
+        "chi"        "胜负已定     {1} x {2}"
+    }
+    "CeremonyCountdown"
+    {
+        "#format"    "{1:s},{2:d}"
+        "chi"        "下一战役：{1}   -   {2} 秒后换图"
+    }
 }

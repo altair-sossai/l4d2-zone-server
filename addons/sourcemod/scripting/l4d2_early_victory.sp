@@ -13,6 +13,8 @@
 
 #define ZOMBIECLASS_TANK 8
 
+#define VICTORY_SOUND "ui/pickup_secret01.wav"
+
 ConVar g_cvEnabled,
        g_cvChapter,
        g_cvMinDiff,
@@ -25,9 +27,14 @@ bool g_bTriggered = false,
      g_bRoundOver = false;
 
 Handle g_hVote = null,
-       g_hCheckTimer = null;
+       g_hCheckTimer = null,
+       g_hCountdownTimer = null;
 
-int g_iEligibleVoters = 0;
+int g_iEligibleVoters = 0,
+    g_iNextMapPick = -1,
+    g_iCountdown = 0,
+    g_iFinalScoringScore = 0,
+    g_iFinalAlreadyPlayedScore = 0;
 
 char g_sOfficialFirstMaps[][] =
 {
@@ -62,7 +69,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.3.0",
+    version = "1.4.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -84,6 +91,11 @@ public void OnPluginStart()
     RegAdminCmd("sm_early_victory_debug", Debug_Cmd, ADMFLAG_ROOT, "Shows Early Victory internal values (scores and bonus breakdown) for debugging");
 }
 
+public void OnMapStart()
+{
+    PrecacheSound(VICTORY_SOUND);
+}
+
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     g_bTriggered = false;
@@ -91,8 +103,11 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
     g_bRoundOver = false;
     g_hVote = null;
     g_iEligibleVoters = 0;
+    g_iNextMapPick = -1;
+    g_iCountdown = 0;
 
     KillCheckTimer();
+    KillCountdownTimer();
 }
 
 public void OnRoundIsLive()
@@ -191,6 +206,9 @@ Action Check_Timer(Handle timer)
 
     g_bTriggered = true;
     g_hCheckTimer = null;
+
+    g_iFinalScoringScore = scoringScore;
+    g_iFinalAlreadyPlayedScore = alreadyPlayedScore;
 
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", scoringScore, alreadyPlayedScore);
     StartContinueVote(losingTeam);
@@ -356,7 +374,40 @@ void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, cons
 
 void ScheduleEarlyVictory()
 {
+    g_iNextMapPick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
+
+    char center[192];
+    FormatEx(center, sizeof(center), "%T", "CeremonyTitle", LANG_SERVER, g_iFinalScoringScore, g_iFinalAlreadyPlayedScore);
+    ShowCenterAnnouncement(center);
+
+    EmitSoundToAll(VICTORY_SOUND);
+
+    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", g_sOfficialCampaigns[g_iNextMapPick]);
+
+    g_iCountdown = RoundToNearest(g_cvSlayDelay.FloatValue + g_cvChangeDelay.FloatValue);
+
+    KillCountdownTimer();
+    Countdown_Timer(null);
+    g_hCountdownTimer = CreateTimer(1.0, Countdown_Timer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+
     CreateTimer(g_cvSlayDelay.FloatValue, Slay_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+Action Countdown_Timer(Handle timer)
+{
+    if (g_iCountdown <= 0)
+    {
+        g_hCountdownTimer = null;
+        return Plugin_Stop;
+    }
+
+    char hint[192];
+    FormatEx(hint, sizeof(hint), "%T", "CeremonyCountdown", LANG_SERVER, g_sOfficialCampaigns[g_iNextMapPick], g_iCountdown);
+    PrintHintTextToAll(hint);
+
+    g_iCountdown--;
+
+    return Plugin_Continue;
 }
 
 Action Slay_Timer(Handle timer)
@@ -370,13 +421,59 @@ Action Slay_Timer(Handle timer)
 
 Action ChangeMap_Timer(Handle timer)
 {
-    int pick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
+    KillCountdownTimer();
 
-    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", g_sOfficialCampaigns[pick]);
+    if (g_iNextMapPick < 0)
+        g_iNextMapPick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
 
-    ServerCommand("changelevel %s", g_sOfficialFirstMaps[pick]);
+    ServerCommand("changelevel %s", g_sOfficialFirstMaps[g_iNextMapPick]);
 
     return Plugin_Stop;
+}
+
+void ShowCenterAnnouncement(const char[] message)
+{
+    int ent = CreateEntityByName("game_text");
+    if (ent == -1)
+        return;
+
+    DispatchKeyValue(ent, "message", message);
+    DispatchKeyValue(ent, "color", "255 200 0");
+    DispatchKeyValue(ent, "color2", "255 255 255");
+    DispatchKeyValue(ent, "x", "-1.0");
+    DispatchKeyValue(ent, "y", "0.2");
+    DispatchKeyValue(ent, "effect", "0");
+    DispatchKeyValue(ent, "fadein", "0.5");
+    DispatchKeyValue(ent, "fadeout", "1.0");
+    DispatchKeyValue(ent, "fxtime", "0.0");
+    DispatchKeyValue(ent, "holdtime", "4.0");
+    DispatchKeyValue(ent, "channel", "4");
+    DispatchKeyValue(ent, "spawnflags", "1");
+
+    DispatchSpawn(ent);
+    ActivateEntity(ent);
+    AcceptEntityInput(ent, "Display");
+
+    CreateTimer(6.0, KillGameText_Timer, EntIndexToEntRef(ent), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+Action KillGameText_Timer(Handle timer, any ref)
+{
+    int ent = EntRefToEntIndex(ref);
+
+    if (ent != INVALID_ENT_REFERENCE && IsValidEntity(ent))
+        RemoveEntity(ent);
+
+    return Plugin_Stop;
+}
+
+void KillCountdownTimer()
+{
+    if (g_hCountdownTimer == null)
+        return;
+
+    KillTimer(g_hCountdownTimer);
+    g_hCountdownTimer = null;
 }
 
 int ScoringTeamScore()

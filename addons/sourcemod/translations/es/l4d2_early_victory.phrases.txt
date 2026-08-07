@@ -34,4 +34,14 @@
         "#format"    "{1:s}"
         "es"         "Próxima campaña: {green}{1}"
     }
+    "CeremonyTitle"
+    {
+        "#format"    "{1:d},{2:d}"
+        "es"         "Partida decidida     {1} x {2}"
+    }
+    "CeremonyCountdown"
+    {
+        "#format"    "{1:s},{2:d}"
+        "es"         "Próxima campaña: {1}   -   cambiando de mapa en {2}s"
+    }
 }
