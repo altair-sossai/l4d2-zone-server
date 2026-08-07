@@ -32,9 +32,7 @@ Handle g_hVote = null,
 
 int g_iEligibleVoters = 0,
     g_iNextMapPick = -1,
-    g_iCountdown = 0,
-    g_iFinalScoringScore = 0,
-    g_iFinalAlreadyPlayedScore = 0;
+    g_iCountdown = 0;
 
 char g_sOfficialFirstMaps[][] =
 {
@@ -207,9 +205,6 @@ Action Check_Timer(Handle timer)
     g_bTriggered = true;
     g_hCheckTimer = null;
 
-    g_iFinalScoringScore = scoringScore;
-    g_iFinalAlreadyPlayedScore = alreadyPlayedScore;
-
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", scoringScore, alreadyPlayedScore);
     StartContinueVote(losingTeam);
 
@@ -376,10 +371,7 @@ void ScheduleEarlyVictory()
 {
     g_iNextMapPick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
 
-    char center[192];
-    FormatEx(center, sizeof(center), "%T", "CeremonyTitle", LANG_SERVER, g_iFinalScoringScore, g_iFinalAlreadyPlayedScore);
-    ShowCenterAnnouncement(center);
-
+    PrecacheSound(VICTORY_SOUND);
     EmitSoundToAll(VICTORY_SOUND);
 
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", g_sOfficialCampaigns[g_iNextMapPick]);
@@ -427,42 +419,6 @@ Action ChangeMap_Timer(Handle timer)
         g_iNextMapPick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
 
     ServerCommand("changelevel %s", g_sOfficialFirstMaps[g_iNextMapPick]);
-
-    return Plugin_Stop;
-}
-
-void ShowCenterAnnouncement(const char[] message)
-{
-    int ent = CreateEntityByName("game_text");
-    if (ent == -1)
-        return;
-
-    DispatchKeyValue(ent, "message", message);
-    DispatchKeyValue(ent, "color", "255 200 0");
-    DispatchKeyValue(ent, "color2", "255 255 255");
-    DispatchKeyValue(ent, "x", "-1.0");
-    DispatchKeyValue(ent, "y", "0.2");
-    DispatchKeyValue(ent, "effect", "0");
-    DispatchKeyValue(ent, "fadein", "0.5");
-    DispatchKeyValue(ent, "fadeout", "1.0");
-    DispatchKeyValue(ent, "fxtime", "0.0");
-    DispatchKeyValue(ent, "holdtime", "4.0");
-    DispatchKeyValue(ent, "channel", "4");
-    DispatchKeyValue(ent, "spawnflags", "1");
-
-    DispatchSpawn(ent);
-    ActivateEntity(ent);
-    AcceptEntityInput(ent, "Display");
-
-    CreateTimer(6.0, KillGameText_Timer, EntIndexToEntRef(ent), TIMER_FLAG_NO_MAPCHANGE);
-}
-
-Action KillGameText_Timer(Handle timer, any ref)
-{
-    int ent = EntRefToEntIndex(ref);
-
-    if (ent != INVALID_ENT_REFERENCE && IsValidEntity(ent))
-        RemoveEntity(ent);
 
     return Plugin_Stop;
 }
