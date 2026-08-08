@@ -2,5 +2,5 @@ LightmappedGeneric
 {
 	"$basetexture" "decals/l4d2br/antair"
 	"$decal" 1
-	"$decalscale" 0.44
+	"$decalscale" 0.42
 }
