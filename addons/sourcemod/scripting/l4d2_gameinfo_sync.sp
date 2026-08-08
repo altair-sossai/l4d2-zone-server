@@ -165,6 +165,9 @@ Action Say_Callback(int client, char[] command, int args)
     if (args == 0)
         return Plugin_Continue;
 
+    if (!IsValidClient(client))
+        return Plugin_Continue;
+
     if (!StrEqual("say", command) && !StrEqual("say_team", command))
         return Plugin_Continue;
 
@@ -212,7 +215,7 @@ void PlayerHurt_Event(Handle event, const char[] name, bool dontBroadcast)
 {
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 
-	if (attacker == 0 || !IsClientInGame(attacker) || GetClientTeam(attacker) != L4D2_TEAM_INFECTED)
+	if (!IsValidClient(attacker) || GetClientTeam(attacker) != L4D2_TEAM_INFECTED)
 	    return;
 	
 	g_iInfectedDamage[attacker] += GetEventInt(event, "dmg_health");
@@ -224,8 +227,8 @@ void PlayerDeath_Event(Event hEvent, const char[] eName, bool dontBroadcast)
         return;
 
     int victim = GetClientOfUserId(hEvent.GetInt("userid"));
-    
-    if (victim == 0 || !IsClientInGame(victim) || GetClientTeam(victim) != L4D2_TEAM_INFECTED)
+
+    if (!IsValidClient(victim) || GetClientTeam(victim) != L4D2_TEAM_INFECTED)
         return;
 
     g_bTankIsDead = GetEntProp(victim, Prop_Send, "m_zombieClass") == ZOMBIECLASS_TANK;
@@ -600,7 +603,7 @@ void SendPlayerConnectionInfoResponse(HTTPResponse httpResponse, any value)
 
     int client = GetClientOfUserId(value);
 
-    if (client == 0 || !IsClientInGame(client) || IsFakeClient(client))
+    if (!IsValidClient(client) || IsFakeClient(client))
         return;
 
     JSONObject firstRelatedPlayer = view_as<JSONObject>(relatedPlayers.Get(0));
@@ -796,6 +799,11 @@ int GetMaxBonus()
         return 0;
 
     return SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
+}
+
+bool IsValidClient(int client)
+{
+    return client >= 1 && client <= MaxClients && IsClientInGame(client);
 }
 
 float Max(float a, float b) {
