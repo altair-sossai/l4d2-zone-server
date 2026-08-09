@@ -24,4 +24,14 @@
     {
         "zho"    "你可以使用 {green}!hear{default} 指令來收聽玩家的語音。"
     }
+    "BroadcastStarted"
+    {
+        "#format"    "{1:s}"
+        "zho"        "{olive}{1}{default} 正在{green}對所有人講話{default}。"
+    }
+    "BroadcastStopped"
+    {
+        "#format"    "{1:s}"
+        "zho"        "{olive}{1}{default} {red}已停止對所有人講話{default}。"
+    }
 }

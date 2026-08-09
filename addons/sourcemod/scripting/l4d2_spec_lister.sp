@@ -18,6 +18,7 @@ enum HearMode
 }
 
 HearMode g_HearMode[MAXPLAYERS + 1];
+bool g_Broadcasting[MAXPLAYERS + 1];
 ConVar g_AllTalk;
 
 public Plugin myinfo =
@@ -34,6 +35,7 @@ public void OnPluginStart()
 	LoadTranslations("l4d2_spec_lister.phrases");
 
 	RegConsoleCmd("sm_hear", HearCmd, "Open the menu to choose which players you hear as a spectator");
+	RegAdminCmd("sm_broadcast", BroadcastCmd, ADMFLAG_CHAT, "Toggle broadcast mode: while enabled, everyone hears you");
 
 	HookEvent("player_team", RefreshEvent);
 
@@ -51,6 +53,17 @@ public void OnPluginStart()
 public void OnClientPutInServer(int client)
 {
 	g_HearMode[client] = Hear_All;
+	g_Broadcasting[client] = false;
+
+	RefreshAllSpectators();
+}
+
+public void OnClientDisconnect(int client)
+{
+	if (!g_Broadcasting[client])
+		return;
+
+	g_Broadcasting[client] = false;
 
 	RefreshAllSpectators();
 }
@@ -122,6 +135,23 @@ int HearPanelHandler(Menu menu, MenuAction menuAction, int client, int selected)
 	return 0;
 }
 
+Action BroadcastCmd(int client, int args)
+{
+	if (client <= 0 || !IsClientInGame(client))
+		return Plugin_Handled;
+
+	g_Broadcasting[client] = !g_Broadcasting[client];
+
+	RefreshAllSpectators();
+
+	char name[MAX_NAME_LENGTH];
+	GetClientName(client, name, sizeof(name));
+
+	CPrintToChatAll("%t", g_Broadcasting[client] ? "BroadcastStarted" : "BroadcastStopped", name);
+
+	return Plugin_Handled;
+}
+
 void RefreshEvent(Event event, const char[] name, bool dontBroadcast)
 {
 	RequestFrame(RefreshFrame);
@@ -162,7 +192,9 @@ void ApplyHearMode(int client)
 
 		ListenOverride override = Listen_Default;
 
-		if (useCustomHearing)
+		if (g_Broadcasting[target])
+			override = Listen_Yes;
+		else if (useCustomHearing)
 			override = ListenDecision(mode, GetClientTeam(target));
 
 		SetListenOverride(client, target, override);

@@ -24,4 +24,14 @@
     {
         "chi"    "你可以使用 {green}!hear{default} 命令来收听玩家的语音。"
     }
+    "BroadcastStarted"
+    {
+        "#format"    "{1:s}"
+        "chi"        "{olive}{1}{default} 正在{green}对所有人讲话{default}。"
+    }
+    "BroadcastStopped"
+    {
+        "#format"    "{1:s}"
+        "chi"        "{olive}{1}{default} {red}已停止对所有人讲话{default}。"
+    }
 }

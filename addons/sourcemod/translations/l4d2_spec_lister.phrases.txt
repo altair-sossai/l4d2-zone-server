@@ -24,4 +24,14 @@
     {
         "en"    "You can use the {green}!hear{default} command to hear the players."
     }
+    "BroadcastStarted"
+    {
+        "#format"    "{1:s}"
+        "en"         "{olive}{1}{default} is now {green}talking to everyone{default}."
+    }
+    "BroadcastStopped"
+    {
+        "#format"    "{1:s}"
+        "en"         "{olive}{1}{default} {red}stopped talking to everyone{default}."
+    }
 }
