@@ -190,6 +190,26 @@ void CreateInfectedModelGlow(int client)
     g_iModelIndex[client] = EntIndexToEntRef(entity);
 
     SDKHook(entity, SDKHook_SetTransmit, Hook_SetTransmit);
+
+    // Fix PVS glow issues while inside walls (by Mart)
+    int clientFlags = GetEdictFlags(client);
+    if (!(clientFlags & FL_EDICT_ALWAYS))
+    {
+        SetEdictFlags(client, clientFlags | FL_EDICT_ALWAYS);
+        RequestFrame(Frame_ResetEdictFlag, GetClientUserId(client));
+    }
+}
+
+void Frame_ResetEdictFlag(int userid)
+{
+    int client = GetClientOfUserId(userid);
+
+    if (!client)
+        return;
+
+    int clientFlags = GetEdictFlags(client);
+    clientFlags &= ~FL_EDICT_ALWAYS;
+    SetEdictFlags(client, clientFlags);
 }
 
 void RemoveInfectedModelGlow(int client)
