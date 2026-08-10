@@ -39,4 +39,22 @@
         "#format"    "{1:s},{2:d}"
         "zho"        "下一戰役：{1}   -   {2} 秒後換圖"
     }
+    "MenuTitle"
+    {
+        "#format"    "{1:d}"
+        "zho"        "設定接下來的戰役佇列（佇列中：{1}）"
+    }
+    "MenuClear"
+    {
+        "zho"    "清空清單"
+    }
+    "QueueList"
+    {
+        "#format"    "{1:s}"
+        "zho"        "接下來的戰役為：{1}"
+    }
+    "QueueCleared"
+    {
+        "zho"    "未設定下一張戰役，下一張將隨機抽取。"
+    }
 }

@@ -39,4 +39,22 @@
         "#format"    "{1:s},{2:d}"
         "pt"         "Próxima campanha: {1}   -   trocando de mapa em {2}s"
     }
+    "MenuTitle"
+    {
+        "#format"    "{1:d}"
+        "pt"         "Fila das próximas campanhas (na fila: {1})"
+    }
+    "MenuClear"
+    {
+        "pt"    "Limpar lista"
+    }
+    "QueueList"
+    {
+        "#format"    "{1:s}"
+        "pt"         "As próximas campanhas são: {1}"
+    }
+    "QueueCleared"
+    {
+        "pt"    "Nenhuma campanha definida. A próxima será aleatória."
+    }
 }

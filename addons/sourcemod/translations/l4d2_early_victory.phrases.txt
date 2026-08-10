@@ -39,4 +39,22 @@
         "#format"    "{1:s},{2:d}"
         "en"         "Next campaign: {1}   -   changing map in {2}s"
     }
+    "MenuTitle"
+    {
+        "#format"    "{1:d}"
+        "en"         "Queue the next campaigns (in queue: {1})"
+    }
+    "MenuClear"
+    {
+        "en"    "Clear list"
+    }
+    "QueueList"
+    {
+        "#format"    "{1:s}"
+        "en"         "The next campaigns are: {1}"
+    }
+    "QueueCleared"
+    {
+        "en"    "No next campaign set. The next one will be random."
+    }
 }

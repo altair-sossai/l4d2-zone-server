@@ -34,6 +34,8 @@ int g_iEligibleVoters = 0,
     g_iNextMapPick = -1,
     g_iCountdown = 0;
 
+ArrayList g_hMapQueue = null;
+
 char g_sOfficialFirstMaps[][] =
 {
     "c1m1_hotel",
@@ -67,13 +69,15 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.4.0",
+    version = "1.5.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
 public void OnPluginStart()
 {
     LoadTranslations(TRANSLATION_FILE);
+
+    g_hMapQueue = new ArrayList();
 
     g_cvEnabled = CreateConVar("l4d2_early_victory_enabled", "1", "Enable/disable the early victory (skip last map when the game is already decided)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
     g_cvChapter = CreateConVar("l4d2_early_victory_chapter", "4", "Chapter (map index) that triggers the early victory", FCVAR_NOTIFY, true, 1.0);
@@ -87,6 +91,8 @@ public void OnPluginStart()
     AddCommandListener(CallVote_Listener, "callvote");
 
     RegAdminCmd("sm_early_victory_debug", Debug_Cmd, ADMFLAG_ROOT, "Shows Early Victory internal values (scores and bonus breakdown) for debugging");
+
+    RegAdminCmd("sm_setnextmap", NextMapMenu_Cmd, ADMFLAG_CHANGEMAP, "Opens a menu to queue the next campaigns (or clear them all) instead of a random draw");
 }
 
 public void OnMapStart()
@@ -369,7 +375,7 @@ void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, cons
 
 void ScheduleEarlyVictory()
 {
-    g_iNextMapPick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
+    g_iNextMapPick = PickNextMapIndex();
 
     PrecacheSound(VICTORY_SOUND);
     EmitSoundToAll(VICTORY_SOUND);
@@ -416,7 +422,7 @@ Action ChangeMap_Timer(Handle timer)
     KillCountdownTimer();
 
     if (g_iNextMapPick < 0)
-        g_iNextMapPick = GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
+        g_iNextMapPick = PickNextMapIndex();
 
     ServerCommand("changelevel %s", g_sOfficialFirstMaps[g_iNextMapPick]);
 
@@ -549,4 +555,99 @@ int MapPillsBonusMargin()
     int margin = pillsLimit * (maxPillsBonus / teamSize);
 
     return margin < remainingPillsBonus ? margin : remainingPillsBonus;
+}
+
+Action NextMapMenu_Cmd(int client, int args)
+{
+    if (client <= 0 || !IsClientInGame(client))
+        return Plugin_Handled;
+
+    ShowNextMapMenu(client);
+
+    return Plugin_Handled;
+}
+
+void ShowNextMapMenu(int client)
+{
+    Menu menu = new Menu(NextMapMenuHandler);
+
+    char title[128];
+    FormatEx(title, sizeof(title), "%T", "MenuTitle", client, g_hMapQueue.Length);
+    menu.SetTitle(title);
+
+    char info[8];
+    for (int i = 0; i < sizeof(g_sOfficialCampaigns); i++)
+    {
+        IntToString(i, info, sizeof(info));
+        menu.AddItem(info, g_sOfficialCampaigns[i]);
+    }
+
+    char clearLabel[64];
+    FormatEx(clearLabel, sizeof(clearLabel), "%T", "MenuClear", client);
+    menu.AddItem("clear", clearLabel);
+
+    menu.ExitButton = true;
+    menu.Display(client, MENU_TIME_FOREVER);
+}
+
+int NextMapMenuHandler(Menu menu, MenuAction action, int param1, int param2)
+{
+    switch (action)
+    {
+        case MenuAction_Select:
+        {
+            char info[8];
+            menu.GetItem(param2, info, sizeof(info));
+
+            if (StrEqual(info, "clear"))
+            {
+                g_hMapQueue.Clear();
+                CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "QueueCleared");
+            }
+            else
+            {
+                int index = StringToInt(info);
+                g_hMapQueue.Push(index);
+                AnnounceQueue();
+            }
+
+            if (IsClientInGame(param1))
+                ShowNextMapMenu(param1);
+        }
+        case MenuAction_End:
+            delete menu;
+    }
+
+    return 0;
+}
+
+void AnnounceQueue()
+{
+    char list[512];
+
+    for (int i = 0; i < g_hMapQueue.Length; i++)
+    {
+        int index = g_hMapQueue.Get(i);
+
+        if (i > 0)
+            StrCat(list, sizeof(list), "{default}, ");
+
+        Format(list, sizeof(list), "%s{green}%s", list, g_sOfficialCampaigns[index]);
+    }
+
+    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "QueueList", list);
+}
+
+int PickNextMapIndex()
+{
+    while (g_hMapQueue.Length > 0)
+    {
+        int index = g_hMapQueue.Get(0);
+        g_hMapQueue.Erase(0);
+
+        if (index >= 0 && index < sizeof(g_sOfficialFirstMaps))
+            return index;
+    }
+
+    return GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
 }
