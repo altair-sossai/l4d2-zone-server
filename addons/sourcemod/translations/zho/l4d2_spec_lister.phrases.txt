@@ -24,6 +24,15 @@
     {
         "zho"    "你可以使用 {green}!hear{default} 指令來收聽玩家的語音。"
     }
+    "HearSet"
+    {
+        "#format"    "{1:s}"
+        "zho"        "你現在正在收聽：{green}{1}{default}。"
+    }
+    "HearUsage"
+    {
+        "zho"    "用法：{green}!hear <survivors|infected|spectators|all>{default}，或輸入 {green}!hear{default} 開啟選單。"
+    }
     "BroadcastStarted"
     {
         "#format"    "{1:s}"

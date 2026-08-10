@@ -24,6 +24,15 @@
     {
         "es"    "Puedes usar el comando {green}!hear{default} para escuchar a los jugadores."
     }
+    "HearSet"
+    {
+        "#format"    "{1:s}"
+        "es"         "Ahora estás escuchando: {green}{1}{default}."
+    }
+    "HearUsage"
+    {
+        "es"    "Uso: {green}!hear <survivors|infected|spectators|all>{default}, o {green}!hear{default} para abrir el menú."
+    }
     "BroadcastStarted"
     {
         "#format"    "{1:s}"

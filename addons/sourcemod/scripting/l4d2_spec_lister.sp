@@ -34,7 +34,7 @@ public void OnPluginStart()
 {
 	LoadTranslations("l4d2_spec_lister.phrases");
 
-	RegConsoleCmd("sm_hear", HearCmd, "Open the menu to choose which players you hear as a spectator");
+	RegConsoleCmd("sm_hear", HearCmd, "Choose which players you hear as a spectator (no arg opens the menu; optional arg: survivors/infected/spectators/all)");
 	RegAdminCmd("sm_broadcast", BroadcastCmd, ADMFLAG_CHAT, "Toggle broadcast mode: while enabled, everyone hears you");
 
 	HookEvent("player_team", RefreshEvent);
@@ -92,6 +92,28 @@ Action HearCmd(int client, int args)
 {
 	if (GetClientTeam(client) != TEAM_SPECTATOR)
 		return Plugin_Handled;
+
+	if (args >= 1)
+	{
+		char arg[16];
+		GetCmdArg(1, arg, sizeof(arg));
+
+		HearMode mode;
+		if (!ParseHearMode(arg, mode))
+		{
+			CPrintToChat(client, "%t", "HearUsage");
+			return Plugin_Handled;
+		}
+
+		g_HearMode[client] = mode;
+		ApplyHearMode(client);
+
+		char label[64];
+		FormatEx(label, sizeof(label), "%T", HearModePhrase(mode), client);
+		CPrintToChat(client, "%t", "HearSet", label);
+
+		return Plugin_Handled;
+	}
 
 	char title[64];
 	FormatEx(title, sizeof(title), "%T", "HearMenuTitle", client);
@@ -199,6 +221,50 @@ void ApplyHearMode(int client)
 
 		SetListenOverride(client, target, override);
 	}
+}
+
+bool ParseHearMode(const char[] arg, HearMode &mode)
+{
+	if (StrEqual(arg, "survivor", false) || StrEqual(arg, "survivors", false) || StrEqual(arg, "surv", false) || StrEqual(arg, "2"))
+	{
+		mode = Hear_Survivors;
+		return true;
+	}
+
+	if (StrEqual(arg, "infected", false) || StrEqual(arg, "infec", false) || StrEqual(arg, "zombie", false) || StrEqual(arg, "3"))
+	{
+		mode = Hear_Infected;
+		return true;
+	}
+
+	if (StrEqual(arg, "spectator", false) || StrEqual(arg, "spectators", false) || StrEqual(arg, "spec", false) || StrEqual(arg, "1"))
+	{
+		mode = Hear_Spectators;
+		return true;
+	}
+
+	if (StrEqual(arg, "all", false) || StrEqual(arg, "everyone", false) || StrEqual(arg, "0"))
+	{
+		mode = Hear_All;
+		return true;
+	}
+
+	return false;
+}
+
+char[] HearModePhrase(HearMode mode)
+{
+	char phrase[24];
+
+	switch (mode)
+	{
+		case Hear_Survivors:  phrase = "HearSurvivors";
+		case Hear_Infected:   phrase = "HearInfected";
+		case Hear_Spectators: phrase = "HearOnlySpectators";
+		default:              phrase = "HearAll";
+	}
+
+	return phrase;
 }
 
 ListenOverride ListenDecision(HearMode mode, int targetTeam)

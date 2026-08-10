@@ -24,6 +24,15 @@
     {
         "chi"    "你可以使用 {green}!hear{default} 命令来收听玩家的语音。"
     }
+    "HearSet"
+    {
+        "#format"    "{1:s}"
+        "chi"        "你现在正在收听：{green}{1}{default}。"
+    }
+    "HearUsage"
+    {
+        "chi"    "用法：{green}!hear <survivors|infected|spectators|all>{default}，或输入 {green}!hear{default} 打开菜单。"
+    }
     "BroadcastStarted"
     {
         "#format"    "{1:s}"
