@@ -20,11 +20,14 @@ ConVar g_cvEnabled,
        g_cvMinDiff,
        g_cvVoteDuration,
        g_cvSlayDelay,
-       g_cvChangeDelay;
+       g_cvChangeDelay,
+       g_cvInitialQueue;
 
 bool g_bTriggered = false,
      g_bVoteResolved = false,
      g_bRoundOver = false;
+
+bool g_bInitialQueueLoaded = false;
 
 Handle g_hVote = null,
        g_hCheckTimer = null,
@@ -85,6 +88,8 @@ public void OnPluginStart()
     g_cvVoteDuration = CreateConVar("l4d2_early_victory_vote_duration", "15", "How many seconds the losing team has to vote whether to continue playing", FCVAR_NOTIFY, true, 5.0);
     g_cvSlayDelay = CreateConVar("l4d2_early_victory_slay_delay", "5.0", "How many seconds after announcing the victory before slaying everyone", FCVAR_NOTIFY, true, 0.0);
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
+    g_cvInitialQueue = CreateConVar("l4d2_early_victory_initial_queue", "", "Ordered, comma-separated list of official campaign names to preload into the next-campaign queue (e.g. \"The Parish,Hard Rain,Death Toll\"). Applied once when the config loads; leave empty to keep the random draw", FCVAR_NOTIFY);
+    g_cvInitialQueue.AddChangeHook(InitialQueue_Changed);
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
@@ -98,6 +103,11 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     PrecacheSound(VICTORY_SOUND);
+}
+
+public void OnConfigsExecuted()
+{
+    TryLoadInitialQueue();
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -650,4 +660,54 @@ int PickNextMapIndex()
     }
 
     return GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
+}
+
+void InitialQueue_Changed(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+    TryLoadInitialQueue();
+}
+
+void TryLoadInitialQueue()
+{
+    if (g_bInitialQueueLoaded)
+        return;
+
+    char buffer[512];
+    g_cvInitialQueue.GetString(buffer, sizeof(buffer));
+    TrimString(buffer);
+
+    if (buffer[0] == '\0')
+        return;
+
+    g_bInitialQueueLoaded = true;
+
+    char campaigns[16][64];
+    int total = ExplodeString(buffer, ",", campaigns, sizeof(campaigns), sizeof(campaigns[]));
+
+    for (int i = 0; i < total; i++)
+    {
+        TrimString(campaigns[i]);
+
+        if (campaigns[i][0] == '\0')
+            continue;
+
+        int index = FindCampaignIndex(campaigns[i]);
+
+        if (index < 0)
+        {
+            LogError("[Early Victory] Unknown campaign in l4d2_early_victory_initial_queue: '%s'", campaigns[i]);
+            continue;
+        }
+
+        g_hMapQueue.Push(index);
+    }
+}
+
+int FindCampaignIndex(const char[] name)
+{
+    for (int i = 0; i < sizeof(g_sOfficialCampaigns); i++)
+        if (StrEqual(g_sOfficialCampaigns[i], name, false))
+            return i;
+
+    return -1;
 }
