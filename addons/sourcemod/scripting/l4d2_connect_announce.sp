@@ -5,43 +5,42 @@
 #include <sdktools>
 #include <colors>
 
-bool early;
+#define EARLY_GRACE_PERIOD 25.0
+
+bool g_bEarly;
 
 public Plugin myinfo =
 {
-	name = "Connect Announce", 
-	author = "pa4H", 
-	description = "", 
-	version = "1.0", 
-	url = "vk.com/pa4h1337"
+	name		= "L4D2 - Connect Announce",
+	author		= "pa4H",
+	description = "Announces in chat when a player connects, ignoring the initial rush right after the map loads",
+	version		= "1.0.0",
+	url			= "vk.com/pa4h1337"
 };
 
 public void OnPluginStart()
 {
 	LoadTranslations("l4d2_connect_announce.phrases");
 
-	early = true;
+	g_bEarly = true;
 }
 
 public void OnMapStart()
 {
-	early = true;
-	CreateTimer(25.0, EarlyTimer);
+	g_bEarly = true;
+	CreateTimer(EARLY_GRACE_PERIOD, EndEarlyGrace_Timer, _, TIMER_FLAG_NO_MAPCHANGE);
 }
 
-public Action EarlyTimer(Handle timer)
+Action EndEarlyGrace_Timer(Handle timer)
 {
-	early = false;
+	g_bEarly = false;
 	return Plugin_Stop;
 }
 
 public void OnClientAuthorized(int client)
 {
-	if (early || IsFakeClient(client))
+	if (g_bEarly || IsFakeClient(client))
 		return;
 
-	char clientName[64];
-	GetClientName(client, clientName, sizeof(clientName));
-
-	CPrintToChatAll("%t", "PlayerLoading", clientName);
+	CPrintToChatAll("%t", "PlayerLoading", client);
 }

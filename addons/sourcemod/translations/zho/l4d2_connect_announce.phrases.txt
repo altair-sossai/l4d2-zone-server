@@ -1,8 +1,8 @@
 "Phrases"
 {
-	"PlayerLoading"
-	{
-		"#format"	"{1:s}"
-		"zho"		"{lightgreen}{1} {default}正在連線..."
-	}
+    "PlayerLoading"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{lightgreen}{1} {default}正在連線..."
+    }
 }

@@ -1,8 +1,8 @@
 "Phrases"
 {
-	"PlayerLoading"
-	{
-		"#format"	"{1:s}"
-		"chi"		"{lightgreen}{1} {default}正在连接..."
-	}
+    "PlayerLoading"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{lightgreen}{1} {default}正在连接..."
+    }
 }

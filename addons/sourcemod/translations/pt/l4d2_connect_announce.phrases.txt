@@ -1,8 +1,8 @@
 "Phrases"
 {
-	"PlayerLoading"
-	{
-		"#format"	"{1:s}"
-		"pt"		"{lightgreen}{1} {default}está se conectando..."
-	}
+    "PlayerLoading"
+    {
+        "#format"    "{1:N}"
+        "pt"         "{lightgreen}{1} {default}está se conectando..."
+    }
 }
