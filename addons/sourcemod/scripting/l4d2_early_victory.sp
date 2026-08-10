@@ -97,7 +97,7 @@ public void OnPluginStart()
 
     RegAdminCmd("sm_early_victory_debug", Debug_Cmd, ADMFLAG_ROOT, "Shows Early Victory internal values (scores and bonus breakdown) for debugging");
 
-    RegAdminCmd("sm_setnextmap", NextMapMenu_Cmd, ADMFLAG_CHANGEMAP, "Opens a menu to queue the next campaigns (or clear them all) instead of a random draw");
+    RegAdminCmd("sm_setnextcampaign", NextMapMenu_Cmd, ADMFLAG_CHANGEMAP, "Opens a menu to queue the next campaigns (or clear them all) instead of a random draw");
 }
 
 public void OnMapStart()
