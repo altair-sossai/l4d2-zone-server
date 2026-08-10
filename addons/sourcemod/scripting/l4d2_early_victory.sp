@@ -103,6 +103,7 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     PrecacheSound(VICTORY_SOUND);
+    RemoveCurrentMapFromQueue();
 }
 
 public void OnConfigsExecuted()
@@ -707,6 +708,32 @@ int FindCampaignIndex(const char[] name)
 {
     for (int i = 0; i < sizeof(g_sOfficialCampaigns); i++)
         if (StrEqual(g_sOfficialCampaigns[i], name, false))
+            return i;
+
+    return -1;
+}
+
+void RemoveCurrentMapFromQueue()
+{
+    if (g_hMapQueue.Length == 0)
+        return;
+
+    int index = GetCurrentMapIndex();
+    if (index < 0)
+        return;
+
+    for (int i = g_hMapQueue.Length - 1; i >= 0; i--)
+        if (g_hMapQueue.Get(i) == index)
+            g_hMapQueue.Erase(i);
+}
+
+int GetCurrentMapIndex()
+{
+    char currentMap[64];
+    GetCurrentMap(currentMap, sizeof(currentMap));
+
+    for (int i = 0; i < sizeof(g_sOfficialFirstMaps); i++)
+        if (StrEqual(g_sOfficialFirstMaps[i], currentMap, false))
             return i;
 
     return -1;
