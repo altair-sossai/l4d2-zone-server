@@ -20,14 +20,13 @@ ConVar g_cvEnabled,
        g_cvMinDiff,
        g_cvVoteDuration,
        g_cvSlayDelay,
-       g_cvChangeDelay,
-       g_cvInitialQueue;
+       g_cvChangeDelay;
 
 bool g_bTriggered = false,
      g_bVoteResolved = false,
      g_bRoundOver = false;
 
-bool g_bInitialQueueLoaded = false;
+bool g_bInitialQueueLocked = false;
 
 Handle g_hVote = null,
        g_hCheckTimer = null,
@@ -72,7 +71,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.5.0",
+    version = "1.6.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -88,8 +87,9 @@ public void OnPluginStart()
     g_cvVoteDuration = CreateConVar("l4d2_early_victory_vote_duration", "15", "How many seconds the losing team has to vote whether to continue playing", FCVAR_NOTIFY, true, 5.0);
     g_cvSlayDelay = CreateConVar("l4d2_early_victory_slay_delay", "5.0", "How many seconds after announcing the victory before slaying everyone", FCVAR_NOTIFY, true, 0.0);
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
-    g_cvInitialQueue = CreateConVar("l4d2_early_victory_initial_queue", "", "Ordered, comma-separated list of official campaign names to preload into the next-campaign queue (e.g. \"The Parish,Hard Rain,Death Toll\"). Applied once when the config loads; leave empty to keep the random draw", FCVAR_NOTIFY);
-    g_cvInitialQueue.AddChangeHook(InitialQueue_Changed);
+    
+    RegServerCmd("l4d2_early_victory_queue", InitialQueue_Cmd, "Appends a single official campaign name to the next-campaign queue (e.g. l4d2_early_victory_queue \"The Parish\"). Use one command per line in your config to build the ordered rotation. Ignored once the queue is locked");
+    RegServerCmd("l4d2_early_victory_queue_lock", InitialQueueLock_Cmd, "Locks the initial queue so later l4d2_early_victory_queue calls are ignored. Call this once right after the last campaign in your config");
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
 
@@ -106,9 +106,42 @@ public void OnMapStart()
     RemoveCurrentMapFromQueue();
 }
 
-public void OnConfigsExecuted()
+Action InitialQueue_Cmd(int args)
 {
-    TryLoadInitialQueue();
+    if (g_bInitialQueueLocked)
+        return Plugin_Handled;
+
+    if (args < 1)
+    {
+        LogError("[Early Victory] Usage: l4d2_early_victory_queue <campaign name>");
+        return Plugin_Handled;
+    }
+
+    char name[64];
+    GetCmdArg(1, name, sizeof(name));
+    TrimString(name);
+
+    if (name[0] == '\0')
+        return Plugin_Handled;
+
+    int index = FindCampaignIndex(name);
+
+    if (index < 0)
+    {
+        LogError("[Early Victory] Unknown campaign in l4d2_early_victory_queue: '%s'", name);
+        return Plugin_Handled;
+    }
+
+    g_hMapQueue.Push(index);
+
+    return Plugin_Handled;
+}
+
+Action InitialQueueLock_Cmd(int args)
+{
+    g_bInitialQueueLocked = true;
+
+    return Plugin_Handled;
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -661,47 +694,6 @@ int PickNextMapIndex()
     }
 
     return GetRandomInt(0, sizeof(g_sOfficialFirstMaps) - 1);
-}
-
-void InitialQueue_Changed(ConVar convar, const char[] oldValue, const char[] newValue)
-{
-    TryLoadInitialQueue();
-}
-
-void TryLoadInitialQueue()
-{
-    if (g_bInitialQueueLoaded)
-        return;
-
-    char buffer[512];
-    g_cvInitialQueue.GetString(buffer, sizeof(buffer));
-    TrimString(buffer);
-
-    if (buffer[0] == '\0')
-        return;
-
-    g_bInitialQueueLoaded = true;
-
-    char campaigns[16][64];
-    int total = ExplodeString(buffer, ",", campaigns, sizeof(campaigns), sizeof(campaigns[]));
-
-    for (int i = 0; i < total; i++)
-    {
-        TrimString(campaigns[i]);
-
-        if (campaigns[i][0] == '\0')
-            continue;
-
-        int index = FindCampaignIndex(campaigns[i]);
-
-        if (index < 0)
-        {
-            LogError("[Early Victory] Unknown campaign in l4d2_early_victory_initial_queue: '%s'", campaigns[i]);
-            continue;
-        }
-
-        g_hMapQueue.Push(index);
-    }
 }
 
 int FindCampaignIndex(const char[] name)
