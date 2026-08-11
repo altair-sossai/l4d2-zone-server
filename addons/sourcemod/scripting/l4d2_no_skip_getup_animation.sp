@@ -16,7 +16,7 @@ public Plugin myinfo =
     author = "Altair Sossai",
     description = "Prevents players from skipping the getup animation",
     version = "1.0.0",
-    url = "https://github.com/SirPlease/L4D2-Competitive-Rework"
+    url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
 public void OnPluginStart()
