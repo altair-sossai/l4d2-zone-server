@@ -4,12 +4,14 @@
 #include <sourcemod>
 #include <sdktools>
 #include <left4dhooks>
+#include <l4d2util>
 #include <colors>
 
 ConVar g_cvEnabled;
 ConVar g_cvInterval;
 ConVar g_cvDecrement;
 ConVar g_cvLimit;
+ConVar g_cvMinHealth;
 
 float g_fFriendlyFire[MAXPLAYERS + 1];
 
@@ -33,6 +35,7 @@ public void OnPluginStart()
     g_cvInterval = CreateConVar("l4d2_friendly_fire_control_interval", "1.0", "Interval, in seconds, at which each player's accumulated friendly fire damage is reduced", FCVAR_NOTIFY, true, 0.1);
     g_cvDecrement = CreateConVar("l4d2_friendly_fire_control_decrement", "1.0", "How much is subtracted from the accumulated friendly fire damage on every recovery interval", FCVAR_NOTIFY, true, 0.0);
     g_cvLimit = CreateConVar("l4d2_friendly_fire_control_limit", "20.0", "Accumulated friendly fire damage that gets a player kicked", FCVAR_NOTIFY, true, 1.0);
+    g_cvMinHealth = CreateConVar("l4d2_friendly_fire_control_min_health", "10.0", "Friendly fire is ignored when the victim's total health (permanent + temporary) is at or below this value (e.g. mercy downs on low-health teammates)", FCVAR_NOTIFY, true, 0.0);
 
     HookEvent("player_hurt", PlayerHurt_Event, EventHookMode_Post);
     HookEvent("round_end", RoundEnd_Event, EventHookMode_PostNoCopy);
@@ -118,6 +121,9 @@ void PlayerHurt_Event(Event event, const char[] name, bool dontBroadcast)
     if (!IsStanding(victim))
         return;
 
+    if (float(TotalHealth(victim)) <= g_cvMinHealth.FloatValue)
+        return;
+
     int damage = event.GetInt("dmg_health");
     if (damage <= 0)
         return;
@@ -162,6 +168,11 @@ bool IsStanding(int client)
         return false;
 
     return true;
+}
+
+int TotalHealth(int client)
+{
+    return GetSurvivorPermanentHealth(client) + GetSurvivorTemporaryHealth(client);
 }
 
 bool IsValidClient(int client)
