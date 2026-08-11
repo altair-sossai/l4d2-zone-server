@@ -37,7 +37,8 @@ ConVar
     g_hUrl,
     g_hSecretKey,
     g_hConfigurationName,
-    g_hVersusBossBuffer;
+    g_hVersusBossBuffer,
+    g_hRelatedAccountsChat;
 
 char 
     g_sConfigurationName[64],
@@ -73,6 +74,7 @@ public void OnPluginStart()
 
     g_hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
+    g_hRelatedAccountsChat = CreateConVar("gameinfo_related_accounts_chat", "1", "Announce related accounts (same IP) in chat", _, true, 0.0, true, 1.0);
 
     AddCommandListener(Say_Callback, "say");
     AddCommandListener(Say_Callback, "say_team");
@@ -613,12 +615,15 @@ void SendPlayerConnectionInfoResponse(HTTPResponse httpResponse, any value)
 
     int additionalAccounts = relatedPlayers.Length - 1;
 
-    if (additionalAccounts == 0)
-        CPrintToChatAll("%t", "RelatedAccount", client, firstRelatedPlayerName);
-    else if (additionalAccounts == 1)
-        CPrintToChatAll("%t", "RelatedAccountOneAdditional", client, firstRelatedPlayerName);
-    else
-        CPrintToChatAll("%t", "RelatedAccountMultipleAdditional", client, firstRelatedPlayerName, additionalAccounts);
+    if (g_hRelatedAccountsChat.BoolValue)
+    {
+        if (additionalAccounts == 0)
+            CPrintToChatAll("%t", "RelatedAccount", client, firstRelatedPlayerName);
+        else if (additionalAccounts == 1)
+            CPrintToChatAll("%t", "RelatedAccountOneAdditional", client, firstRelatedPlayerName);
+        else
+            CPrintToChatAll("%t", "RelatedAccountMultipleAdditional", client, firstRelatedPlayerName, additionalAccounts);
+    }
 
     PrintToConsoleAll("%t", "RelatedAccountsConsoleHeader", client);
 
