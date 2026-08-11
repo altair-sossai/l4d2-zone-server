@@ -20,3 +20,4 @@ spcomp ..\addons\sourcemod\scripting\l4d2_early_victory.sp -o ..\addons\sourcemo
 spcomp ..\addons\sourcemod\scripting\l4d2_afk_to_spec.sp -o ..\addons\sourcemod\plugins\optional\l4d2_afk_to_spec.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_spec_lister.sp -o ..\addons\sourcemod\plugins\optional\l4d2_spec_lister.smx
 spcomp ..\addons\sourcemod\scripting\l4d2_block_spec_during_tank.sp -o ..\addons\sourcemod\plugins\optional\l4d2_block_spec_during_tank.smx
+spcomp ..\addons\sourcemod\scripting\l4d2_custom_commands.sp -o ..\addons\sourcemod\plugins\optional\l4d2_custom_commands.smx
