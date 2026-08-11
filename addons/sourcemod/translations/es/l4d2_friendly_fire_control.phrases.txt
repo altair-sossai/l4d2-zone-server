@@ -1,0 +1,16 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "es"    "FF"
+    }
+    "Announce"
+    {
+        "#format"    "{1:N}"
+        "es"         "{olive}{1}{default} fue expulsado por fuego amigo."
+    }
+    "KickReason"
+    {
+        "es"    "Fuiste expulsado por fuego amigo."
+    }
+}

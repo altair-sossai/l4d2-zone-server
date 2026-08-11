@@ -1,0 +1,16 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "zho"    "FF"
+    }
+    "Announce"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{olive}{1}{default} 因友軍傷害被踢出。"
+    }
+    "KickReason"
+    {
+        "zho"    "你因友軍傷害被踢出。"
+    }
+}

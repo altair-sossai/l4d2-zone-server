@@ -1,0 +1,16 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "chi"    "FF"
+    }
+    "Announce"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{olive}{1}{default} 因友军伤害被踢出。"
+    }
+    "KickReason"
+    {
+        "chi"    "你因友军伤害被踢出。"
+    }
+}
