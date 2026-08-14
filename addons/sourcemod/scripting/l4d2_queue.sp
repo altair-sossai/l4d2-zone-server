@@ -65,8 +65,6 @@ public void OnPluginStart()
     RegConsoleCmd("sm_vaga", RequestSlotCmd, "Request a slot in the game");
     RegConsoleCmd("sm_slot", RequestSlotCmd, "Request a slot in the game");
 
-    RegAdminCmd("sm_fixteams", FixQueueCmd, ADMFLAG_BAN, "Force the queue fix");
-
     CreateTimer(3.0, WinningTeam_Timer, _, TIMER_REPEAT);
 }
 
@@ -155,29 +153,12 @@ Action FixTeam_Timer(Handle timer)
     return Plugin_Continue;
 }
 
-Action FixQueueCmd(int client, int args)
-{
-    if (!IsNewGame())
-        return Plugin_Handled;
-
-    bool wasFixingTeams = g_bFixingTeams;
-
-    g_bFixingTeams = true;
-    FixTeams();
-    g_bFixingTeams = wasFixingTeams;
-
-    return Plugin_Handled;
-}
-
 Action PrintQueueCmd(int client, int args)
 {
     if (!IsHumanClient(client))
         return Plugin_Handled;
 
     PrintQueue(client);
-
-    if (CheckCommandAccess(client, "sm_ban", ADMFLAG_BAN))
-        PrintDebugQueue(client);
 
     return Plugin_Handled;
 }
@@ -931,118 +912,6 @@ bool IsValidClient(int client)
 bool IsHumanClient(int client)
 {
     return IsValidClient(client) && !IsFakeClient(client);
-}
-
-void PrintDebugQueue(int client)
-{
-    int now = GetTime();
-
-    DebugPrint(client, "===== L4D2 Queue Debug =====");
-    DebugPrint(client, "Now (GetTime): %d", now);
-    DebugPrint(client, "MapStarted: %s | IsNewGame: %s", L4D_HasMapStarted() ? "yes" : "no", IsNewGame() ? "yes" : "no");
-    DebugPrint(client, "Flags -> FixingTeams: %s", g_bFixingTeams ? "true" : "false");
-    DebugPrint(client, "WinningTeam -> cached g_iWinningTeam: %d | GetWinningTeam(now): %d", g_iWinningTeam, GetWinningTeam());
-    
-    DebugPrint(client, "Scores -> TeamA: %d (campaign %d + map %d) | TeamB: %d (campaign %d + map %d)",
-        GetTeamAScore(), L4D2Direct_GetVSCampaignScore(0), L4D_GetTeamScore(1),
-        GetTeamBScore(), L4D2Direct_GetVSCampaignScore(1), L4D_GetTeamScore(2));
-
-    DebugPrint(client, "TeamsFlipped: %d", GameRules_GetProp("m_bAreTeamsFlipped"));
-    DebugPrint(client, "TeamSize: %d | Slots: %d | DisconnectTimeout: %d | MustFixTheTeams: %s",
-        TeamSize(), Slots(), g_cvDisconnectTimeout.IntValue, MustFixTheTeams() ? "yes" : "no");
-
-    DebugPrint(client, "--- Queue (%d entries) ---", g_aQueue.Length);
-
-    Player player;
-    for (int i = 0; i < g_aQueue.Length; i++)
-    {
-        g_aQueue.GetArray(i, player);
-
-        int c = GetClientUsingSteamId(player.steamId);
-
-        char status[48];
-        if (player.expiresAt == 0)
-            strcopy(status, sizeof(status), "active");
-        else
-            Format(status, sizeof(status), "expires in %ds", player.expiresAt - now);
-
-        if (c == -1)
-        {
-            DebugPrint(client, "  [%d] %s | DISCONNECTED | %s | starter: %s",
-                i, player.steamId, status, IsStarter(player.steamId) ? "yes" : "no");
-        }
-        else
-        {
-            int team = GetClientTeam(c);
-            char teamName[16];
-            TeamName(team, teamName, sizeof(teamName));
-
-            DebugPrint(client, "  [%d] %s | %N | team %d (%s) | %s | starter: %s",
-                i, player.steamId, c, team, teamName, status, IsStarter(player.steamId) ? "yes" : "no");
-        }
-    }
-
-    DebugPrint(client, "--- Snapshot TeamA (%d entries) ---", g_aTeamA.Length);
-    DumpTeamSnapshot(client, g_aTeamA);
-
-    DebugPrint(client, "--- Snapshot TeamB (%d entries) ---", g_aTeamB.Length);
-    DumpTeamSnapshot(client, g_aTeamB);
-
-    DebugPrint(client, "============================");
-}
-
-void DumpTeamSnapshot(int client, ArrayList list)
-{
-    char steamId[64];
-
-    for (int i = 0; i < list.Length; i++)
-    {
-        list.GetString(i, steamId, sizeof(steamId));
-
-        int c = GetClientUsingSteamId(steamId);
-
-        if (c == -1)
-        {
-            DebugPrint(client, "  [%d] %s | DISCONNECTED", i, steamId);
-        }
-        else
-        {
-            int team = GetClientTeam(c);
-            char teamName[16];
-            TeamName(team, teamName, sizeof(teamName));
-
-            DebugPrint(client, "  [%d] %s | %N | team %d (%s)", i, steamId, c, team, teamName);
-        }
-    }
-}
-
-void TeamName(int team, char[] buffer, int maxlength)
-{
-    switch (team)
-    {
-        case L4D_TEAM_SPECTATOR:
-            strcopy(buffer, maxlength, "spectator");
-
-        case L4D_TEAM_SURVIVOR:
-            strcopy(buffer, maxlength, "survivor");
-
-        case L4D_TEAM_INFECTED:
-            strcopy(buffer, maxlength, "infected");
-
-        default:
-            strcopy(buffer, maxlength, "none");
-    }
-}
-
-void DebugPrint(int client, const char[] format, any ...)
-{
-    char buffer[512];
-    VFormat(buffer, sizeof(buffer), format, 3);
-
-    if (client == 0)
-        PrintToServer("%s", buffer);
-    else
-        PrintToConsole(client, "%s", buffer);
 }
 
 void LoadQueue()
