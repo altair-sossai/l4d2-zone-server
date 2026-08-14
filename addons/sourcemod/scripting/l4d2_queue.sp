@@ -627,17 +627,7 @@ void PrintQueue(int target)
 
         if (strlen(output) != 0 && strlen(output) + 1 + strlen(entry) >= MAX_QUEUE_MESSAGE_LENGTH)
         {
-            if (firstMessage)
-            {
-                if (target == 0)
-                    CPrintToChatAll(QUEUE_TAG, output);
-                else
-                    CPrintToChat(target, QUEUE_TAG, output);
-            }
-            else if (target == 0)
-                CPrintToChatAll("%s", output);
-            else
-                CPrintToChat(target, "%s", output);
+            SendQueueLine(target, output, firstMessage);
 
             output = "";
             firstMessage = false;
@@ -654,17 +644,22 @@ void PrintQueue(int target)
     if (strlen(output) == 0)
         return;
 
-    if (firstMessage)
+    SendQueueLine(target, output, firstMessage);
+}
+
+void SendQueueLine(int target, const char[] line, bool withHeader)
+{
+    if (withHeader)
     {
         if (target == 0)
-            CPrintToChatAll(QUEUE_TAG, output);
+            CPrintToChatAll(QUEUE_TAG, line);
         else
-            CPrintToChat(target, QUEUE_TAG, output);
+            CPrintToChat(target, QUEUE_TAG, line);
     }
     else if (target == 0)
-        CPrintToChatAll("%s", output);
+        CPrintToChatAll("%s", line);
     else
-        CPrintToChat(target, "%s", output);
+        CPrintToChat(target, "%s", line);
 }
 
 void FixTeams()
