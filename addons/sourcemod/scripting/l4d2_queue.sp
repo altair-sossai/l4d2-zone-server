@@ -76,7 +76,7 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
     g_bRoundOver = false;
 
     CreateTimer(2.5, EnableFixTeam_Timer);
-    CreateTimer(10.0, SuggestSlotCommand_Timer);
+    CreateTimer(30.0, SuggestSlotCommand_Timer);
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
