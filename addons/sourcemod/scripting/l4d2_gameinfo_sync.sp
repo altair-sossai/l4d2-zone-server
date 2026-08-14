@@ -40,9 +40,11 @@ ConVar
     g_hVersusBossBuffer,
     g_hRelatedAccountsChat;
 
-char 
+char
     g_sConfigurationName[64],
-    g_sLastMessage[32];
+    g_sLastMessage[32],
+    g_sUrl[255],
+    g_sSecretKey[100];
 
 bool 
     g_bReadyUpIsAvailable = false,
@@ -76,6 +78,11 @@ public void OnPluginStart()
     g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
     g_hRelatedAccountsChat = CreateConVar("gameinfo_related_accounts_chat", "1", "Announce related accounts (same IP) in chat", _, true, 0.0, true, 1.0);
 
+    g_hUrl.AddChangeHook(OnCredentialsChanged);
+    g_hSecretKey.AddChangeHook(OnCredentialsChanged);
+
+    RefreshCredentials();
+
     AddCommandListener(Say_Callback, "say");
     AddCommandListener(Say_Callback, "say_team");
 
@@ -88,6 +95,11 @@ public void OnPluginStart()
 
     ClearInfectedDamage();
     ClearSurvivorProgress();
+}
+
+public void OnConfigsExecuted()
+{
+    RefreshCredentials();
 }
 
 public void OnAllPluginsLoaded()
@@ -685,17 +697,25 @@ void DoNothing(HTTPResponse httpResponse, any value)
     delete view_as<JSONObject>(value);
 }
 
+void RefreshCredentials()
+{
+    g_hUrl.GetString(g_sUrl, sizeof(g_sUrl));
+    g_hSecretKey.GetString(g_sSecretKey, sizeof(g_sSecretKey));
+}
+
+void OnCredentialsChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
+    RefreshCredentials();
+}
+
 HTTPRequest BuildHTTPRequest(char[] path)
 {
     char url[255];
-    GetConVarString(g_hUrl, url, sizeof(url));
+    strcopy(url, sizeof(url), g_sUrl);
     StrCat(url, sizeof(url), path);
 
-    char secretKey[100];
-    GetConVarString(g_hSecretKey, secretKey, sizeof(secretKey));
-
     HTTPRequest request = new HTTPRequest(url);
-    request.SetHeader("Authorization", secretKey);
+    request.SetHeader("Authorization", g_sSecretKey);
     request.ConnectTimeout = GAMEINFO_HTTP_CONNECT_TIMEOUT;
     request.Timeout = GAMEINFO_HTTP_TIMEOUT;
 
