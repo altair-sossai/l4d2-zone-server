@@ -11,15 +11,20 @@
     }
     "VoteTitle"
     {
-        "chi"    "胜负已定，是否继续？"
+        "chi"    "胜负已定，是否放弃比赛？"
     }
-    "VoteEnd"
+    "GapVoteTitle"
     {
-        "chi"    "未过半同意，结束比赛。"
+        "#format"    "{1:d}"
+        "chi"        "比分差距超过 {1} 分，是否放弃比赛？"
+    }
+    "VoteSurrender"
+    {
+        "chi"    "落败队选择放弃，结束比赛。"
     }
     "VoteContinue"
     {
-        "chi"    "落败队选择继续。"
+        "chi"    "未过半同意放弃，比赛继续。"
     }
     "VoteCancelled"
     {

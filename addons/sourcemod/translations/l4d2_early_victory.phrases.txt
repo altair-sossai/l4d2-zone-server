@@ -11,15 +11,20 @@
     }
     "VoteTitle"
     {
-        "en"    "Game decided, keep playing?"
+        "en"    "Game decided, give up the match?"
     }
-    "VoteEnd"
+    "GapVoteTitle"
     {
-        "en"    "No majority to continue. Ending match."
+        "#format"    "{1:d}"
+        "en"         "The score gap is over {1} points, give up the match?"
+    }
+    "VoteSurrender"
+    {
+        "en"    "Losing team chose to give up. Ending match."
     }
     "VoteContinue"
     {
-        "en"    "Losing team chose to continue."
+        "en"    "No majority to give up. The match continues."
     }
     "VoteCancelled"
     {

@@ -11,15 +11,20 @@
     }
     "VoteTitle"
     {
-        "zho"    "勝負已定，是否繼續？"
+        "zho"    "勝負已定，是否放棄比賽？"
     }
-    "VoteEnd"
+    "GapVoteTitle"
     {
-        "zho"    "未過半同意，結束比賽。"
+        "#format"    "{1:d}"
+        "zho"        "比分差距超過 {1} 分，是否放棄比賽？"
+    }
+    "VoteSurrender"
+    {
+        "zho"    "落敗隊選擇放棄，結束比賽。"
     }
     "VoteContinue"
     {
-        "zho"    "落敗隊選擇繼續。"
+        "zho"    "未過半同意放棄，比賽繼續。"
     }
     "VoteCancelled"
     {

@@ -11,15 +11,20 @@
     }
     "VoteTitle"
     {
-        "es"    "Partida decidida, ¿seguir jugando?"
+        "es"    "Partida decidida, ¿rendirse?"
     }
-    "VoteEnd"
+    "GapVoteTitle"
     {
-        "es"    "Sin mayoría para continuar. Terminando la partida."
+        "#format"    "{1:d}"
+        "es"         "La diferencia entre los marcadores supera los {1} puntos, ¿rendirse?"
+    }
+    "VoteSurrender"
+    {
+        "es"    "El equipo perdedor decidió rendirse. Terminando la partida."
     }
     "VoteContinue"
     {
-        "es"    "El equipo perdedor decidió continuar."
+        "es"    "Sin mayoría para rendirse. La partida continúa."
     }
     "VoteCancelled"
     {

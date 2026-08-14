@@ -11,15 +11,20 @@
     }
     "VoteTitle"
     {
-        "pt"    "Jogo decidido, deseja continuar?"
+        "pt"    "Jogo decidido, deseja desistir?"
     }
-    "VoteEnd"
+    "GapVoteTitle"
     {
-        "pt"    "Sem maioria para continuar. Encerrando a partida."
+        "#format"    "{1:d}"
+        "pt"         "A diferença entre os placares é superior a {1} pontos, deseja desistir?"
+    }
+    "VoteSurrender"
+    {
+        "pt"    "Equipe perdedora decidiu desistir. Encerrando a partida."
     }
     "VoteContinue"
     {
-        "pt"    "Equipe perdedora decidiu continuar."
+        "pt"    "Sem maioria para desistir. A partida continua."
     }
     "VoteCancelled"
     {

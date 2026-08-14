@@ -39,7 +39,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 |--------|-----------|
 | [l4d2_queue](#l4d2_queue) | Player queue — shows who plays next and lets players claim a slot |
 | [l4d2_friendly_fire_control](#l4d2_friendly_fire_control) | Kicks players who exceed a friendly-fire limit |
-| [l4d2_early_victory](#l4d2_early_victory) | Skips the last map when the match is already decided |
+| [l4d2_early_victory](#l4d2_early_victory) | Lets the losing team give up and skip to another campaign when the match is already decided |
 | [l4d2_afk_to_spec](#l4d2_afk_to_spec) | Moves AFK players to spectator during ready-up |
 | [l4d2_block_spec_during_tank](#l4d2_block_spec_during_tank) | Blocks team changes while the tank is alive |
 | [l4d2_no_skip_getup_animation](#l4d2_no_skip_getup_animation) | Prevents skipping the get-up animation via team change |
@@ -122,10 +122,15 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 
 **Source:** [`scripting/l4d2_early_victory.sp`](../../addons/sourcemod/scripting/l4d2_early_victory.sp)
 
-**What it does** — Detects when a best-of series is effectively over before the final map. When play reaches the configured chapter (default the 4th map) and the leading team's advantage is at least `min_diff`, everyone is told *"Game decided ({score} x {score}). Losing team will vote."* and the losing team gets a short vote titled *"Game decided, keep playing?"*:
+**What it does** — Detects when a best-of series is effectively over before the final map and offers the losing team a surrender vote. There are two triggers on the configured chapter (default the 4th map):
 
-- If the majority votes to keep playing → *"Losing team chose to continue."* and the match proceeds normally.
-- If there's no majority → *"No majority to continue. Ending match."*, the plugin announces the next campaign (*"Next campaign: {name}"*), slays everyone after `slay_delay`, runs a short countdown (*"Next campaign: {name} - changing map in {n}s"*), and changes to the next official campaign after `change_delay`.
+- **Right after the ready-up of the first round**, if the campaign score gap carried from the previous chapter is at least `min_gap` → the losing team gets a vote titled *"The score gap is over {n} points, give up the match?"*.
+- **During the second round**, if the leading team's advantage is at least `min_diff` → everyone is told *"Game decided ({score} x {score}). Losing team will vote."* and the losing team gets a vote titled *"Game decided, give up the match?"*.
+
+In both cases the vote follows the usual Left 4 Dead 2 convention — **F1 (Yes) executes the action**:
+
+- If the majority votes yes → *"Losing team chose to give up. Ending match."*, the plugin announces the next campaign (*"Next campaign: {name}"*), slays everyone after `slay_delay`, runs a short countdown (*"Next campaign: {name} - changing map in {n}s"*), and changes to the next official campaign after `change_delay`.
+- If there's no majority → *"No majority to give up. The match continues."* and the match proceeds normally.
 - While an early victory is pending, manual map changes are blocked: *"Map change blocked until the match ends."*
 
 The next campaign comes from a preconfigured rotation queue (see below), or an admin can override it with a menu (*"Queue the next campaigns (in queue: {n})"* / *"Clear list"*).
@@ -138,8 +143,9 @@ The next campaign comes from a preconfigured rotation queue (see below), or an a
 |--------|---------|-------------|
 | `l4d2_early_victory_enabled` | `1` | Enable / disable |
 | `l4d2_early_victory_chapter` | `4` | Chapter (map index) that triggers the check |
-| `l4d2_early_victory_min_diff` | `15` | Minimum score lead required to start the vote |
-| `l4d2_early_victory_vote_duration` | `15` | Seconds the losing team has to vote to continue |
+| `l4d2_early_victory_min_diff` | `15` | Minimum score lead required to start the second-round vote |
+| `l4d2_early_victory_min_gap` | `1000` | Minimum campaign score gap required to start the ready-up vote |
+| `l4d2_early_victory_vote_duration` | `15` | Seconds the losing team has to vote to give up |
 | `l4d2_early_victory_slay_delay` | `5.0` | Seconds after the announcement before slaying everyone |
 | `l4d2_early_victory_change_delay` | `3.0` | Seconds after slaying before changing campaign |
 
@@ -157,6 +163,7 @@ The next campaign comes from a preconfigured rotation queue (see below), or an a
 ```
 confogl_addcvar l4d2_early_victory_chapter 4
 confogl_addcvar l4d2_early_victory_min_diff 15
+confogl_addcvar l4d2_early_victory_min_gap 1000
 l4d2_early_victory_queue "The Parish"
 l4d2_early_victory_queue "Hard Rain"
 l4d2_early_victory_queue "Death Toll"

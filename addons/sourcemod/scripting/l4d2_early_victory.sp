@@ -18,6 +18,7 @@
 ConVar g_cvEnabled,
        g_cvChapter,
        g_cvMinDiff,
+       g_cvMinGap,
        g_cvVoteDuration,
        g_cvSlayDelay,
        g_cvChangeDelay;
@@ -71,7 +72,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.6.0",
+    version = "1.7.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -84,7 +85,8 @@ public void OnPluginStart()
     g_cvEnabled = CreateConVar("l4d2_early_victory_enabled", "1", "Enable/disable the early victory (skip last map when the game is already decided)", FCVAR_NOTIFY, true, 0.0, true, 1.0);
     g_cvChapter = CreateConVar("l4d2_early_victory_chapter", "4", "Chapter (map index) that triggers the early victory", FCVAR_NOTIFY, true, 1.0);
     g_cvMinDiff = CreateConVar("l4d2_early_victory_min_diff", "15", "Minimum score lead (scoring team over the already-played team) required to start the early victory vote", FCVAR_NOTIFY, true, 1.0);
-    g_cvVoteDuration = CreateConVar("l4d2_early_victory_vote_duration", "15", "How many seconds the losing team has to vote whether to continue playing", FCVAR_NOTIFY, true, 5.0);
+    g_cvMinGap = CreateConVar("l4d2_early_victory_min_gap", "1000", "Minimum campaign score gap carried into the chapter required to offer the surrender vote right after the ready-up", FCVAR_NOTIFY, true, 1.0);
+    g_cvVoteDuration = CreateConVar("l4d2_early_victory_vote_duration", "15", "How many seconds the losing team has to vote whether to give up the match", FCVAR_NOTIFY, true, 5.0);
     g_cvSlayDelay = CreateConVar("l4d2_early_victory_slay_delay", "5.0", "How many seconds after announcing the victory before slaying everyone", FCVAR_NOTIFY, true, 0.0);
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
     
@@ -200,7 +202,7 @@ Action StartCheck_Timer(Handle timer)
     if (!g_cvEnabled.BoolValue || g_bTriggered || g_bRoundOver || !L4D_HasMapStarted())
         return Plugin_Stop;
 
-    if (IsInReady() || !InSecondHalfOfRound())
+    if (IsInReady())
         return Plugin_Stop;
 
     if (L4D_GetCurrentChapter() != g_cvChapter.IntValue || L4D_IsMissionFinalMap())
@@ -219,6 +221,40 @@ Action Check_Timer(Handle timer)
         return Plugin_Stop;
     }
 
+    return InSecondHalfOfRound() ? DecidedCheck() : ScoreGapCheck();
+}
+
+Action ScoreGapCheck()
+{
+    int scoreGap = CampaignScoreGap();
+    int losingTeam = LosingCampaignTeam();
+
+    if (scoreGap < g_cvMinGap.IntValue || losingTeam == 0)
+    {
+        g_hCheckTimer = null;
+        return Plugin_Stop;
+    }
+
+    if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
+        return Plugin_Continue;
+
+    if (!HasHumanOnLosingTeam(losingTeam))
+        return Plugin_Continue;
+
+    g_bTriggered = true;
+    g_hCheckTimer = null;
+
+    char title[192];
+    FormatEx(title, sizeof(title), "%T", "GapVoteTitle", LANG_SERVER, g_cvMinGap.IntValue);
+
+    AnnounceToTeam(losingTeam, "GapVoteTitle", g_cvMinGap.IntValue);
+    StartSurrenderVote(losingTeam, title);
+
+    return Plugin_Stop;
+}
+
+Action DecidedCheck()
+{
     if (IsTankInPlay() || IsAnySurvivorIncapacitated())
         return Plugin_Continue;
 
@@ -255,8 +291,11 @@ Action Check_Timer(Handle timer)
     g_bTriggered = true;
     g_hCheckTimer = null;
 
+    char title[192];
+    FormatEx(title, sizeof(title), "%T", "VoteTitle", LANG_SERVER);
+
     CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "Decided", scoringScore, alreadyPlayedScore);
-    StartContinueVote(losingTeam);
+    StartSurrenderVote(losingTeam, title);
 
     return Plugin_Stop;
 }
@@ -295,6 +334,8 @@ Action Debug_Cmd(int client, int args)
     ReplyToCommand(client, "Scoring team score: %d", scoringScore);
     ReplyToCommand(client, "Already-played team score: %d", alreadyPlayedScore);
     ReplyToCommand(client, "min_diff: %d", g_cvMinDiff.IntValue);
+    ReplyToCommand(client, "--- Ready-up surrender vote ---");
+    ReplyToCommand(client, "Campaign score gap: %d | min_gap: %d | Losing team: %d", CampaignScoreGap(), g_cvMinGap.IntValue, LosingCampaignTeam());
     ReplyToCommand(client, "--- Bonus (scoremod) ---");
     ReplyToCommand(client, "Health: %d | Damage: %d | Pills: %d => Current total: %d", healthBonus, damageBonus, pillsBonus, currentBonus);
     ReplyToCommand(client, "Max pills bonus: %d | Team size: %d | Points per pill: %d", maxPillsBonus, teamSize, pointsPerPill);
@@ -318,7 +359,7 @@ void KillCheckTimer()
     g_hCheckTimer = null;
 }
 
-void StartContinueVote(int losingTeam)
+void StartSurrenderVote(int losingTeam, const char[] title)
 {
     g_iEligibleVoters = 0;
 
@@ -333,35 +374,25 @@ void StartContinueVote(int losingTeam)
     }
 
     if (g_iEligibleVoters == 0)
-    {
-        CPrintToChatAll("%t", "VoteEnd");
-        ScheduleEarlyVictory();
         return;
-    }
 
-    g_hVote = CreateBuiltinVote(ContinueVoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
+    g_hVote = CreateBuiltinVote(SurrenderVoteActionHandler, BuiltinVoteType_Custom_YesNo, BuiltinVoteAction_Cancel | BuiltinVoteAction_VoteEnd | BuiltinVoteAction_End);
 
     if (g_hVote == null)
-    {
-        ScheduleEarlyVictory();
         return;
-    }
 
-    char title[128];
-    FormatEx(title, sizeof(title), "%T", "VoteTitle", LANG_SERVER);
     SetBuiltinVoteArgument(g_hVote, title);
     SetBuiltinVoteInitiator(g_hVote, BUILTINVOTES_SERVER_INDEX);
-    SetBuiltinVoteResultCallback(g_hVote, ContinueVoteResultHandler);
+    SetBuiltinVoteResultCallback(g_hVote, SurrenderVoteResultHandler);
 
     if (!DisplayBuiltinVote(g_hVote, players, g_iEligibleVoters, g_cvVoteDuration.IntValue))
     {
         CloseHandle(g_hVote);
         g_hVote = null;
-        ScheduleEarlyVictory();
     }
 }
 
-void ContinueVoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
+void SurrenderVoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
 {
     switch (action)
     {
@@ -384,7 +415,7 @@ void ContinueVoteActionHandler(Handle vote, BuiltinVoteAction action, int param1
     }
 }
 
-void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
+void SurrenderVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info, int num_items, const int[][] item_info)
 {
     if (g_bVoteResolved)
         return;
@@ -402,19 +433,18 @@ void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, cons
 
     g_bVoteResolved = true;
 
-    int noVotes = g_iEligibleVoters - yesVotes;
-    if (noVotes * 2 > g_iEligibleVoters)
+    if (yesVotes * 2 <= g_iEligibleVoters)
     {
         DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
-        CPrintToChatAll("%t", "VoteEnd");
-        ScheduleEarlyVictory();
+        CPrintToChatAll("%t", "VoteContinue");
         return;
     }
 
     char message[128];
-    FormatEx(message, sizeof(message), "%T", "VoteContinue", LANG_SERVER);
+    FormatEx(message, sizeof(message), "%T", "VoteSurrender", LANG_SERVER);
     DisplayBuiltinVotePass(vote, message);
-    CPrintToChatAll("%t", "VoteContinue");
+    CPrintToChatAll("%t", "VoteSurrender");
+    ScheduleEarlyVictory();
 }
 
 void ScheduleEarlyVictory()
@@ -492,6 +522,35 @@ int AlreadyPlayedTeamScore()
     return AreTeamsFlipped() ? GetTeamAScore() : GetTeamBScore();
 }
 
+int CampaignScoreGap()
+{
+    int teamAScore = L4D2Direct_GetVSCampaignScore(0);
+    int teamBScore = L4D2Direct_GetVSCampaignScore(1);
+
+    return teamAScore > teamBScore ? teamAScore - teamBScore : teamBScore - teamAScore;
+}
+
+int LosingCampaignTeam()
+{
+    int teamAScore = L4D2Direct_GetVSCampaignScore(0);
+    int teamBScore = L4D2Direct_GetVSCampaignScore(1);
+
+    if (teamAScore == teamBScore)
+        return 0;
+
+    return CampaignTeamToClientTeam(teamAScore < teamBScore ? 0 : 1);
+}
+
+int CampaignTeamToClientTeam(int campaignTeam)
+{
+    bool flipped = AreTeamsFlipped();
+
+    if (campaignTeam == 0)
+        return flipped ? L4D_TEAM_INFECTED : L4D_TEAM_SURVIVOR;
+
+    return flipped ? L4D_TEAM_SURVIVOR : L4D_TEAM_INFECTED;
+}
+
 int GetTeamAScore()
 {
     return GetTeamTotalScore(0, 1);
@@ -567,6 +626,17 @@ bool HasHumanOnLosingTeam(int losingTeam)
     }
 
     return false;
+}
+
+void AnnounceToTeam(int team, const char[] phrase, int value)
+{
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i) || GetClientTeam(i) != team)
+            continue;
+
+        CPrintToChat(i, "{orange}[%t]{default} %t", "Tag", phrase, value);
+    }
 }
 
 int ScoringTeamMaxScore()
