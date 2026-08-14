@@ -450,10 +450,8 @@ void SnapshotTeams()
     g_aTeamA.Clear();
     g_aTeamB.Clear();
 
-    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
-
-    int teamA = flipped ? L4D_TEAM_INFECTED : L4D_TEAM_SURVIVOR;
-    int teamB = flipped ? L4D_TEAM_SURVIVOR : L4D_TEAM_INFECTED;
+    int teamA = CurrentSideOf(0);
+    int teamB = CurrentSideOf(1);
 
     char steamId[64];
 
@@ -561,15 +559,23 @@ bool IsStarter(const char[] steamId)
 
 int StarterCurrentTeam(const char[] steamId)
 {
-    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
-
     if (g_aTeamA.FindString(steamId) != -1)
-        return flipped ? L4D_TEAM_INFECTED : L4D_TEAM_SURVIVOR;
+        return CurrentSideOf(0);
 
     if (g_aTeamB.FindString(steamId) != -1)
-        return flipped ? L4D_TEAM_SURVIVOR : L4D_TEAM_INFECTED;
+        return CurrentSideOf(1);
 
     return L4D_TEAM_SPECTATOR;
+}
+
+int CurrentSideOf(int campaignTeam)
+{
+    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+
+    if (campaignTeam == 0)
+        return flipped ? L4D_TEAM_INFECTED : L4D_TEAM_SURVIVOR;
+
+    return flipped ? L4D_TEAM_SURVIVOR : L4D_TEAM_INFECTED;
 }
 
 int GetClientUsingSteamId(const char[] steamId)
