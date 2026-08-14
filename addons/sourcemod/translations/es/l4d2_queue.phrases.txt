@@ -40,7 +40,7 @@
     }
     "SlotJoined"
     {
-        "es"    "Has recuperado tu plaza en tu equipo."
+        "es"    "Has ocupado una plaza en la partida."
     }
     "SlotTankControlled"
     {

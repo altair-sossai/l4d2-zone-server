@@ -208,8 +208,15 @@ Action RequestSlotReadyUp(int client)
     if (currentTeam == L4D_TEAM_SURVIVOR || currentTeam == L4D_TEAM_INFECTED)
         return Plugin_Handled;
 
-    if (HasFreeTeamSlot())
-        return Plugin_Handled;
+    for (int team = L4D_TEAM_SURVIVOR; team <= L4D_TEAM_INFECTED; team++)
+    {
+        if (NumberOfPlayersInTheTeam(team) < TeamSize())
+        {
+            MovePlayerToTeam(client, team);
+            CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotJoined");
+            return Plugin_Handled;
+        }
+    }
 
     RemoveExpiredPlayers();
 
@@ -841,14 +848,6 @@ int ConnectedPlayers()
     }
 
     return count;
-}
-
-bool HasFreeTeamSlot()
-{
-    int teamSize = TeamSize();
-
-    return NumberOfPlayersInTheTeam(L4D_TEAM_SURVIVOR) < teamSize
-        || NumberOfPlayersInTheTeam(L4D_TEAM_INFECTED) < teamSize;
 }
 
 bool IsControllingTank(int client)

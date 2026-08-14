@@ -40,7 +40,7 @@
     }
     "SlotJoined"
     {
-        "zho"    "你已重新取得你在隊伍中的名額。"
+        "zho"    "你已在遊戲中取得一個名額。"
     }
     "SlotTankControlled"
     {

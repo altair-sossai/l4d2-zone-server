@@ -40,7 +40,7 @@
     }
     "SlotJoined"
     {
-        "chi"    "你已重新取得你在队伍中的名额。"
+        "chi"    "你已在游戏中获得一个名额。"
     }
     "SlotTankControlled"
     {

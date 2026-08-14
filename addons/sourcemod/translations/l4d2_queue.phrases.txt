@@ -40,7 +40,7 @@
     }
     "SlotJoined"
     {
-        "en"    "You have taken your slot back on your team."
+        "en"    "You have taken a slot in the game."
     }
     "SlotTankControlled"
     {

@@ -40,7 +40,7 @@
     }
     "SlotJoined"
     {
-        "pt"    "Você retomou a sua vaga na sua equipe."
+        "pt"    "Você assumiu uma vaga no jogo."
     }
     "SlotTankControlled"
     {
