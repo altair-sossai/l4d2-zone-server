@@ -44,7 +44,8 @@ char
     g_sConfigurationName[64],
     g_sLastMessage[32],
     g_sUrl[255],
-    g_sSecretKey[100];
+    g_sSecretKey[100],
+    g_sCommunityId[MAXPLAYERS + 1][25];
 
 bool 
     g_bReadyUpIsAvailable = false,
@@ -153,7 +154,18 @@ public void OnLibraryAdded(const char[] name)
 
 public void OnClientPostAdminCheck(int client)
 {
+    if (!IsFakeClient(client))
+    {
+        char communityId[25];
+        GetCommunityId(client, communityId, sizeof(communityId));
+    }
+
     SendPlayerConnectionInfo(client);
+}
+
+public void OnClientDisconnect(int client)
+{
+    g_sCommunityId[client][0] = '\0';
 }
 
 public void OnRoundIsLive()
@@ -209,7 +221,7 @@ Action Say_Callback(int client, char[] command, int args)
     jObject.SetInt("team", GetClientTeam(client));
 
     char communityId[25];
-    GetClientAuthId(client, AuthId_SteamID64, communityId, sizeof(communityId));
+    GetCommunityId(client, communityId, sizeof(communityId));
     jObject.SetString("communityId", communityId);
 
     char name[MAX_NAME_LENGTH];
@@ -315,7 +327,7 @@ void SendPlayerConnectionInfo(int client)
         return;
 
     char communityId[25];
-    if (!GetClientAuthId(client, AuthId_SteamID64, communityId, sizeof(communityId)))
+    if (!GetCommunityId(client, communityId, sizeof(communityId)))
         return;
 
     char ipAddress[46];
@@ -446,7 +458,7 @@ void SendPlayers()
 
         JSONObject player = new JSONObject();
 
-        GetClientAuthId(client, AuthId_SteamID64, communityId, sizeof(communityId));
+        GetCommunityId(client, communityId, sizeof(communityId));
         player.SetString("communityId", communityId);
 
         GetClientName(client, name, sizeof(name));
@@ -844,6 +856,22 @@ int GetMaxBonus()
         return 0;
 
     return SMPlus_GetMaxHealthBonus() + SMPlus_GetMaxDamageBonus() + SMPlus_GetMaxPillsBonus();
+}
+
+bool GetCommunityId(int client, char[] buffer, int size)
+{
+    if (g_sCommunityId[client][0] != '\0')
+    {
+        strcopy(buffer, size, g_sCommunityId[client]);
+        return true;
+    }
+
+    if (!GetClientAuthId(client, AuthId_SteamID64, buffer, size))
+        return false;
+
+    strcopy(g_sCommunityId[client], sizeof(g_sCommunityId[]), buffer);
+
+    return true;
 }
 
 bool IsValidClient(int client)
