@@ -257,13 +257,7 @@ Action RequestSlotReadyUp(int client)
         return Plugin_Handled;
     }
 
-    int lastClientTeam = GetClientTeam(lastClient);
-
-    MovePlayerToTeam(lastClient, L4D_TEAM_SPECTATOR);
-    MovePlayerToTeam(client, lastClientTeam);
-
-    CPrintToChat(client, SLOT_TAG, "SlotClaimed", lastClient);
-    CPrintToChat(lastClient, SLOT_TAG, "SlotLost", client);
+    ClaimSlot(client, lastClient, GetClientTeam(lastClient));
 
     return Plugin_Handled;
 }
@@ -327,11 +321,7 @@ Action RequestSlotInGame(int client)
         return Plugin_Handled;
     }
 
-    MovePlayerToTeam(substitute, L4D_TEAM_SPECTATOR);
-    MovePlayerToTeam(client, targetTeam);
-
-    CPrintToChat(client, SLOT_TAG, "SlotClaimed", substitute);
-    CPrintToChat(substitute, SLOT_TAG, "SlotLost", client);
+    ClaimSlot(client, substitute, targetTeam);
 
     return Plugin_Handled;
 }
@@ -820,6 +810,15 @@ void MovePlayerToTeam(int client, int team)
         case L4D_TEAM_INFECTED:
             ChangeClientTeam(client, L4D_TEAM_INFECTED);
     }
+}
+
+void ClaimSlot(int client, int bumped, int team)
+{
+    MovePlayerToTeam(bumped, L4D_TEAM_SPECTATOR);
+    MovePlayerToTeam(client, team);
+
+    CPrintToChat(client, SLOT_TAG, "SlotClaimed", bumped);
+    CPrintToChat(bumped, SLOT_TAG, "SlotLost", client);
 }
 
 int NumberOfPlayersInTheTeam(int team)
