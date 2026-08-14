@@ -11,6 +11,9 @@
 #define QUEUE_FILE "data/l4d2_queue.txt"
 #define QUEUE_MAX_AGE (30 * 60)
 
+#define SLOT_TAG "{orange}[%t] {default}%t", "Slot"
+#define QUEUE_TAG "{orange}%t {default}%s", "Queue"
+
 ConVar g_cvDisconnectTimeout;
 ConVar g_cvEndMapDelay;
 
@@ -186,13 +189,13 @@ Action RequestSlotCmd(int client, int args)
 
     if (g_bFixingTeams)
     {
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotFixing");
+        CPrintToChat(client, SLOT_TAG, "SlotFixing");
         return Plugin_Handled;
     }
 
     if (g_bMixInProgress)
     {
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotNotAvailable");
+        CPrintToChat(client, SLOT_TAG, "SlotNotAvailable");
         return Plugin_Handled;
     }
 
@@ -213,7 +216,7 @@ Action RequestSlotReadyUp(int client)
         if (NumberOfPlayersInTheTeam(team) < TeamSize())
         {
             MovePlayerToTeam(client, team);
-            CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotJoined");
+            CPrintToChat(client, SLOT_TAG, "SlotJoined");
             return Plugin_Handled;
         }
     }
@@ -250,7 +253,7 @@ Action RequestSlotReadyUp(int client)
 
     if (lastClient == -1)
     {
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotAllAhead");
+        CPrintToChat(client, SLOT_TAG, "SlotAllAhead");
         return Plugin_Handled;
     }
 
@@ -259,8 +262,8 @@ Action RequestSlotReadyUp(int client)
     MovePlayerToTeam(lastClient, L4D_TEAM_SPECTATOR);
     MovePlayerToTeam(client, lastClientTeam);
 
-    CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotClaimed", lastClient);
-    CPrintToChat(lastClient, "{orange}[%t] {default}%t", "Slot", "SlotLost", client);
+    CPrintToChat(client, SLOT_TAG, "SlotClaimed", lastClient);
+    CPrintToChat(lastClient, SLOT_TAG, "SlotLost", client);
 
     return Plugin_Handled;
 }
@@ -273,7 +276,7 @@ Action RequestSlotInGame(int client)
 
     if (!IsStarter(steamId))
     {
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotStartersOnly");
+        CPrintToChat(client, SLOT_TAG, "SlotStartersOnly");
         return Plugin_Handled;
     }
 
@@ -287,7 +290,7 @@ Action RequestSlotInGame(int client)
     if (NumberOfPlayersInTheTeam(targetTeam) < TeamSize())
     {
         MovePlayerToTeam(client, targetTeam);
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotJoined");
+        CPrintToChat(client, SLOT_TAG, "SlotJoined");
         return Plugin_Handled;
     }
 
@@ -320,15 +323,15 @@ Action RequestSlotInGame(int client)
 
     if (IsControllingTank(substitute))
     {
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotTankControlled", substitute);
+        CPrintToChat(client, SLOT_TAG, "SlotTankControlled", substitute);
         return Plugin_Handled;
     }
 
     MovePlayerToTeam(substitute, L4D_TEAM_SPECTATOR);
     MovePlayerToTeam(client, targetTeam);
 
-    CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotClaimed", substitute);
-    CPrintToChat(substitute, "{orange}[%t] {default}%t", "Slot", "SlotLost", client);
+    CPrintToChat(client, SLOT_TAG, "SlotClaimed", substitute);
+    CPrintToChat(substitute, SLOT_TAG, "SlotLost", client);
 
     return Plugin_Handled;
 }
@@ -373,7 +376,7 @@ Action SuggestSlotCommand_Timer(Handle timer)
         if (GetClientTeam(client) != L4D_TEAM_SPECTATOR)
             continue;
 
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotSuggestion");
+        CPrintToChat(client, SLOT_TAG, "SlotSuggestion");
     }
 
     return Plugin_Stop;
@@ -635,9 +638,9 @@ void PrintQueue(int target)
             if (firstMessage)
             {
                 if (target == 0)
-                    CPrintToChatAll("{orange}%t {default}%s", "Queue", output);
+                    CPrintToChatAll(QUEUE_TAG, output);
                 else
-                    CPrintToChat(target, "{orange}%t {default}%s", "Queue", output);
+                    CPrintToChat(target, QUEUE_TAG, output);
             }
             else if (target == 0)
                 CPrintToChatAll("%s", output);
@@ -662,9 +665,9 @@ void PrintQueue(int target)
     if (firstMessage)
     {
         if (target == 0)
-            CPrintToChatAll("{orange}%t {default}%s", "Queue", output);
+            CPrintToChatAll(QUEUE_TAG, output);
         else
-            CPrintToChat(target, "{orange}%t {default}%s", "Queue", output);
+            CPrintToChat(target, QUEUE_TAG, output);
     }
     else if (target == 0)
         CPrintToChatAll("%s", output);
