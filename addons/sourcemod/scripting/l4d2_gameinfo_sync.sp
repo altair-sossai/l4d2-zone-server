@@ -65,8 +65,9 @@ int
     g_iTankPercent,
     g_iWitchPercent;
 
-float 
-    g_fSurvivorProgress[MAXPLAYERS + 1];
+float
+    g_fSurvivorProgress[MAXPLAYERS + 1],
+    g_fMapMaxFlowDistance = 0.0;
 
 public void OnPluginStart()
 {
@@ -100,6 +101,16 @@ public void OnPluginStart()
 public void OnConfigsExecuted()
 {
     RefreshCredentials();
+}
+
+public void OnMapStart()
+{
+    g_fMapMaxFlowDistance = 0.0;
+}
+
+public void OnMapEnd()
+{
+    g_fMapMaxFlowDistance = 0.0;
 }
 
 public void OnAllPluginsLoaded()
@@ -218,6 +229,7 @@ Action Say_Callback(int client, char[] command, int args)
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
+    g_fMapMaxFlowDistance = 0.0;
     g_bTankIsDead = false;
 
     ClearInfectedDamage();
@@ -741,8 +753,8 @@ float GetSurvivorProgress(int client)
 
     Address navArea = L4D2Direct_GetTerrorNavArea(origin);
     if (navArea != Address_Null)
-        return Max(0.0, Min(L4D2Direct_GetTerrorNavAreaFlow(navArea) / L4D2Direct_GetMapMaxFlowDistance(), 1.0));
-	
+        return Max(0.0, Min(L4D2Direct_GetTerrorNavAreaFlow(navArea) / GetMapMaxFlowDistanceCached(), 1.0));
+
     return 0.0;
 }
 
@@ -753,7 +765,7 @@ int GetCurrentProgress()
 
 float GetBossProximity()
 {
-	float proximity = GetMaxSurvivorCompletion() + g_hVersusBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance();
+	float proximity = GetMaxSurvivorCompletion() + g_hVersusBossBuffer.FloatValue / GetMapMaxFlowDistanceCached();
 
 	return (proximity > 1.0) ? 1.0 : proximity;
 }
@@ -773,7 +785,7 @@ float GetMaxSurvivorCompletion()
 		}
 	}
 
-	return (flow / L4D2Direct_GetMapMaxFlowDistance());
+	return (flow / GetMapMaxFlowDistanceCached());
 }
 
 bool GetIsInReady()
@@ -802,12 +814,20 @@ int GetWitchPercent()
 
 int GetRoundTankFlow()
 {
-	return RoundToNearest(L4D2Direct_GetVSTankFlowPercent(InSecondHalfOfRound()) + g_hVersusBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance());
+	return RoundToNearest(L4D2Direct_GetVSTankFlowPercent(InSecondHalfOfRound()) + g_hVersusBossBuffer.FloatValue / GetMapMaxFlowDistanceCached());
 }
 
 int GetRoundWitchFlow()
 {
-	return RoundToNearest(L4D2Direct_GetVSWitchFlowPercent(InSecondHalfOfRound()) + g_hVersusBossBuffer.FloatValue / L4D2Direct_GetMapMaxFlowDistance());
+	return RoundToNearest(L4D2Direct_GetVSWitchFlowPercent(InSecondHalfOfRound()) + g_hVersusBossBuffer.FloatValue / GetMapMaxFlowDistanceCached());
+}
+
+float GetMapMaxFlowDistanceCached()
+{
+    if (g_fMapMaxFlowDistance <= 0.0)
+        g_fMapMaxFlowDistance = L4D2Direct_GetMapMaxFlowDistance();
+
+    return g_fMapMaxFlowDistance;
 }
 
 int GetBonus()
