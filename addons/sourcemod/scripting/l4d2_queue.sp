@@ -208,7 +208,7 @@ Action RequestSlotCmd(int client, int args)
 Action RequestSlotReadyUp(int client)
 {
     int currentTeam = GetClientTeam(client);
-    if (currentTeam == L4D_TEAM_SURVIVOR || currentTeam == L4D_TEAM_INFECTED)
+    if (IsSurvivorOrInfected(currentTeam))
         return Plugin_Handled;
 
     if (MoveToFirstOpenTeam(client))
@@ -240,7 +240,7 @@ Action RequestSlotReadyUp(int client)
             continue;
 
         int team = GetClientTeam(c);
-        if (team == L4D_TEAM_SURVIVOR || team == L4D_TEAM_INFECTED)
+        if (IsSurvivorOrInfected(team))
         {
             lastClient = c;
             break;
@@ -271,7 +271,7 @@ Action RequestSlotInGame(int client)
     }
 
     int targetTeam = StarterCurrentTeam(steamId);
-    if (targetTeam != L4D_TEAM_SURVIVOR && targetTeam != L4D_TEAM_INFECTED)
+    if (!IsSurvivorOrInfected(targetTeam))
         return Plugin_Handled;
 
     if (GetClientTeam(client) == targetTeam)
@@ -619,7 +619,7 @@ void PrintQueue(int target)
 
         int team = GetClientTeam(client);
 
-        if (team == L4D_TEAM_SURVIVOR || team == L4D_TEAM_INFECTED)
+        if (IsSurvivorOrInfected(team))
             color = "{blue}";
 
         char entry[128];
@@ -780,7 +780,7 @@ bool TeamsAreExactlyQueueFront()
             return false;
 
         int team = GetClientTeam(client);
-        if (team != L4D_TEAM_SURVIVOR && team != L4D_TEAM_INFECTED)
+        if (!IsSurvivorOrInfected(team))
             return false;
     }
 
@@ -843,6 +843,11 @@ int NumberOfPlayersInTheTeam(int team)
     }
 
     return count;
+}
+
+bool IsSurvivorOrInfected(int team)
+{
+    return team == L4D_TEAM_SURVIVOR || team == L4D_TEAM_INFECTED;
 }
 
 int ConnectedPlayers()
