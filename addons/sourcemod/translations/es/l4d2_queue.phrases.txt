@@ -34,4 +34,17 @@
     {
         "es"    "Los equipos se están organizando automáticamente, espera un momento."
     }
+    "SlotStartersOnly"
+    {
+        "es"    "Durante la partida, solo los jugadores de los equipos iniciales pueden solicitar una plaza."
+    }
+    "SlotJoined"
+    {
+        "es"    "Has recuperado tu plaza en tu equipo."
+    }
+    "SlotTankControlled"
+    {
+        "#format"    "{1:N}"
+        "es"         "{blue}{1}{default} está controlando el tank, solicita tu plaza de nuevo cuando el tank muera."
+    }
 }

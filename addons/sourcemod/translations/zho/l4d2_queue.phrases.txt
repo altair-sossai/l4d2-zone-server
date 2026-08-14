@@ -34,4 +34,17 @@
     {
         "zho"    "隊伍正在自動整理中，請稍候。"
     }
+    "SlotStartersOnly"
+    {
+        "zho"    "遊戲進行中，只有初始隊伍的玩家才能申請名額。"
+    }
+    "SlotJoined"
+    {
+        "zho"    "你已重新取得你在隊伍中的名額。"
+    }
+    "SlotTankControlled"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{blue}{1}{default} 正在控制坦克，請在坦克死亡後再申請你的名額。"
+    }
 }

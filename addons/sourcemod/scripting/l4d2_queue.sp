@@ -181,20 +181,7 @@ Action PrintQueueCmd(int client, int args)
 
 Action RequestSlotCmd(int client, int args)
 {
-    if (!IsValidClient(client) || IsFakeClient(client))
-        return Plugin_Handled;
-
-    if (!IsInReady() || !IsNewGame() || g_bMixInProgress)
-    {
-        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotNotAvailable");
-        return Plugin_Handled;
-    }
-
-    int currentTeam = GetClientTeam(client);
-    if (currentTeam == L4D_TEAM_SURVIVOR || currentTeam == L4D_TEAM_INFECTED)
-        return Plugin_Handled;
-
-    if (HasFreeTeamSlot())
+    if (!IsValidClient(client) || IsFakeClient(client) || g_bRoundOver)
         return Plugin_Handled;
 
     if (g_bFixingTeams)
@@ -202,6 +189,27 @@ Action RequestSlotCmd(int client, int args)
         CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotFixing");
         return Plugin_Handled;
     }
+
+    if (g_bMixInProgress)
+    {
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotNotAvailable");
+        return Plugin_Handled;
+    }
+
+    if (IsInReady() && IsNewGame())
+        return RequestSlotReadyUp(client);
+
+    return RequestSlotInGame(client);
+}
+
+Action RequestSlotReadyUp(int client)
+{
+    int currentTeam = GetClientTeam(client);
+    if (currentTeam == L4D_TEAM_SURVIVOR || currentTeam == L4D_TEAM_INFECTED)
+        return Plugin_Handled;
+
+    if (HasFreeTeamSlot())
+        return Plugin_Handled;
 
     RemoveExpiredPlayers();
 
@@ -246,6 +254,74 @@ Action RequestSlotCmd(int client, int args)
 
     CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotClaimed", lastClient);
     CPrintToChat(lastClient, "{orange}[%t] {default}%t", "Slot", "SlotLost", client);
+
+    return Plugin_Handled;
+}
+
+Action RequestSlotInGame(int client)
+{
+    char steamId[64];
+    if (!GetSteamId(client, steamId, sizeof(steamId)))
+        return Plugin_Handled;
+
+    if (!IsStarter(steamId))
+    {
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotStartersOnly");
+        return Plugin_Handled;
+    }
+
+    int targetTeam = StarterCurrentTeam(steamId);
+    if (targetTeam != L4D_TEAM_SURVIVOR && targetTeam != L4D_TEAM_INFECTED)
+        return Plugin_Handled;
+
+    if (GetClientTeam(client) == targetTeam)
+        return Plugin_Handled;
+
+    if (NumberOfPlayersInTheTeam(targetTeam) < TeamSize())
+    {
+        MovePlayerToTeam(client, targetTeam);
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotJoined");
+        return Plugin_Handled;
+    }
+
+    RemoveExpiredPlayers();
+
+    int substitute = -1;
+
+    Player player;
+
+    for (int i = g_aQueue.Length - 1; i >= 0; i--)
+    {
+        g_aQueue.GetArray(i, player);
+
+        if (IsStarter(player.steamId))
+            continue;
+
+        int c = GetClientUsingSteamId(player.steamId);
+        if (c == -1 || c == client)
+            continue;
+
+        if (GetClientTeam(c) != targetTeam)
+            continue;
+
+        substitute = c;
+        break;
+    }
+
+    if (substitute == -1)
+        return Plugin_Handled;
+
+    if (IsControllingTank(substitute))
+    {
+        CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotTankControlled", substitute);
+        return Plugin_Handled;
+    }
+
+    MovePlayerToTeam(substitute, L4D_TEAM_SPECTATOR);
+    MovePlayerToTeam(client, targetTeam);
+
+    CPrintToChat(client, "{orange}[%t] {default}%t", "Slot", "SlotClaimed", substitute);
+    CPrintToChat(substitute, "{orange}[%t] {default}%t", "Slot", "SlotLost", client);
 
     return Plugin_Handled;
 }
@@ -481,6 +557,19 @@ int FindInQueue(const char[] steamId)
 bool IsStarter(const char[] steamId)
 {
     return g_aTeamA.FindString(steamId) != -1 || g_aTeamB.FindString(steamId) != -1;
+}
+
+int StarterCurrentTeam(const char[] steamId)
+{
+    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+
+    if (g_aTeamA.FindString(steamId) != -1)
+        return flipped ? L4D_TEAM_INFECTED : L4D_TEAM_SURVIVOR;
+
+    if (g_aTeamB.FindString(steamId) != -1)
+        return flipped ? L4D_TEAM_SURVIVOR : L4D_TEAM_INFECTED;
+
+    return L4D_TEAM_SPECTATOR;
 }
 
 int GetClientUsingSteamId(const char[] steamId)
@@ -760,6 +849,14 @@ bool HasFreeTeamSlot()
 
     return NumberOfPlayersInTheTeam(L4D_TEAM_SURVIVOR) < teamSize
         || NumberOfPlayersInTheTeam(L4D_TEAM_INFECTED) < teamSize;
+}
+
+bool IsControllingTank(int client)
+{
+    if (GetClientTeam(client) != L4D_TEAM_INFECTED || !IsPlayerAlive(client))
+        return false;
+
+    return GetEntProp(client, Prop_Send, "m_zombieClass") == view_as<int>(L4D2ZombieClass_Tank);
 }
 
 bool IsNewGame()

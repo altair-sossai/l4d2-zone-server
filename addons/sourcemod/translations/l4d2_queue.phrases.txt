@@ -34,4 +34,17 @@
     {
         "en"    "The teams are being arranged automatically, please wait a moment."
     }
+    "SlotStartersOnly"
+    {
+        "en"    "During the game only players from the starting teams can request a slot."
+    }
+    "SlotJoined"
+    {
+        "en"    "You have taken your slot back on your team."
+    }
+    "SlotTankControlled"
+    {
+        "#format"    "{1:N}"
+        "en"         "{blue}{1}{default} is controlling the tank, request your slot again when the tank dies."
+    }
 }

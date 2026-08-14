@@ -34,4 +34,17 @@
     {
         "pt"    "As equipes estão sendo organizadas automaticamente, aguarde um instante."
     }
+    "SlotStartersOnly"
+    {
+        "pt"    "Durante o jogo, apenas jogadores das equipes iniciais podem solicitar uma vaga."
+    }
+    "SlotJoined"
+    {
+        "pt"    "Você retomou a sua vaga na sua equipe."
+    }
+    "SlotTankControlled"
+    {
+        "#format"    "{1:N}"
+        "pt"         "{blue}{1}{default} está controlando o tank, solicite a sua vaga novamente quando o tank morrer."
+    }
 }

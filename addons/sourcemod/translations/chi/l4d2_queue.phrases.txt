@@ -34,4 +34,17 @@
     {
         "chi"    "队伍正在自动整理中，请稍候。"
     }
+    "SlotStartersOnly"
+    {
+        "chi"    "游戏进行中，只有初始队伍的玩家才能申请名额。"
+    }
+    "SlotJoined"
+    {
+        "chi"    "你已重新取得你在队伍中的名额。"
+    }
+    "SlotTankControlled"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{blue}{1}{default} 正在控制坦克，请在坦克死亡后再申请你的名额。"
+    }
 }
