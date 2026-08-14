@@ -211,14 +211,10 @@ Action RequestSlotReadyUp(int client)
     if (currentTeam == L4D_TEAM_SURVIVOR || currentTeam == L4D_TEAM_INFECTED)
         return Plugin_Handled;
 
-    for (int team = L4D_TEAM_SURVIVOR; team <= L4D_TEAM_INFECTED; team++)
+    if (MoveToFirstOpenTeam(client))
     {
-        if (NumberOfPlayersInTheTeam(team) < TeamSize())
-        {
-            MovePlayerToTeam(client, team);
-            CPrintToChat(client, SLOT_TAG, "SlotJoined");
-            return Plugin_Handled;
-        }
+        CPrintToChat(client, SLOT_TAG, "SlotJoined");
+        return Plugin_Handled;
     }
 
     RemoveExpiredPlayers();
@@ -721,8 +717,6 @@ void FixTeams()
             MovePlayerToTeam(client, L4D_TEAM_SPECTATOR);
     }
 
-    int teamSize = TeamSize();
-
     for (int np = 0; np < slots; np++)
     {
         int client = nextPlayers[np];
@@ -730,14 +724,7 @@ void FixTeams()
         if (client == -1 || GetClientTeam(client) != L4D_TEAM_SPECTATOR)
             continue;
 
-        for (int team = L4D_TEAM_SURVIVOR; team <= L4D_TEAM_INFECTED; team++)
-        {
-            if (NumberOfPlayersInTheTeam(team) < teamSize)
-            {
-                MovePlayerToTeam(client, team);
-                break;
-            }
-        }
+        MoveToFirstOpenTeam(client);
     }
 
     g_bFixingTeams = !TeamsAreExactlyQueueFront();
@@ -825,6 +812,22 @@ void ClaimSlot(int client, int bumped, int team)
 
     CPrintToChat(client, SLOT_TAG, "SlotClaimed", bumped);
     CPrintToChat(bumped, SLOT_TAG, "SlotLost", client);
+}
+
+bool MoveToFirstOpenTeam(int client)
+{
+    int teamSize = TeamSize();
+
+    for (int team = L4D_TEAM_SURVIVOR; team <= L4D_TEAM_INFECTED; team++)
+    {
+        if (NumberOfPlayersInTheTeam(team) < teamSize)
+        {
+            MovePlayerToTeam(client, team);
+            return true;
+        }
+    }
+
+    return false;
 }
 
 int NumberOfPlayersInTheTeam(int team)
