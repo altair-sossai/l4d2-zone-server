@@ -1,0 +1,42 @@
+# Manual pipeline: synchronizes L4D2Center custom maps onto the game server.
+#
+# Runs the vendored bash/l4d2center-maps-sync.sh (deployed to
+# /home/steam/l4d2/left4dead2/bash by azure-pipelines.yml) from the server
+# addons folder, so the maps' .vpk files land directly in
+# /home/steam/l4d2/left4dead2/addons.
+#
+# Trigger: manual only (run it from the Azure DevOps UI when you want to
+# refresh the map pool). Map sync downloads can be large, so it is kept out
+# of the per-commit CI.
+
+trigger: none
+
+pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
+
+variables:
+  sshServiceConnection: "L4D2 - Server"
+
+stages:
+  - stage: L4D2MapsSync
+    displayName: "Sync Left 4 Dead 2 Custom Maps"
+    jobs:
+      - job: L4D2MapsSync
+        steps:
+          - task: SSH@0
+            displayName: "🗺️ Download and sync custom maps into addons"
+            inputs:
+              sshEndpoint: $(sshServiceConnection)
+              readyTimeout: "20000"
+              runOptions: "inline"
+              inline: |
+                set -e
+                # Ensure the tools the sync script needs are present.
+                sudo apt-get update
+                sudo apt-get install -y p7zip-full curl
+                # Run the sync from the addons folder (the script requires it).
+                cd /home/steam/l4d2/left4dead2/addons
+                chmod +x /home/steam/l4d2/left4dead2/bash/l4d2center-maps-sync.sh
+                /home/steam/l4d2/left4dead2/bash/l4d2center-maps-sync.sh
