@@ -16,11 +16,6 @@
 #include <l4d2_boss_percents>
 #include <l4d2_hybrid_scoremod>
 
-#define L4D2_TEAM_SPECTATOR 1
-#define L4D2_TEAM_SURVIVOR 2
-#define L4D2_TEAM_INFECTED 3
-
-#define ZOMBIECLASS_TANK 8
 #define GAMEINFO_HTTP_CONNECT_TIMEOUT 3
 #define GAMEINFO_HTTP_TIMEOUT 5
 
@@ -253,7 +248,7 @@ void PlayerHurt_Event(Handle event, const char[] name, bool dontBroadcast)
 {
 	int attacker = GetClientOfUserId(GetEventInt(event, "attacker"));
 
-	if (!IsValidClient(attacker) || GetClientTeam(attacker) != L4D2_TEAM_INFECTED)
+	if (!IsValidClient(attacker) || GetClientTeam(attacker) != L4D2Team_Infected)
 	    return;
 	
 	g_iInfectedDamage[attacker] += GetEventInt(event, "dmg_health");
@@ -266,10 +261,10 @@ void PlayerDeath_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 
     int victim = GetClientOfUserId(hEvent.GetInt("userid"));
 
-    if (!IsValidClient(victim) || GetClientTeam(victim) != L4D2_TEAM_INFECTED)
+    if (!IsValidClient(victim) || GetClientTeam(victim) != L4D2Team_Infected)
         return;
 
-    g_bTankIsDead = GetEntProp(victim, Prop_Send, "m_zombieClass") == ZOMBIECLASS_TANK;
+    g_bTankIsDead = GetEntProp(victim, Prop_Send, "m_zombieClass") == L4D2Infected_Tank;
 }
 
 void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -453,7 +448,7 @@ void SendPlayers()
             continue;
 
         int team = GetClientTeam(client);
-        if (team != L4D2_TEAM_SPECTATOR && team != L4D2_TEAM_SURVIVOR && team != L4D2_TEAM_INFECTED)
+        if (team != L4D2Team_Spectator && team != L4D2Team_Survivor && team != L4D2Team_Infected)
             continue;
 
         JSONObject player = new JSONObject();
@@ -466,10 +461,10 @@ void SendPlayers()
 
         player.SetBool("isAdmin", CheckCommandAccess(client, "sm_ban", ADMFLAG_BAN));
 
-        if (team == L4D2_TEAM_SURVIVOR || team == L4D2_TEAM_INFECTED)
+        if (team == L4D2Team_Survivor || team == L4D2Team_Infected)
             player.SetFloat("latency", GetClientLatency(client, NetFlow_Both));
 
-        if (team == L4D2_TEAM_SURVIVOR)
+        if (team == L4D2Team_Survivor)
         {
             player.SetInt("character", IdentifySurvivor(client));
 
@@ -509,7 +504,7 @@ void SendPlayers()
             survivors.Push(player);
         }
 
-        if (team == L4D2_TEAM_INFECTED)
+        if (team == L4D2Team_Infected)
         {
             bool isInfectedGhost = IsInfectedGhost(client);
             bool isPlayerAlive = IsPlayerAlive(client);
@@ -528,7 +523,7 @@ void SendPlayers()
             infecteds.Push(player);
         }
         
-        if (team == L4D2_TEAM_SPECTATOR)
+        if (team == L4D2Team_Spectator)
             spectators.Push(player);
 
         delete player;
@@ -787,7 +782,7 @@ float GetMaxSurvivorCompletion()
 	float flow = 0.0, tmp_flow = 0.0, origin[3];
 	Address pNavArea;
 	for (int i = 1; i <= MaxClients; i++) {
-		if (IsClientInGame(i) && GetClientTeam(i) == L4D2_TEAM_SURVIVOR) {
+		if (IsClientInGame(i) && GetClientTeam(i) == L4D2Team_Survivor) {
 			GetClientAbsOrigin(i, origin);
 			pNavArea = L4D2Direct_GetTerrorNavArea(origin);
 			if (pNavArea != Address_Null) {

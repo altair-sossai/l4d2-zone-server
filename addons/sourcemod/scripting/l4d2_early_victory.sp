@@ -11,8 +11,6 @@
 
 #define TRANSLATION_FILE "l4d2_early_victory.phrases"
 
-#define ZOMBIECLASS_TANK 8
-
 #define VICTORY_SOUND "ui/pickup_secret01.wav"
 
 ConVar g_cvEnabled,
@@ -534,7 +532,7 @@ bool IsTankInPlay()
         if (!IsClientInGame(i) || GetClientTeam(i) != L4D_TEAM_INFECTED || !IsPlayerAlive(i))
             continue;
 
-        if (GetEntProp(i, Prop_Send, "m_zombieClass") == ZOMBIECLASS_TANK)
+        if (GetEntProp(i, Prop_Send, "m_zombieClass") == view_as<int>(L4D2ZombieClass_Tank))
             return true;
     }
 
