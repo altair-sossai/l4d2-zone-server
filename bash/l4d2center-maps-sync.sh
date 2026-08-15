@@ -3,8 +3,12 @@
 # ---------------------------------------------------------------------------
 # L4D2Center custom maps synchronization script.
 #
-# Source (vendored verbatim): https://l4d2center.com/maps/servers/l4d2center_maps_sync.sh.txt
-# Reference page:             https://l4d2center.com/maps/servers/
+# Source (vendored): https://l4d2center.com/maps/servers/l4d2center_maps_sync.sh.txt
+# Reference page:    https://l4d2center.com/maps/servers/
+#
+# Only local change from upstream: the map-download curl uses "-sS" instead of
+# "-#" so it does not write a progress bar to stderr (which made the Azure
+# DevOps SSH task report a false failure). Behavior is otherwise identical.
 #
 # Must be executed from the server "addons" folder
 # (/home/steam/l4d2/left4dead2/addons). It downloads the map manifest from
@@ -110,9 +114,12 @@ for vpk in "${expected_vpk[@]}"; do
 
         encoded_url=$(echo "$download_url" | sed 's/ /%20/g')
 
-        # Download the .7z file to a temporary location
+        # Download the .7z file to a temporary location.
+        # NOTE: upstream uses "-#" (progress bar) here, but that writes to
+        # stderr and makes the Azure DevOps SSH task report a false failure.
+        # "-sS" is silent on success and still prints real errors to stderr.
         TEMP_7Z=$(mktemp --suffix=.7z)
-        curl --max-time 120 -# -L -o "$TEMP_7Z" "$encoded_url"
+        curl --max-time 120 -sS -L -o "$TEMP_7Z" "$encoded_url"
 
         # Check if the download was successful
         if [[ $? -ne 0 ]]; then

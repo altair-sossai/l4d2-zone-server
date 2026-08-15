@@ -1,7 +1,9 @@
-pool:
-  vmImage: "ubuntu-latest"
+trigger: none
 
 pr: none
+
+pool:
+  vmImage: "ubuntu-latest"
 
 variables:
   sshServiceConnection: "L4D2 - Server"

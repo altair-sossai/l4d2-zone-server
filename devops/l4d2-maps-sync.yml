@@ -33,9 +33,16 @@ stages:
               runOptions: "inline"
               inline: |
                 set -e
+                # The Azure DevOps SSH task flags the job as failed if the
+                # remote command writes ANYTHING to stderr. apt (debconf /
+                # needrestart warnings) and curl's progress bar do that even on
+                # success, so we keep apt non-interactive/quiet and merge its
+                # stderr into stdout. Real failures still fail the job because
+                # of `set -e` and the non-zero exit codes.
+                export DEBIAN_FRONTEND=noninteractive
                 # Ensure the tools the sync script needs are present.
-                sudo apt-get update
-                sudo apt-get install -y p7zip-full curl
+                sudo -E apt-get update -qq 2>&1
+                sudo -E apt-get install -y -qq p7zip-full curl 2>&1
                 # Run the sync from the addons folder (the script requires it).
                 cd /home/steam/l4d2/left4dead2/addons
                 chmod +x /home/steam/l4d2/left4dead2/bash/l4d2center-maps-sync.sh
