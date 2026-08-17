@@ -48,6 +48,7 @@ bool
     g_bL4D2BossPercentsAvailable = false,
     g_bHybridScoremodIsAvailable = false,
     g_bInTransition = false,
+    g_bRoundOver = false,
     g_bTankIsDead = false,
     g_bConfigurationRequestPending = false,
     g_bRoundRequestPending = false,
@@ -185,6 +186,8 @@ public void OnUnpause()
 
 public void L4D2_OnEndVersusModeRound_Post()
 {
+    g_bRoundOver = true;
+
     SendRound();
     SendScoreboard();
     SendPlayers();
@@ -237,6 +240,7 @@ Action Say_Callback(int client, char[] command, int args)
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
     g_fMapMaxFlowDistance = 0.0;
+    g_bRoundOver = false;
     g_bTankIsDead = false;
 
     ClearInfectedDamage();
@@ -409,8 +413,8 @@ void SendScoreboard()
     int bonus = GetBonus();
     int maxBonus = GetMaxBonus();
 
-    command.SetInt("survivorScore", L4D2Direct_GetVSCampaignScore(flipped ? 1 : 0) + L4D_GetTeamScore(flipped ? 2 : 1));
-    command.SetInt("infectedScore", L4D2Direct_GetVSCampaignScore(flipped ? 0 : 1) + L4D_GetTeamScore(flipped ? 1 : 2));
+    command.SetInt("survivorScore", GetTeamTotalScore(flipped ? 1 : 0, flipped ? 2 : 1));
+    command.SetInt("infectedScore", GetTeamTotalScore(flipped ? 0 : 1, flipped ? 1 : 2));
     command.SetInt("bonus", isInReady ? maxBonus : bonus);
     command.SetInt("maxBonus", maxBonus);
     command.SetFloat("currentProgress", isInReady ? 0.0 : (GetCurrentProgress() / 100.0));
@@ -835,6 +839,21 @@ float GetMapMaxFlowDistanceCached()
         g_fMapMaxFlowDistance = L4D2Direct_GetMapMaxFlowDistance();
 
     return g_fMapMaxFlowDistance;
+}
+
+int GetTeamTotalScore(int campaignTeam, int logicalTeam)
+{
+    int score = L4D2Direct_GetVSCampaignScore(campaignTeam);
+
+    if (g_bRoundOver)
+        return score;
+
+    int mapScore = L4D_GetTeamScore(logicalTeam);
+
+    if (mapScore > 0)
+        score += mapScore;
+
+    return score;
 }
 
 int GetBonus()
