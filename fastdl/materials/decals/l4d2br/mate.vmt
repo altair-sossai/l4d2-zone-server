@@ -1,0 +1,7 @@
+LightmappedGeneric
+{
+	"$basetexture" "decals/l4d2br/mate"
+	"$decal" 1
+	"$decalscale" 0.42
+	"$translucent" 1
+}
