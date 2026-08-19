@@ -17,11 +17,11 @@ public void OnPluginStart()
 {
     LoadTranslations("l4d2_campaign_vote.phrases");
 
-    RegConsoleCmd("sm_votecampaign", voteCampaign_CMD, "Opens the campaign menu to start a map change vote");
-    RegConsoleCmd("sm_votecamp",     voteCampaign_CMD, "Opens the campaign menu to start a map change vote");
+    RegConsoleCmd("sm_votecampaign", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
+    RegConsoleCmd("sm_votecamp", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
 }
 
-public Action voteCampaign_CMD(int client, int args)
+public Action VoteCampaignCmd(int client, int args)
 {
     if (client == 0)
     {
