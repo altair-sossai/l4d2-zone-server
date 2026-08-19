@@ -167,6 +167,12 @@ void ReadCampaigns(DirectoryListing dir, ArrayList campaigns, StringMap titleCou
         if (shortName[0] == '\0')
             continue;
 
+        if (!IsValidCampaignName(shortName))
+        {
+            LogError("Invalid campaign name \"%s\" in \"%s\".", shortName, path);
+            continue;
+        }
+
         if (IsIgnoredCampaign(shortName))
             continue;
 
@@ -187,6 +193,17 @@ void ReadCampaigns(DirectoryListing dir, ArrayList campaigns, StringMap titleCou
     }
 
     delete seenNames;
+}
+
+bool IsValidCampaignName(const char[] name)
+{
+    for (int i = 0; name[i] != '\0'; i++)
+    {
+        if (!IsCharAlpha(name[i]) && !IsCharNumeric(name[i]) && name[i] != '_' && name[i] != '-')
+            return false;
+    }
+
+    return true;
 }
 
 bool IsIgnoredCampaign(const char[] shortName)
@@ -250,7 +267,7 @@ public int MenuHandler_Campaigns(Menu menu, MenuAction action, int client, int p
 {
     if (action == MenuAction_Select)
     {
-        if (client < 1 || !IsClientInGame(client))
+        if (!IsHumanClient(client))
             return 0;
 
         char shortName[64];
