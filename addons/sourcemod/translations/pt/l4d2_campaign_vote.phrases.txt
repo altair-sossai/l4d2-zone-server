@@ -1,0 +1,15 @@
+"Phrases"
+{
+    "MenuTitle"
+    {
+        "pt"    "Escolha uma campanha para iniciar uma votação de troca de mapa:"
+    }
+    "PlayerOnly"
+    {
+        "pt"    "Este comando só pode ser usado por um jogador."
+    }
+    "ReadError"
+    {
+        "pt"    "Não foi possível ler a lista de campanhas."
+    }
+}

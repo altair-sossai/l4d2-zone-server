@@ -113,6 +113,9 @@ Pick a line below, copy it, and run it:
 
 # l4d2_custom_commands
 ./ps/compile-custom-plugins.ps1 l4d2_custom_commands
+
+# l4d2_campaign_vote
+./ps/compile-custom-plugins.ps1 l4d2_campaign_vote
 ```
 
 ## Notes
@@ -152,9 +155,10 @@ Copy any name from this list to compile it individually.
 | `l4d2_spec_lister` | `optional/l4d2_spec_lister.smx` |
 | `l4d2_block_spec_during_tank` | `optional/l4d2_block_spec_during_tank.smx` |
 | `l4d2_custom_commands` | `optional/l4d2_custom_commands.smx` |
+| `l4d2_campaign_vote` | `optional/l4d2_campaign_vote.smx` |
 
 ### All names on one line (for quick copy-paste)
 
 ```
-l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_playstats_sync l4d2_ranking l4d2_show_patent_icon l4d2_no_skip_getup_animation l4d2_jockey_no_deadstops l4d2_gameinfo_sync l4d2_admin_hp l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands
+l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_playstats_sync l4d2_ranking l4d2_show_patent_icon l4d2_no_skip_getup_animation l4d2_jockey_no_deadstops l4d2_gameinfo_sync l4d2_admin_hp l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands l4d2_campaign_vote
 ```

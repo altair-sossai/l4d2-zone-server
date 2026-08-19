@@ -51,6 +51,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 | [l4d2_show_patent_icon](#l4d2_show_patent_icon) | Displays each player's rank/patent icon |
 | [l4d2_playstats_sync](#l4d2_playstats_sync) | Syncs match statistics to the PlayStats API |
 | [l4d2_gameinfo_sync](#l4d2_gameinfo_sync) | Syncs live game info & chat to the Game Info API |
+| [l4d2_campaign_vote](#l4d2_campaign_vote) | Lets any player vote to change to any installed campaign |
 
 **Adapted plugins (third-party)**
 
@@ -383,6 +384,26 @@ sm_cvar playstats_access_token "your-token-here"
 sm_cvar gameinfo_url "https://your-domain"
 sm_cvar gameinfo_secret "your-secret-here"
 ```
+
+---
+
+## l4d2_campaign_vote
+
+**Source:** [`scripting/l4d2_campaign_vote.sp`](../../addons/sourcemod/scripting/l4d2_campaign_vote.sp)
+
+**What it does** — Lets any player browse every installed campaign — official and custom — and start a map change vote from a menu, without needing admin rights. Typing `!votecampaign` (or `!votecamp`) opens a menu titled *"Choose a campaign to start a map change vote:"* listing all campaigns alphabetically. The list is built by reading the `missions/*.txt` files from inside the mounted VPK addons (via the Valve filesystem), so it always reflects what is actually installed. The 14 official campaigns show their English names (Dead Center, Dark Carnival, …); custom campaigns show the display title from their own VPK. Selecting an entry runs `callvote changemission <Name>` as if the player had typed it, starting the standard change-mission vote. If the campaign list can't be read, the player is told *"Could not read the campaign list."*
+
+**Objective** — Give players a simple, self-service way to propose a campaign change through the game's native vote, covering custom campaigns too.
+
+**ConVars** — None.
+
+**Commands**
+
+| Command | Access | Description |
+|---------|--------|-------------|
+| `sm_votecampaign` / `sm_votecamp` | all | Open the campaign menu and start a map change vote for the chosen campaign |
+
+**How to configure** — No configuration needed; just load it. Player-facing UI text (menu title and messages) is defined in [`addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt`](../../addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt) (English, Portuguese and Spanish). The `changemission` vote itself must be enabled in the server's vote settings for the vote to actually start.
 
 ---
 
