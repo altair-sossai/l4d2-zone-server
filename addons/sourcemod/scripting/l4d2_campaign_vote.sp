@@ -67,7 +67,8 @@ public Action VoteCampaignCmd(int client, int args)
         return Plugin_Handled;
     }
 
-    menu.Display(client, MENU_TIME_FOREVER);
+    if (!menu.Display(client, MENU_TIME_FOREVER))
+        delete menu;
 
     return Plugin_Handled;
 }
@@ -119,6 +120,8 @@ bool EnsureCampaignCache()
     }
 
     UpdateDuplicateMenuText(campaigns, titleCount);
+
+    campaigns.SortCustom(CompareCampaignsByMenuText);
 
     delete titleCount;
 
@@ -229,6 +232,18 @@ void UpdateDuplicateMenuText(ArrayList campaigns, StringMap titleCount)
         Format(campaign.menuText, sizeof(campaign.menuText), "%s (%s)", campaign.title, campaign.name);
         campaigns.SetArray(i, campaign);
     }
+}
+
+int CompareCampaignsByMenuText(int index1, int index2, Handle array, Handle data)
+{
+    ArrayList campaigns = view_as<ArrayList>(array);
+
+    Campaign campaign1;
+    Campaign campaign2;
+    campaigns.GetArray(index1, campaign1);
+    campaigns.GetArray(index2, campaign2);
+
+    return strcmp(campaign1.menuText, campaign2.menuText, false);
 }
 
 public int MenuHandler_Campaigns(Menu menu, MenuAction action, int client, int param2)
