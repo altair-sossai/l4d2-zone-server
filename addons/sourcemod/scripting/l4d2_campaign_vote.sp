@@ -33,7 +33,7 @@ enum struct Campaign
 {
     char name[64];
     char title[128];
-    char menuText[192];
+    char menuText[256];
 }
 
 ArrayList g_Campaigns = null;
