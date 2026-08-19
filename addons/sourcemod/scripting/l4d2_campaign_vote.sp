@@ -4,6 +4,26 @@
 #include <sourcemod>
 #include <colors>
 
+#define TAG "{green}[Campaigns] {default}"
+
+char g_OfficialCampaigns[][2][] =
+{
+    { "L4D2C1",  "Dead Center" },
+    { "L4D2C2",  "Dark Carnival" },
+    { "L4D2C3",  "Swamp Fever" },
+    { "L4D2C4",  "Hard Rain" },
+    { "L4D2C5",  "The Parish" },
+    { "L4D2C6",  "The Passing" },
+    { "L4D2C7",  "The Sacrifice" },
+    { "L4D2C8",  "No Mercy" },
+    { "L4D2C9",  "Crash Course" },
+    { "L4D2C10", "Death Toll" },
+    { "L4D2C11", "Dead Air" },
+    { "L4D2C12", "Blood Harvest" },
+    { "L4D2C13", "Cold Stream" },
+    { "L4D2C14", "The Last Stand" }
+};
+
 public Plugin myinfo =
 {
     name        = "L4D2 Campaign Vote",
@@ -25,14 +45,14 @@ public Action VoteCampaignCmd(int client, int args)
 {
     if (client == 0)
     {
-        ReplyToCommand(client, "[Campaigns] %t", "PlayerOnly");
+        CReplyToCommand(client, "%s%t", TAG, "PlayerOnly");
         return Plugin_Handled;
     }
 
     Menu menu = BuildCampaignMenu(client);
     if (menu == null)
     {
-        CPrintToChat(client, "{green}[Campaigns] {default}%t", "ReadError");
+        CReplyToCommand(client, "%s%t", TAG, "ReadError");
         return Plugin_Handled;
     }
 
@@ -107,6 +127,11 @@ public int MenuHandler_Campaigns(Menu menu, MenuAction action, int client, int p
 {
     if (action == MenuAction_Select)
     {
+        if (client < 1 || !IsClientInGame(client))
+        {
+            return 0;
+        }
+
         char shortName[64];
         menu.GetItem(param2, shortName, sizeof(shortName));
 
@@ -122,88 +147,13 @@ public int MenuHandler_Campaigns(Menu menu, MenuAction action, int client, int p
 
 void ResolveDisplayName(const char[] shortName, char[] displayName, int maxlen)
 {
-    if (StrEqual(shortName, "L4D2C1", false))
+    for (int i = 0; i < sizeof(g_OfficialCampaigns); i++)
     {
-        strcopy(displayName, maxlen, "Dead Center");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C2", false))
-    {
-        strcopy(displayName, maxlen, "Dark Carnival");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C3", false))
-    {
-        strcopy(displayName, maxlen, "Swamp Fever");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C4", false))
-    {
-        strcopy(displayName, maxlen, "Hard Rain");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C5", false))
-    {
-        strcopy(displayName, maxlen, "The Parish");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C6", false))
-    {
-        strcopy(displayName, maxlen, "The Passing");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C7", false))
-    {
-        strcopy(displayName, maxlen, "The Sacrifice");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C8", false))
-    {
-        strcopy(displayName, maxlen, "No Mercy");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C9", false))
-    {
-        strcopy(displayName, maxlen, "Crash Course");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C10", false))
-    {
-        strcopy(displayName, maxlen, "Death Toll");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C11", false))
-    {
-        strcopy(displayName, maxlen, "Dead Air");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C12", false))
-    {
-        strcopy(displayName, maxlen, "Blood Harvest");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C13", false))
-    {
-        strcopy(displayName, maxlen, "Cold Stream");
-        return;
-    }
-
-    if (StrEqual(shortName, "L4D2C14", false))
-    {
-        strcopy(displayName, maxlen, "The Last Stand");
-        return;
+        if (StrEqual(shortName, g_OfficialCampaigns[i][0], false))
+        {
+            strcopy(displayName, maxlen, g_OfficialCampaigns[i][1]);
+            return;
+        }
     }
 
     if (displayName[0] == '\0' || displayName[0] == '#' || displayName[0] == '$')
