@@ -29,6 +29,15 @@ char g_IgnoredCampaigns[][] =
     "credits"
 };
 
+enum struct Campaign
+{
+    char name[64];
+    char title[128];
+    char menuText[192];
+}
+
+ArrayList g_Campaigns = null;
+
 public Plugin myinfo =
 {
     name        = "L4D2 Campaign Vote",
@@ -48,11 +57,8 @@ public void OnPluginStart()
 
 public Action VoteCampaignCmd(int client, int args)
 {
-    if (client == 0)
-    {
-        CReplyToCommand(client, "%s%t", TAG, "PlayerOnly");
+    if (!IsHumanClient(client))
         return Plugin_Handled;
-    }
 
     Menu menu = BuildCampaignMenu(client);
     if (menu == null)
@@ -62,13 +68,13 @@ public Action VoteCampaignCmd(int client, int args)
     }
 
     menu.Display(client, MENU_TIME_FOREVER);
+
     return Plugin_Handled;
 }
 
 Menu BuildCampaignMenu(int client)
 {
-    DirectoryListing dir = OpenDirectory("missions", true, NULL_STRING);
-    if (dir == null)
+    if (!EnsureCampaignCache())
         return null;
 
     Menu menu = new Menu(MenuHandler_Campaigns);
@@ -77,8 +83,56 @@ Menu BuildCampaignMenu(int client)
     Format(title, sizeof(title), "%T", "MenuTitle", client);
     menu.SetTitle(title);
 
+    Campaign campaign;
+
+    for (int i = 0; i < g_Campaigns.Length; i++)
+    {
+        g_Campaigns.GetArray(i, campaign);
+
+        menu.AddItem(campaign.name, campaign.menuText);
+    }
+
+    return menu;
+}
+
+bool EnsureCampaignCache()
+{
+    if (g_Campaigns != null)
+        return true;
+
+    DirectoryListing dir = OpenDirectory("missions", true, NULL_STRING);
+    if (dir == null)
+        return false;
+
+    ArrayList campaigns = new ArrayList(sizeof(Campaign));
+    StringMap titleCount = new StringMap();
+
+    ReadCampaigns(dir, campaigns, titleCount);
+
+    delete dir;
+
+    if (campaigns.Length == 0)
+    {
+        delete titleCount;
+        delete campaigns;
+        return false;
+    }
+
+    UpdateDuplicateMenuText(campaigns, titleCount);
+
+    delete titleCount;
+
+    g_Campaigns = campaigns;
+
+    return true;
+}
+
+void ReadCampaigns(DirectoryListing dir, ArrayList campaigns, StringMap titleCount)
+{
     char fileName[PLATFORM_MAX_PATH];
     FileType type;
+
+    StringMap seenNames = new StringMap();
 
     while (dir.GetNext(fileName, sizeof(fileName), type))
     {
@@ -96,55 +150,40 @@ Menu BuildCampaignMenu(int client)
         char shortName[64];
 
         KeyValues kv = new KeyValues("Mission");
-        bool imported = kv.ImportFromFile(path);
-
-        if (imported)
+        if (!kv.ImportFromFile(path))
         {
-            kv.GetString("DisplayTitle", displayName, sizeof(displayName), "");
-            kv.GetString("Name", shortName, sizeof(shortName), "");
+            delete kv;
+            continue;
         }
+
+        kv.GetString("DisplayTitle", displayName, sizeof(displayName), "");
+        kv.GetString("Name", shortName, sizeof(shortName), "");
 
         delete kv;
 
-        if (!imported || shortName[0] == '\0')
+        if (shortName[0] == '\0')
             continue;
 
         if (IsIgnoredCampaign(shortName))
             continue;
 
+        if (!seenNames.SetString(shortName, "", false))
+            continue;
+
         ResolveDisplayName(shortName, displayName, sizeof(displayName));
-        menu.AddItem(shortName, displayName);
+
+        Campaign campaign;
+        strcopy(campaign.name, sizeof(campaign.name), shortName);
+        strcopy(campaign.title, sizeof(campaign.title), displayName);
+        strcopy(campaign.menuText, sizeof(campaign.menuText), displayName);
+        campaigns.PushArray(campaign);
+
+        int count = 0;
+        titleCount.GetValue(displayName, count);
+        titleCount.SetValue(displayName, count + 1);
     }
 
-    delete dir;
-
-    if (menu.ItemCount == 0)
-    {
-        delete menu;
-        return null;
-    }
-
-    return menu;
-}
-
-public int MenuHandler_Campaigns(Menu menu, MenuAction action, int client, int param2)
-{
-    if (action == MenuAction_Select)
-    {
-        if (client < 1 || !IsClientInGame(client))
-            return 0;
-
-        char shortName[64];
-        menu.GetItem(param2, shortName, sizeof(shortName));
-
-        FakeClientCommand(client, "callvote changemission %s", shortName);
-    }
-    else if (action == MenuAction_End)
-    {
-        delete menu;
-    }
-
-    return 0;
+    delete seenNames;
 }
 
 bool IsIgnoredCampaign(const char[] shortName)
@@ -171,4 +210,56 @@ void ResolveDisplayName(const char[] shortName, char[] displayName, int maxlen)
 
     if (displayName[0] == '\0' || displayName[0] == '#' || displayName[0] == '$')
         strcopy(displayName, maxlen, shortName);
+}
+
+void UpdateDuplicateMenuText(ArrayList campaigns, StringMap titleCount)
+{
+    Campaign campaign;
+
+    for (int i = 0; i < campaigns.Length; i++)
+    {
+        campaigns.GetArray(i, campaign);
+
+        int count = 0;
+        titleCount.GetValue(campaign.title, count);
+
+        if (count == 1)
+            continue;
+
+        Format(campaign.menuText, sizeof(campaign.menuText), "%s (%s)", campaign.title, campaign.name);
+        campaigns.SetArray(i, campaign);
+    }
+}
+
+public int MenuHandler_Campaigns(Menu menu, MenuAction action, int client, int param2)
+{
+    if (action == MenuAction_Select)
+    {
+        if (client < 1 || !IsClientInGame(client))
+            return 0;
+
+        char shortName[64];
+        menu.GetItem(param2, shortName, sizeof(shortName));
+
+        FakeClientCommand(client, "callvote changemission %s", shortName);
+    }
+    else if (action == MenuAction_End)
+    {
+        delete menu;
+    }
+
+    return 0;
+}
+
+bool IsHumanClient(int client)
+{
+    return IsValidClient(client) && !IsFakeClient(client);
+}
+
+bool IsValidClient(int client)
+{
+    if (client <= 0 || client > MaxClients)
+        return false;
+
+    return IsClientInGame(client);
 }

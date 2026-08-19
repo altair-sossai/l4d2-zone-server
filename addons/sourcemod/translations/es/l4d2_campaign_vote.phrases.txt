@@ -4,10 +4,6 @@
     {
         "es"    "Elige una campaña para iniciar una votación de cambio de mapa:"
     }
-    "PlayerOnly"
-    {
-        "es"    "Este comando solo puede ser usado por un jugador."
-    }
     "ReadError"
     {
         "es"    "No se pudo leer la lista de campañas."

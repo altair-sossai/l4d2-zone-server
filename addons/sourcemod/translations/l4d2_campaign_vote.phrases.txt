@@ -4,10 +4,6 @@
     {
         "en"    "Choose a campaign to start a map change vote:"
     }
-    "PlayerOnly"
-    {
-        "en"    "This command can only be used by a player."
-    }
     "ReadError"
     {
         "en"    "Could not read the campaign list."
