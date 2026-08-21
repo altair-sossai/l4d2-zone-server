@@ -6,6 +6,8 @@
 
 StringMap g_hNames;
 
+bool g_bNamesLocked = false;
+
 public Plugin myinfo =
 {
 	name = "L4D2 Forced Names",
@@ -19,7 +21,8 @@ public void OnPluginStart()
 {
 	g_hNames = new StringMap();
 
-	RegServerCmd("sm_forcename", Cmd_ForceName, "Maps a SteamID to a forced player name");
+	RegServerCmd("sm_forcename", ForceNameCmd, "Maps a SteamID to a forced player name");
+	RegServerCmd("sm_forcename_lock", ForceNameLockCmd, "Locks the forced names list so later sm_forcename calls are ignored");
 
 	HookEvent("player_changename", Event_NameChange, EventHookMode_Post);
 
@@ -33,14 +36,18 @@ public void OnConfigsExecuted()
 
 void LoadForcedNames()
 {
+	g_bNamesLocked = false;
 	g_hNames.Clear();
 	ServerCommand("exec %s", "sourcemod/forced_names.cfg");
 
 	RequestFrame(Frame_EnforceAll);
 }
 
-Action Cmd_ForceName(int args)
+Action ForceNameCmd(int args)
 {
+	if (g_bNamesLocked)
+		return Plugin_Handled;
+
 	if (args < 2)
 	{
 		PrintToServer("[ForcedNames] Usage: sm_forcename \"<steamid>\" \"<name>\"");
@@ -59,6 +66,13 @@ Action Cmd_ForceName(int args)
 	g_hNames.SetString(sSteamId, sName);
 	sSteamId[6] = '1';
 	g_hNames.SetString(sSteamId, sName);
+
+	return Plugin_Handled;
+}
+
+Action ForceNameLockCmd(int args)
+{
+	g_bNamesLocked = true;
 
 	return Plugin_Handled;
 }

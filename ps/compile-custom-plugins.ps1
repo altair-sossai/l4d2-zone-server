@@ -62,7 +62,8 @@ $targets = @(
     @{ src = "l4d2_spec_lister.sp";                 out = "optional\l4d2_spec_lister.smx" },
     @{ src = "l4d2_block_spec_during_tank.sp";      out = "optional\l4d2_block_spec_during_tank.smx" },
     @{ src = "l4d2_custom_commands.sp";             out = "optional\l4d2_custom_commands.smx" },
-    @{ src = "l4d2_campaign_vote.sp";               out = "optional\l4d2_campaign_vote.smx" }
+    @{ src = "l4d2_campaign_vote.sp";               out = "optional\l4d2_campaign_vote.smx" },
+    @{ src = "l4d2_forced_names.sp";                out = "optional\l4d2_forced_names.smx" }
 )
 
 # If plugin names were passed, compile only those. Match on the file name
