@@ -6,11 +6,8 @@
 #include <sourcemod>
 #include <left4dhooks>
 
-#define TEAM_SPECTATOR          1
-#define TEAM_INFECTED           3
-#define ZOMBIECLASS_TANK        8
-#define IS_SPECTATOR(%1)        (GetClientTeam(%1) == TEAM_SPECTATOR)
-#define IS_INFECTED(%1)         (GetClientTeam(%1) == TEAM_INFECTED)
+#define IS_SPECTATOR(%1)        (GetClientTeam(%1) == L4D_TEAM_SPECTATOR)
+#define IS_INFECTED(%1)         (GetClientTeam(%1) == L4D_TEAM_INFECTED)
 #define IS_VALID_INFECTED(%1)   (IsClientInGame(%1) && IS_INFECTED(%1))
 #define IS_VALID_SPECTATOR(%1)  (IsClientInGame(%1) && IS_SPECTATOR(%1))
 
@@ -275,7 +272,7 @@ void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast)
     if (client < 1 || client > MaxClients)
         return;
 
-    if (oldTeam == TEAM_INFECTED)
+    if (oldTeam == L4D_TEAM_INFECTED)
     {
         /*
         * Triggers for disconnects as well as forced-swaps and whatnot.
@@ -284,7 +281,7 @@ void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast)
         if (!IsFakeClient(client))
         {
             int zombieClass = GetEntProp(client, Prop_Send, "m_zombieClass");
-            if (zombieClass == ZOMBIECLASS_TANK)
+            if (zombieClass == view_as<int>(L4D2ZombieClass_Tank))
             {
                 dcedTankFrustration = GetTankFrustration(client);
                 fTankGrace = CTimer_GetRemainingTime(GetFrustrationTimer(client));
@@ -308,7 +305,7 @@ void PlayerTeam_Event(Event hEvent, const char[] name, bool dontBroadcast)
         }
     }
 
-    if (team == TEAM_INFECTED && !IsFakeClient(client) && !StrEqual(tankInitiallyChosen, ""))
+    if (team == L4D_TEAM_INFECTED && !IsFakeClient(client) && !StrEqual(tankInitiallyChosen, ""))
     {
         GetClientAuthId(client, AuthId_Steam2, tmpSteamId, sizeof(tmpSteamId));
         if (StrEqual(tankInitiallyChosen, tmpSteamId))
@@ -391,7 +388,7 @@ void PlayerDeath_Event(Event hEvent, const char[] eName, bool dontBroadcast)
     if (victim && IS_VALID_INFECTED(victim) && gotTankAt > 0.0)
     {
         int zombieClass = GetEntProp(victim, Prop_Send, "m_zombieClass");
-        if (zombieClass == ZOMBIECLASS_TANK) 
+        if (zombieClass == view_as<int>(L4D2ZombieClass_Tank)) 
         {
             if (hTankDebug.BoolValue)
                 PrintToConsoleAll("[TC] Tank died (player_death), choosing a new tank");
@@ -593,7 +590,7 @@ int getTankPlayer()
         
         int zombieClass = GetEntProp(i, Prop_Send, "m_zombieClass");
         
-        if (zombieClass == ZOMBIECLASS_TANK)
+        if (zombieClass == view_as<int>(L4D2ZombieClass_Tank))
             return i;
     }
 
@@ -676,7 +673,7 @@ void EnqueueNewInfectedPlayers()
 
     for (int client = 1; client <= MaxClients; client++)
     {
-        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != TEAM_INFECTED)
+        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != L4D_TEAM_INFECTED)
             continue;
         
         GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
@@ -699,7 +696,7 @@ void RemoveAllInfectedFrom(ArrayList arrayList)
 
     for (int client = 1; client <= MaxClients; client++)
     {
-        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != TEAM_INFECTED)
+        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != L4D_TEAM_INFECTED)
             continue;
         
         GetClientAuthId(client, AuthId_Steam2, steamId, sizeof(steamId));
