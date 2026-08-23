@@ -6,8 +6,9 @@
 #include <lerpmonitor>
 #include <colors>
 
+#define LERP_COMMANDS "cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100"
+
 ConVar g_cvEnabled,
-       g_cvCommands,
        g_cvMinLerp,
        g_cvMaxLerp;
 
@@ -29,7 +30,6 @@ public void OnPluginStart()
     LoadTranslations("l4d2_lerp_advisor.phrases");
 
     g_cvEnabled = CreateConVar("l4d2_lerp_advisor_enabled", "1", "Enable the lerp advisory message", FCVAR_NOTIFY, true, 0.0, true, 1.0);
-    g_cvCommands = CreateConVar("l4d2_lerp_advisor_commands", "cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100", "Commands suggested to the player, separated by semicolons", FCVAR_NOTIFY);
 
     HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 }
@@ -115,13 +115,10 @@ Action CheckLerp_Timer(Handle timer, int userid)
 
 void SuggestCommands(int client)
 {
-    char commands[256];
-    g_cvCommands.GetString(commands, sizeof(commands));
+    CPrintToChat(client, "{default}<{olive}Lerp{default}> %t", "LerpAdvisorInstruction");
+    CPrintToChat(client, "%s", LERP_COMMANDS);
 
-    CPrintToChat(client, "{olive}[Lerp] {default}%t", "LerpAdvisorInstruction");
-    CPrintToChat(client, "%s", commands);
-
-    PrintToConsole(client, "%s", commands);
+    PrintToConsole(client, "%s", LERP_COMMANDS);
 }
 
 bool IsLerpValid(float lerp)

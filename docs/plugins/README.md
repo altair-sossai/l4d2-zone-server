@@ -423,9 +423,10 @@ The lerp value and the valid range are taken **entirely from `lerpmonitor`** —
 | ConVar | Default | Description |
 |--------|---------|-------------|
 | `l4d2_lerp_advisor_enabled` | `1` | Enable / disable the advisory message |
-| `l4d2_lerp_advisor_commands` | `cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100` | Commands suggested to the player (separated by `;`, so they can paste them all at once) |
 
-**How to configure** — Set the ConVars in `shared_cvars.cfg`, e.g. `confogl_addcvar l4d2_lerp_advisor_commands "cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100"`. Requires `lerpmonitor` to be loaded (it provides the lerp value and the `sm_min_lerp` / `sm_max_lerp` range). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt`](../../addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt) (English, Portuguese and Spanish).
+The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100`) are hardcoded in the plugin, so they are shown to the player intact (a CVar value set through `confogl_addcvar` would be truncated at the first `;`).
+
+**How to configure** — Set `l4d2_lerp_advisor_enabled` in `shared_cvars.cfg`. Requires `lerpmonitor` to be loaded (it provides the lerp value and the `sm_min_lerp` / `sm_max_lerp` range). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt`](../../addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt) (English, Portuguese and Spanish).
 
 ---
 

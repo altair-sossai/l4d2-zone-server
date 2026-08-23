@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <left4dhooks>
 #include <readyup>
+#include <lerpmonitor>
 #include <colors>
 
 #define MAX_QUEUE_MESSAGE_LENGTH 140
@@ -16,6 +17,10 @@
 
 ConVar g_cvDisconnectTimeout;
 ConVar g_cvEndMapDelay;
+ConVar g_cvMinLerp;
+ConVar g_cvMaxLerp;
+
+bool g_bLerpMonitorIsAvailable = false;
 
 ArrayList g_aQueue;
 ArrayList g_aTeamA;
@@ -66,6 +71,33 @@ public void OnPluginStart()
     RegConsoleCmd("sm_slot", RequestSlotCmd, "Request a slot in the game");
 
     CreateTimer(3.0, WinningTeam_Timer, _, TIMER_REPEAT);
+}
+
+public void OnConfigsExecuted()
+{
+    g_cvMinLerp = FindConVar("sm_min_lerp");
+    g_cvMaxLerp = FindConVar("sm_max_lerp");
+}
+
+public void OnAllPluginsLoaded()
+{
+    g_bLerpMonitorIsAvailable = LibraryExists("lerpmonitor");
+}
+
+public void OnLibraryAdded(const char[] name)
+{
+    if (!StrEqual(name, "lerpmonitor"))
+        return;
+
+    g_bLerpMonitorIsAvailable = true;
+    g_cvMinLerp = FindConVar("sm_min_lerp");
+    g_cvMaxLerp = FindConVar("sm_max_lerp");
+}
+
+public void OnLibraryRemoved(const char[] name)
+{
+    if (StrEqual(name, "lerpmonitor"))
+        g_bLerpMonitorIsAvailable = false;
 }
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -671,7 +703,7 @@ void FixTeams()
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
+        if (client == -1 || HasInvalidLerp(client))
             continue;
 
         nextPlayers[np++] = client;
@@ -723,7 +755,7 @@ bool MustFixTheTeams()
         g_aQueue.GetArray(i, player);
 
         int client = GetClientUsingSteamId(player.steamId);
-        if (client == -1)
+        if (client == -1 || HasInvalidLerp(client))
             continue;
 
         if (GetClientTeam(client) == L4D_TEAM_SPECTATOR)
@@ -804,6 +836,16 @@ bool MoveToFirstOpenTeam(int client)
     }
 
     return false;
+}
+
+bool HasInvalidLerp(int client)
+{
+    if (!g_bLerpMonitorIsAvailable || g_cvMinLerp == null || g_cvMaxLerp == null)
+        return false;
+
+    float lerp = LM_GetCurrentLerpTime(client);
+
+    return lerp < g_cvMinLerp.FloatValue || lerp > g_cvMaxLerp.FloatValue;
 }
 
 int NumberOfPlayersInTheTeam(int team)
