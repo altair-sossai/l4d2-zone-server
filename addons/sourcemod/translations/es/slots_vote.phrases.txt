@@ -41,4 +41,8 @@
 	{
 		"es"		"Limitando los espacios..."
 	}
+	"PlayersNotAllowed"
+	{
+		"es"		"No está permitido que los jugadores cambien la cantidad de espacios."
+	}
 }

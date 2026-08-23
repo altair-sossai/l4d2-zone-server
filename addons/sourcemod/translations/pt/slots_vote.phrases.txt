@@ -1,0 +1,7 @@
+"Phrases"
+{
+	"PlayersNotAllowed"
+	{
+		"pt"		"Não é permitido que jogadores alterem a quantidade de slots"
+	}
+}

@@ -41,4 +41,8 @@
 	{
 		"en"		"Limiting Slots..."
 	}
+	"PlayersNotAllowed"
+	{
+		"en"		"Players are not allowed to change the amount of slots."
+	}
 }

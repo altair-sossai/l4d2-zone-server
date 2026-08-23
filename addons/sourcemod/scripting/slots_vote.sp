@@ -11,6 +11,8 @@ Handle g_hVote;
 char   g_sSlots[32];
 ConVar hMaxSlots;
 int    MaxSlots;
+ConVar hAllowPlayers;
+bool   AllowPlayers;
 
 public Plugin myinfo =
 {
@@ -28,6 +30,9 @@ public void OnPluginStart()
 	hMaxSlots = CreateConVar("slots_max_slots", "30", "Maximum amount of slots you wish players to be able to vote for? (DON'T GO HIGHER THAN 30)");
 	MaxSlots  = hMaxSlots.IntValue;
 	HookConVarChange(hMaxSlots, CVarChanged);
+	hAllowPlayers = CreateConVar("slots_allow_players", "1", "Allow non-admin players to start a vote to change the slots? (1 = yes, 0 = no)");
+	AllowPlayers  = hAllowPlayers.BoolValue;
+	HookConVarChange(hAllowPlayers, CVarChanged);
 }
 
 Action SlotsRequest(int client, int args)
@@ -55,6 +60,10 @@ Action SlotsRequest(int client, int args)
 				GetClientName(client, sName, sizeof(sName));
 				CPrintToChatAll("%t %t", "Tag", "LimitedSlotsTo", sName, Int);
 				SetConVarInt(FindConVar("sv_maxplayers"), Int);
+			}
+			else if (!AllowPlayers)
+			{
+				CPrintToChat(client, "%t %t", "Tag", "PlayersNotAllowed");
 			}
 			else if (Int < GetConVarInt(FindConVar("survivor_limit")) + GetConVarInt(FindConVar("z_max_player_zombies")))
 			{
@@ -153,4 +162,5 @@ void SlotVoteResultHandler(Handle vote, int num_votes, int num_clients, const in
 void CVarChanged(Handle cvar, char[] oldValue, char[] newValue)
 {
 	MaxSlots = GetConVarInt(hMaxSlots);
+	AllowPlayers = GetConVarBool(hAllowPlayers);
 }
