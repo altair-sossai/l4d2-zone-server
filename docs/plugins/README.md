@@ -52,6 +52,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 | [l4d2_playstats_sync](#l4d2_playstats_sync) | Syncs match statistics to the PlayStats API |
 | [l4d2_gameinfo_sync](#l4d2_gameinfo_sync) | Syncs live game info & chat to the Game Info API |
 | [l4d2_campaign_vote](#l4d2_campaign_vote) | Lets any player vote to change to any installed campaign |
+| [l4d2_lerp_advisor](#l4d2_lerp_advisor) | Tells players with an invalid lerp which network commands to run |
 
 **Adapted plugins (third-party)**
 
@@ -404,6 +405,27 @@ sm_cvar gameinfo_secret "your-secret-here"
 | `sm_votecampaign` / `sm_votecamp` | all | Open the campaign menu and start a map change vote for the chosen campaign |
 
 **How to configure** — No configuration needed; just load it. Player-facing UI text (menu title and messages) is defined in [`addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt`](../../addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt) (English, Portuguese and Spanish). The `changemission` vote itself must be enabled in the server's vote settings for the vote to actually start.
+
+---
+
+## l4d2_lerp_advisor
+
+**Source:** [`scripting/l4d2_lerp_advisor.sp`](../../addons/sourcemod/scripting/l4d2_lerp_advisor.sp)
+
+**What it does** — Works alongside `lerpmonitor`: it does **not** change anyone's settings (the server cannot force client CVars), it only *advises*. When a player connects (about 5 seconds after they are authorized and in the server) or joins the survivor/infected team, the plugin checks their lerp and, if it is outside the allowed range, shows a short two-line message — a colored heading (*"Invalid lerp!"*) followed by the exact commands the player should paste into their game console (the command line itself is left uncolored for a clean copy/paste, and is also echoed to their console). Connect-time checks fire even while the player is a spectator, so they're warned before trying to play. A short cooldown prevents duplicate messages.
+
+The lerp value and the valid range are taken **entirely from `lerpmonitor`** — the current lerp comes from its `LM_GetCurrentLerpTime` native and the bounds from its `sm_min_lerp` / `sm_max_lerp` CVars — so changing the limits there automatically changes when this advisory fires, with nothing to update here. If `lerpmonitor` isn't loaded, the plugin stays silent.
+
+**Objective** — Give players with a bad/default lerp a clear, self-service fix instead of only being moved to spectators by `lerpmonitor`, without duplicating any of its detection logic.
+
+**ConVars**
+
+| ConVar | Default | Description |
+|--------|---------|-------------|
+| `l4d2_lerp_advisor_enabled` | `1` | Enable / disable the advisory message |
+| `l4d2_lerp_advisor_commands` | `cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100` | Commands suggested to the player (separated by `;`, so they can paste them all at once) |
+
+**How to configure** — Set the ConVars in `shared_cvars.cfg`, e.g. `confogl_addcvar l4d2_lerp_advisor_commands "cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100"`. Requires `lerpmonitor` to be loaded (it provides the lerp value and the `sm_min_lerp` / `sm_max_lerp` range). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt`](../../addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt) (English, Portuguese and Spanish).
 
 ---
 

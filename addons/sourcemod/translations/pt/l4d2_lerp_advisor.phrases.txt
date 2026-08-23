@@ -1,0 +1,7 @@
+"Phrases"
+{
+    "LerpAdvisorInstruction"
+    {
+        "pt"    "{olive}Lerp inválida!{default} Cole isto no console do jogo:"
+    }
+}
