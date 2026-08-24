@@ -126,4 +126,13 @@
         "#format"    "{1:N}"
         "en"         "Player {lightgreen}{1} {default}left the game. Mix canceled."
     }
+    "KickSpecsDuringMix"
+    {
+        "en"    "You cannot start a vote to kick spectators during a mix."
+    }
+    "KickSpecsCooldown"
+    {
+        "#format"    "{1:d}"
+        "en"         "Wait {olive}{1}{default} seconds after the mix before kicking spectators."
+    }
 }

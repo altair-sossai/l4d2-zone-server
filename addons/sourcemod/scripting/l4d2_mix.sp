@@ -20,7 +20,8 @@
 #define STATE_PICK_TEAMS 3
 
 ConVar g_cvStartVotes,
-       g_cvAdditionalPlayersAfterMix;
+       g_cvAdditionalPlayersAfterMix,
+       g_cvKickSpecsBlockTime;
 
 Menu g_mMixMenu;
 
@@ -34,6 +35,8 @@ int g_iCurrentState = STATE_NO_MIX,
     g_iMaxVoteCount = 0,
     g_iPickCount = 0,
     g_iSurvivorsPick = 0;
+
+float g_fMixEndedTime = 0.0;
 
 char g_sCurrentMaxVotedCaptainAuthId[MAX_STR_LEN],
      g_sSurvivorCaptainAuthId[MAX_STR_LEN],
@@ -61,15 +64,17 @@ public void OnPluginStart()
 
     g_cvStartVotes = CreateConVar("l4d2_mix_start_votes", "2", "Number of votes required to start a mix", FCVAR_NOTIFY, true, 1.0, true, 8.0);
     g_cvAdditionalPlayersAfterMix = CreateConVar("l4d2_mix_additional_players_after_mix", "2", "Additional players required to vote after each mix starts before the game goes live (0 disables)", FCVAR_NOTIFY, true, 0.0);
+    g_cvKickSpecsBlockTime = CreateConVar("l4d2_mix_kickspecs_block_time", "40", "Seconds after a mix ends during which sm_kickspecs stays blocked (0 disables)", FCVAR_NOTIFY, true, 0.0);
     g_iRequiredStartVotes = Clamp(g_cvStartVotes.IntValue, 1, Slots());
 
     RegConsoleCmd("sm_mix", Cmd_MixStart, "Mix command");
     RegAdminCmd("sm_stopmix", Cmd_MixStop, ADMFLAG_CHANGEMAP, "Mix command");
 
-    AddCommandListener(Cmd_OnPlayerJoinTeam, "jointeam");
-    AddCommandListener(Cmd_OnPlayerSpectate, "sm_spectate");
-    AddCommandListener(Cmd_OnPlayerSpectate, "sm_spec");
-    AddCommandListener(Cmd_OnPlayerSpectate, "sm_s");
+    AddCommandListener(PlayerJoinTeam_CallBack, "jointeam");
+    AddCommandListener(PlayerSpectate_CallBack, "sm_spectate");
+    AddCommandListener(PlayerSpectate_CallBack, "sm_spec");
+    AddCommandListener(PlayerSpectate_CallBack, "sm_s");
+    AddCommandListener(KickSpecs_CallBack, "sm_kickspecs");
 
     HookEvent("player_team", Event_PlayerTeam);
 
@@ -231,6 +236,9 @@ void StartMix()
 
 void StopMix()
 {
+    if (g_iCurrentState != STATE_NO_MIX)
+        g_fMixEndedTime = GetEngineTime();
+
     g_iCurrentState = STATE_NO_MIX;
     FakeClientCommandAll("sm_show");
     Call_StartForward(g_hMixStoppedForward);
@@ -605,7 +613,7 @@ void Menu_DisplayToAllSpecs()
  * Team-change enforcement
  * ========================================================================== */
 
-Action Cmd_OnPlayerJoinTeam(int client, const char[] command, int argc)
+Action PlayerJoinTeam_CallBack(int client, const char[] command, int argc)
 {
     if (g_iCurrentState == STATE_NO_MIX || argc < 1 || !IsHuman(client))
     {
@@ -629,7 +637,7 @@ Action Cmd_OnPlayerJoinTeam(int client, const char[] command, int argc)
     return Plugin_Continue;
 }
 
-Action Cmd_OnPlayerSpectate(int client, const char[] command, int argc)
+Action PlayerSpectate_CallBack(int client, const char[] command, int argc)
 {
     if (g_iCurrentState == STATE_NO_MIX || !IsHuman(client))
     {
@@ -639,6 +647,33 @@ Action Cmd_OnPlayerSpectate(int client, const char[] command, int argc)
     if (GetExpectedTeam(client) != L4D2Team_Spectator)
     {
         return Plugin_Stop;
+    }
+
+    return Plugin_Continue;
+}
+
+Action KickSpecs_CallBack(int client, const char[] command, int argc)
+{
+    if (client == 0 || !IsHuman(client))
+        return Plugin_Continue;
+
+    if (g_iCurrentState != STATE_NO_MIX)
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "KickSpecsDuringMix");
+        return Plugin_Handled;
+    }
+
+    float blockTime = g_cvKickSpecsBlockTime.FloatValue;
+
+    if (blockTime <= 0.0 || g_fMixEndedTime <= 0.0)
+        return Plugin_Continue;
+
+    float elapsed = GetEngineTime() - g_fMixEndedTime;
+
+    if (elapsed < blockTime)
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "KickSpecsCooldown", RoundToCeil(blockTime - elapsed));
+        return Plugin_Handled;
     }
 
     return Plugin_Continue;

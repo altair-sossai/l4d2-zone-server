@@ -453,6 +453,7 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 |--------|---------|-------------|
 | `l4d2_mix_start_votes` | `2` | Number of votes required to start a mix (1–8) |
 | `l4d2_mix_additional_players_after_mix` | `2` | Extra players required to vote after each mix starts before the game goes live (`0` disables) |
+| `l4d2_mix_kickspecs_block_time` | `40` | Seconds after a mix ends during which `sm_kickspecs` stays blocked (`0` disables) |
 
 **Commands**
 

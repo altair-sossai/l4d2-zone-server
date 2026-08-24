@@ -126,4 +126,13 @@
         "#format"    "{1:N}"
         "pt"         "O jogador {lightgreen}{1} {default}saiu da partida. Mix cancelado."
     }
+    "KickSpecsDuringMix"
+    {
+        "pt"    "Você não pode iniciar uma votação para expulsar os espectadores durante o mix."
+    }
+    "KickSpecsCooldown"
+    {
+        "#format"    "{1:d}"
+        "pt"         "Aguarde {olive}{1}{default} segundos após o mix para expulsar os espectadores."
+    }
 }
