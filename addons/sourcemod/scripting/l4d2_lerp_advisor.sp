@@ -4,6 +4,7 @@
 #include <sourcemod>
 #include <left4dhooks>
 #include <lerpmonitor>
+#include <readyup>
 #include <colors>
 
 #define LERP_COMMANDS "cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100"
@@ -13,6 +14,7 @@ ConVar g_cvEnabled,
        g_cvMaxLerp;
 
 bool g_bLerpMonitorIsAvailable = false;
+bool g_bReadyUpIsAvailable = false;
 
 int g_iLastNotify[MAXPLAYERS + 1];
 
@@ -43,22 +45,29 @@ public void OnConfigsExecuted()
 public void OnAllPluginsLoaded()
 {
     g_bLerpMonitorIsAvailable = LibraryExists("lerpmonitor");
+    g_bReadyUpIsAvailable = LibraryExists("readyup");
 }
 
 public void OnLibraryAdded(const char[] name)
 {
-    if (!StrEqual(name, "lerpmonitor"))
-        return;
+    if (StrEqual(name, "lerpmonitor"))
+    {
+        g_bLerpMonitorIsAvailable = true;
+        g_cvMinLerp = FindConVar("sm_min_lerp");
+        g_cvMaxLerp = FindConVar("sm_max_lerp");
+    }
 
-    g_bLerpMonitorIsAvailable = true;
-    g_cvMinLerp = FindConVar("sm_min_lerp");
-    g_cvMaxLerp = FindConVar("sm_max_lerp");
+    if (StrEqual(name, "readyup"))
+        g_bReadyUpIsAvailable = true;
 }
 
 public void OnLibraryRemoved(const char[] name)
 {
     if (StrEqual(name, "lerpmonitor"))
         g_bLerpMonitorIsAvailable = false;
+
+    if (StrEqual(name, "readyup"))
+        g_bReadyUpIsAvailable = false;
 }
 
 public void OnClientPutInServer(int client)
@@ -87,7 +96,7 @@ void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
     if (!IsHumanClient(client))
         return;
 
-    CreateTimer(0.3, CheckLerp_Timer, event.GetInt("userid"), TIMER_FLAG_NO_MAPCHANGE);
+    CreateTimer(1.0, CheckLerp_Timer, event.GetInt("userid"), TIMER_FLAG_NO_MAPCHANGE);
 }
 
 Action CheckLerp_Timer(Handle timer, int userid)
@@ -97,6 +106,9 @@ Action CheckLerp_Timer(Handle timer, int userid)
         return Plugin_Stop;
 
     if (!g_bLerpMonitorIsAvailable || g_cvMinLerp == null || g_cvMaxLerp == null)
+        return Plugin_Stop;
+
+    if (g_bReadyUpIsAvailable && !IsInReady())
         return Plugin_Stop;
 
     if (IsLerpValid(LM_GetCurrentLerpTime(client)))
