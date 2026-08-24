@@ -126,4 +126,23 @@
         "#format"    "{1:N}"
         "es"         "El jugador {lightgreen}{1} {default}abandonó la partida. Mix cancelado."
     }
+    "PlayerLeftWarning"
+    {
+        "#format"    "{1:N},{2:d}"
+        "es"         "El jugador {lightgreen}{1} {default}abandonó la partida. Mix cancelado. Si vuelve a abandonar, será baneado por {olive}{2}{default} minutos."
+    }
+    "PlayerLeftBan"
+    {
+        "#format"    "{1:N},{2:d}"
+        "es"         "El jugador {lightgreen}{1} {default}abandonó la partida y fue baneado por {olive}{2}{default} minutos por abandonar el mix."
+    }
+    "KickSpecsDuringMix"
+    {
+        "es"    "No puedes iniciar una votación para expulsar a los espectadores durante un mix."
+    }
+    "KickSpecsCooldown"
+    {
+        "#format"    "{1:d}"
+        "es"         "Espera {olive}{1}{default} segundos después del mix antes de expulsar a los espectadores."
+    }
 }

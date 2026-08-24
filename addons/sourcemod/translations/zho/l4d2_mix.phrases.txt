@@ -126,4 +126,23 @@
         "#format"    "{1:N}"
         "zho"        "玩家 {lightgreen}{1} {default}已離開遊戲。Mix 已取消。"
     }
+    "PlayerLeftWarning"
+    {
+        "#format"    "{1:N},{2:d}"
+        "zho"        "玩家 {lightgreen}{1} {default}已離開遊戲。Mix 已取消。若再次中途退出，將被封鎖 {olive}{2}{default} 分鐘。"
+    }
+    "PlayerLeftBan"
+    {
+        "#format"    "{1:N},{2:d}"
+        "zho"        "玩家 {lightgreen}{1} {default}已離開遊戲，因中途放棄 Mix 被封鎖 {olive}{2}{default} 分鐘。"
+    }
+    "KickSpecsDuringMix"
+    {
+        "zho"    "Mix 進行期間，你不能發起踢出觀眾的投票。"
+    }
+    "KickSpecsCooldown"
+    {
+        "#format"    "{1:d}"
+        "zho"        "Mix 結束後請等待 {olive}{1}{default} 秒再踢出觀眾。"
+    }
 }

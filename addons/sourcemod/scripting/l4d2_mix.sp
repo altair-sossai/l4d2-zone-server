@@ -177,7 +177,6 @@ Action Cmd_MixStart(int client, int args)
         }
 
         g_iCurrentState = STATE_FIRST_CAPT;
-        IncreaseRequiredStartVotes();
         StartMix();
 
         g_smSwapWhitelist.Clear();
@@ -563,6 +562,7 @@ int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
                     if (g_iPickCount >= requiredPicks)
                     {
                         CPrintToChatAll("%t %t", "MixTag", "TeamsPicked");
+                        IncreaseRequiredStartVotes();
                         StopMix();
                     }
                     else if (g_iPickCount != requiredPicks - 2)

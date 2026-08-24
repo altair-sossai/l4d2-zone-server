@@ -126,4 +126,23 @@
         "#format"    "{1:N}"
         "chi"        "玩家 {lightgreen}{1} {default}已离开游戏。Mix 已取消。"
     }
+    "PlayerLeftWarning"
+    {
+        "#format"    "{1:N},{2:d}"
+        "chi"        "玩家 {lightgreen}{1} {default}已离开游戏。Mix 已取消。若再次中途退出，将被封禁 {olive}{2}{default} 分钟。"
+    }
+    "PlayerLeftBan"
+    {
+        "#format"    "{1:N},{2:d}"
+        "chi"        "玩家 {lightgreen}{1} {default}已离开游戏，因中途放弃 Mix 被封禁 {olive}{2}{default} 分钟。"
+    }
+    "KickSpecsDuringMix"
+    {
+        "chi"    "Mix 进行期间，你不能发起踢出旁观者的投票。"
+    }
+    "KickSpecsCooldown"
+    {
+        "#format"    "{1:d}"
+        "chi"        "Mix 结束后请等待 {olive}{1}{default} 秒再踢出旁观者。"
+    }
 }
