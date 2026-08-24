@@ -291,6 +291,7 @@ void IncreaseRequiredStartVotes()
 void HandleMixAbandon(int client)
 {
     char authId[MAX_STR_LEN];
+    char ip[64];
     int banTime = g_cvAbandonBanTime.IntValue;
 
     if (banTime <= 0 || !GetClientAuthId(client, AuthId_SteamID64, authId, MAX_STR_LEN))
@@ -308,7 +309,13 @@ void HandleMixAbandon(int client)
         return;
     }
 
+    bool hasIp = GetClientIP(client, ip, sizeof(ip));
+
     BanClient(client, banTime, BANFLAG_AUTHID, "Abandoned the mix", "Abandoned the mix", "l4d2_mix");
+
+    if (hasIp)
+        BanIdentity(ip, banTime, BANFLAG_IP, "Abandoned the mix", "l4d2_mix");
+
     CPrintToChatAll("%t %t", "MixTag", "PlayerLeftBan", client, banTime);
 }
 
