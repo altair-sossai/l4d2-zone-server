@@ -21,13 +21,15 @@
 
 ConVar g_cvStartVotes,
        g_cvAdditionalPlayersAfterMix,
-       g_cvKickSpecsBlockTime;
+       g_cvKickSpecsBlockTime,
+       g_cvAbandonBanTime;
 
 Menu g_mMixMenu;
 
 StringMap g_smVoteResults,
           g_smSwapWhitelist,
-          g_smPlayers;
+          g_smPlayers,
+          g_smAbandoners;
 
 int g_iCurrentState = STATE_NO_MIX,
     g_iMixCallsCount = 0,
@@ -65,6 +67,7 @@ public void OnPluginStart()
     g_cvStartVotes = CreateConVar("l4d2_mix_start_votes", "2", "Number of votes required to start a mix", FCVAR_NOTIFY, true, 1.0, true, 8.0);
     g_cvAdditionalPlayersAfterMix = CreateConVar("l4d2_mix_additional_players_after_mix", "2", "Additional players required to vote after each mix starts before the game goes live (0 disables)", FCVAR_NOTIFY, true, 0.0);
     g_cvKickSpecsBlockTime = CreateConVar("l4d2_mix_kickspecs_block_time", "40", "Seconds after a mix ends during which sm_kickspecs stays blocked (0 disables)", FCVAR_NOTIFY, true, 0.0);
+    g_cvAbandonBanTime = CreateConVar("l4d2_mix_abandon_ban_time", "30", "Minutes a player is banned when they abandon a mix for a second time (0 disables the ban)", FCVAR_NOTIFY, true, 0.0);
     g_iRequiredStartVotes = Clamp(g_cvStartVotes.IntValue, 1, Slots());
 
     RegConsoleCmd("sm_mix", Cmd_MixStart, "Mix command");
@@ -81,6 +84,7 @@ public void OnPluginStart()
     g_smVoteResults = new StringMap();
     g_smSwapWhitelist = new StringMap();
     g_smPlayers = new StringMap();
+    g_smAbandoners = new StringMap();
     g_hMixStartedForward = CreateGlobalForward("OnMixStarted", ET_Event);
     g_hMixStoppedForward = CreateGlobalForward("OnMixStopped", ET_Event);
     
@@ -103,6 +107,9 @@ public void OnRoundIsLive()
     g_bIsMixAllowed = false;
     ResetMixVoteProgress();
     StopMix();
+
+    if (g_smAbandoners != null)
+        g_smAbandoners.Clear();
 }
 
 public void OnClientPutInServer(int client)
@@ -120,7 +127,7 @@ public void OnClientDisconnect(int client)
 {
     if (g_iCurrentState != STATE_NO_MIX && IsClientInPlayers(client))
     {
-        CPrintToChatAll("%t %t", "MixTag", "PlayerLeft", client);
+        HandleMixAbandon(client);
         StopMix();
     }
 }
@@ -279,6 +286,30 @@ void ResetMixVoteProgress()
 void IncreaseRequiredStartVotes()
 {
     g_iRequiredStartVotes = Clamp(g_iRequiredStartVotes + g_cvAdditionalPlayersAfterMix.IntValue, 1, Slots());
+}
+
+void HandleMixAbandon(int client)
+{
+    char authId[MAX_STR_LEN];
+    int banTime = g_cvAbandonBanTime.IntValue;
+
+    if (banTime <= 0 || !GetClientAuthId(client, AuthId_SteamID64, authId, MAX_STR_LEN))
+    {
+        CPrintToChatAll("%t %t", "MixTag", "PlayerLeft", client);
+        return;
+    }
+
+    bool dummy;
+
+    if (!g_smAbandoners.GetValue(authId, dummy))
+    {
+        g_smAbandoners.SetValue(authId, true);
+        CPrintToChatAll("%t %t", "MixTag", "PlayerLeftWarning", client, banTime);
+        return;
+    }
+
+    BanClient(client, banTime, BANFLAG_AUTHID, "Abandoned the mix", "Abandoned the mix", "l4d2_mix");
+    CPrintToChatAll("%t %t", "MixTag", "PlayerLeftBan", client, banTime);
 }
 
 /* =============================================================================

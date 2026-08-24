@@ -126,6 +126,16 @@
         "#format"    "{1:N}"
         "en"         "Player {lightgreen}{1} {default}left the game. Mix canceled."
     }
+    "PlayerLeftWarning"
+    {
+        "#format"    "{1:N},{2:d}"
+        "en"         "Player {lightgreen}{1} {default}left the game. Mix canceled. If they abandon again, they will be banned for {olive}{2}{default} minutes."
+    }
+    "PlayerLeftBan"
+    {
+        "#format"    "{1:N},{2:d}"
+        "en"         "Player {lightgreen}{1} {default}left the game and was banned for {olive}{2}{default} minutes for abandoning the mix."
+    }
     "KickSpecsDuringMix"
     {
         "en"    "You cannot start a vote to kick spectators during a mix."

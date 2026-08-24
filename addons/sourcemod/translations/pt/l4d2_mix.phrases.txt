@@ -126,6 +126,16 @@
         "#format"    "{1:N}"
         "pt"         "O jogador {lightgreen}{1} {default}saiu da partida. Mix cancelado."
     }
+    "PlayerLeftWarning"
+    {
+        "#format"    "{1:N},{2:d}"
+        "pt"         "O jogador {lightgreen}{1} {default}saiu da partida. Mix cancelado. Se abandonar novamente, será banido por {olive}{2}{default} minutos."
+    }
+    "PlayerLeftBan"
+    {
+        "#format"    "{1:N},{2:d}"
+        "pt"         "O jogador {lightgreen}{1} {default}saiu da partida e foi banido por {olive}{2}{default} minutos por abandonar o mix."
+    }
     "KickSpecsDuringMix"
     {
         "pt"    "Você não pode iniciar uma votação para expulsar os espectadores durante o mix."
