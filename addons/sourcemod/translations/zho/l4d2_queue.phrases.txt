@@ -28,7 +28,7 @@
     }
     "SlotSuggestion"
     {
-        "zho"    "遊戲中有一個名額等著你！輸入 {olive}!slot{default} 加入。"
+        "zho"    "查看 {olive}!queue{default}。如果你排在正在遊戲的玩家前面，使用 {olive}!slot{default}。"
     }
     "SlotFixing"
     {

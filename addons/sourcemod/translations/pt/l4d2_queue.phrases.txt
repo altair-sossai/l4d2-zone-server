@@ -28,7 +28,7 @@
     }
     "SlotSuggestion"
     {
-        "pt"    "Existe uma vaga para você no jogo! Digite {olive}!vaga{default} para assumir."
+        "pt"    "Confira a {olive}!fila{default}. Se estiver à frente de alguém que está jogando, use {olive}!vaga{default}."
     }
     "SlotFixing"
     {

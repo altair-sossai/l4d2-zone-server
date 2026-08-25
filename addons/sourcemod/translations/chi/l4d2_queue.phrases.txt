@@ -28,7 +28,7 @@
     }
     "SlotSuggestion"
     {
-        "chi"    "游戏中有一个名额等着你！输入 {olive}!slot{default} 加入。"
+        "chi"    "查看 {olive}!queue{default}。如果你排在正在游戏的玩家前面，使用 {olive}!slot{default}。"
     }
     "SlotFixing"
     {

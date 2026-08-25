@@ -28,7 +28,7 @@
     }
     "SlotSuggestion"
     {
-        "es"    "¡Hay una plaza para ti en la partida! Escribe {olive}!slot{default} para ocuparla."
+        "es"    "Revisa la {olive}!queue{default}. Si estás por delante de alguien que está jugando, usa {olive}!slot{default}."
     }
     "SlotFixing"
     {

@@ -28,7 +28,7 @@
     }
     "SlotSuggestion"
     {
-        "en"    "There is a spot for you in the game! Type {olive}!slot{default} to take it."
+        "en"    "Check the {olive}!queue{default}. If you are ahead of someone playing, use {olive}!slot{default}."
     }
     "SlotFixing"
     {
