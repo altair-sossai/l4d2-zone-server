@@ -24,11 +24,6 @@ char g_OfficialCampaigns[][2][] =
     { "L4D2C14", "The Last Stand" }
 };
 
-char g_IgnoredCampaigns[][] =
-{
-    "credits"
-};
-
 enum struct Campaign
 {
     char name[64];
@@ -36,7 +31,13 @@ enum struct Campaign
     char menuText[256];
 }
 
+bool g_CustomTitlesCampaignsLocked = false,
+     g_IgnoredCampaignsLocked = false;
+
 ArrayList g_Campaigns = null;
+
+StringMap g_CustomTitlesCampaigns = null,
+          g_IgnoredCampaigns = null;
 
 public Plugin myinfo =
 {
@@ -51,8 +52,17 @@ public void OnPluginStart()
 {
     LoadTranslations("l4d2_campaign_vote.phrases");
 
+    InitCustomTitlesCampaigns();
+    InitIgnoredCampaigns();
+
     RegConsoleCmd("sm_votecampaign", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
     RegConsoleCmd("sm_votecamp", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
+
+    RegServerCmd("l4d2_campaign_vote_title", CustomTitleCampaignCmd, "Sets a custom title for a campaign name (e.g. l4d2_campaign_vote_title \"L4D2C1\" \"My Custom Title\"). Ignored once the list is locked");
+    RegServerCmd("l4d2_campaign_vote_title_lock", CustomTitleCampaignLockCmd, "Locks the custom titles list so later l4d2_campaign_vote_title calls are ignored. Call this once right after the last entry in your config");
+
+    RegServerCmd("l4d2_campaign_vote_ignore", IgnoreCampaignCmd, "Adds a campaign name to be hidden from the vote menu (e.g. l4d2_campaign_vote_ignore \"credits\"). Ignored once the list is locked");
+    RegServerCmd("l4d2_campaign_vote_ignore_lock", IgnoreCampaignLockCmd, "Locks the ignored list so later l4d2_campaign_vote_ignore calls are ignored. Call this once right after the last entry in your config");
 }
 
 public Action VoteCampaignCmd(int client, int args)
@@ -69,6 +79,76 @@ public Action VoteCampaignCmd(int client, int args)
 
     if (!menu.Display(client, MENU_TIME_FOREVER))
         delete menu;
+
+    return Plugin_Handled;
+}
+
+Action CustomTitleCampaignCmd(int args)
+{
+    if (args < 2)
+    {
+        LogError("[Campaigns] Usage: l4d2_campaign_vote_title <name> <title>");
+        return Plugin_Handled;
+    }
+
+    char name[64];
+    GetCmdArg(1, name, sizeof(name));
+    TrimString(name);
+
+    if (StringEmpty(name))
+    {
+        LogError("[Campaigns] Usage: l4d2_campaign_vote_title <name> <title>");
+        return Plugin_Handled;
+    }
+
+    char title[128];
+    GetCmdArg(2, title, sizeof(title));
+    TrimString(title);
+
+    if (StringEmpty(title))
+    {
+        LogError("[Campaigns] Usage: l4d2_campaign_vote_title <name> <title>");
+        return Plugin_Handled;
+    }
+
+    AddCustomTitleCampaign(name, title);
+
+    return Plugin_Handled;
+}
+
+Action CustomTitleCampaignLockCmd(int args)
+{
+    g_CustomTitlesCampaignsLocked = true;
+
+    return Plugin_Handled;
+}
+
+Action IgnoreCampaignCmd(int args)
+{
+    if (args < 1)
+    {
+        LogError("[Campaigns] Usage: l4d2_campaign_vote_ignore <name>");
+        return Plugin_Handled;
+    }
+
+    char name[64];
+    GetCmdArg(1, name, sizeof(name));
+    TrimString(name);
+
+    if (StringEmpty(name))
+    {
+        LogError("[Campaigns] Usage: l4d2_campaign_vote_ignore <name>");
+        return Plugin_Handled;
+    }
+
+    AddIgnoredCampaign(name);
+
+    return Plugin_Handled;
+}
+
+Action IgnoreCampaignLockCmd(int args)
+{
+    g_IgnoredCampaignsLocked = true;
 
     return Plugin_Handled;
 }
@@ -149,9 +229,6 @@ void ReadCampaigns(DirectoryListing dir, ArrayList campaigns, StringMap titleCou
         char path[PLATFORM_MAX_PATH];
         Format(path, sizeof(path), "missions/%s", fileName);
 
-        char displayName[128];
-        char shortName[64];
-
         KeyValues kv = new KeyValues("Mission");
         if (!kv.ImportFromFile(path))
         {
@@ -159,37 +236,40 @@ void ReadCampaigns(DirectoryListing dir, ArrayList campaigns, StringMap titleCou
             continue;
         }
 
-        kv.GetString("DisplayTitle", displayName, sizeof(displayName), "");
-        kv.GetString("Name", shortName, sizeof(shortName), "");
+        char name[64];
+        kv.GetString("Name", name, sizeof(name), "");
+
+        char displayTitle[128];
+        kv.GetString("DisplayTitle", displayTitle, sizeof(displayTitle), "");
 
         delete kv;
 
-        if (shortName[0] == '\0')
+        if (StringEmpty(name))
             continue;
 
-        if (!IsValidCampaignName(shortName))
+        if (!IsValidCampaignName(name))
         {
-            LogError("Invalid campaign name \"%s\" in \"%s\".", shortName, path);
+            LogError("Invalid campaign name \"%s\" in \"%s\".", name, path);
             continue;
         }
 
-        if (IsIgnoredCampaign(shortName))
+        if (g_IgnoredCampaigns.ContainsKey(name))
             continue;
 
-        if (!seenNames.SetString(shortName, "", false))
+        if (!seenNames.SetString(name, "", false))
             continue;
 
-        ResolveDisplayName(shortName, displayName, sizeof(displayName));
+        ResolveDisplayName(name, displayTitle, sizeof(displayTitle));
 
         Campaign campaign;
-        strcopy(campaign.name, sizeof(campaign.name), shortName);
-        strcopy(campaign.title, sizeof(campaign.title), displayName);
-        strcopy(campaign.menuText, sizeof(campaign.menuText), displayName);
+        strcopy(campaign.name, sizeof(campaign.name), name);
+        strcopy(campaign.title, sizeof(campaign.title), displayTitle);
+        strcopy(campaign.menuText, sizeof(campaign.menuText), displayTitle);
         campaigns.PushArray(campaign);
 
         int count = 0;
-        titleCount.GetValue(displayName, count);
-        titleCount.SetValue(displayName, count + 1);
+        titleCount.GetValue(displayTitle, count);
+        titleCount.SetValue(displayTitle, count + 1);
     }
 
     delete seenNames;
@@ -206,30 +286,50 @@ bool IsValidCampaignName(const char[] name)
     return true;
 }
 
-bool IsIgnoredCampaign(const char[] shortName)
+void InitCustomTitlesCampaigns()
 {
-    for (int i = 0; i < sizeof(g_IgnoredCampaigns); i++)
-    {
-        if (StrEqual(shortName, g_IgnoredCampaigns[i], false))
-            return true;
-    }
-
-    return false;
+    g_CustomTitlesCampaigns = new StringMap();
 }
 
-void ResolveDisplayName(const char[] shortName, char[] displayName, int maxlen)
+void AddCustomTitleCampaign(const char[] name, const char[] title)
 {
+    if (g_CustomTitlesCampaignsLocked)
+        return;
+
+    g_CustomTitlesCampaigns.SetString(name, title, false);
+}
+
+void InitIgnoredCampaigns()
+{
+    g_IgnoredCampaigns = new StringMap();
+
+    AddIgnoredCampaign("credits");
+}
+
+void AddIgnoredCampaign(const char[] name)
+{
+    if (g_IgnoredCampaignsLocked)
+        return;
+
+    g_IgnoredCampaigns.SetString(name, "", false);
+}
+
+void ResolveDisplayName(const char[] name, char[] displayTitle, int maxlen)
+{
+    if (g_CustomTitlesCampaigns.GetString(name, displayTitle, maxlen))
+        return;
+
     for (int i = 0; i < sizeof(g_OfficialCampaigns); i++)
     {
-        if (StrEqual(shortName, g_OfficialCampaigns[i][0], false))
+        if (StrEqual(name, g_OfficialCampaigns[i][0], false))
         {
-            strcopy(displayName, maxlen, g_OfficialCampaigns[i][1]);
+            strcopy(displayTitle, maxlen, g_OfficialCampaigns[i][1]);
             return;
         }
     }
 
-    if (displayName[0] == '\0' || displayName[0] == '#' || displayName[0] == '$')
-        strcopy(displayName, maxlen, shortName);
+    if (StringEmpty(displayTitle) || displayTitle[0] == '#' || displayTitle[0] == '$')
+        strcopy(displayTitle, maxlen, name);
 }
 
 void UpdateDuplicateMenuText(ArrayList campaigns, StringMap titleCount)
@@ -294,4 +394,9 @@ bool IsValidClient(int client)
         return false;
 
     return IsClientInGame(client);
+}
+
+bool StringEmpty(const char[] str)
+{
+    return strlen(str) == 0;
 }
