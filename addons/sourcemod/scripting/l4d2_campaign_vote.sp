@@ -52,8 +52,8 @@ public void OnPluginStart()
 {
     LoadTranslations("l4d2_campaign_vote.phrases");
 
-    InitCustomTitlesCampaigns();
-    InitIgnoredCampaigns();
+    g_CustomTitlesCampaigns = new StringMap();
+    g_IgnoredCampaigns = new StringMap();
 
     RegConsoleCmd("sm_votecampaign", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
     RegConsoleCmd("sm_votecamp", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
@@ -66,6 +66,11 @@ public void OnPluginStart()
 
     RegAdminCmd("sm_listcampaigns", ListCampaignsCmd, ADMFLAG_GENERIC, "Lists in console the raw name and DisplayTitle of every campaign found in the missions folder");
     RegAdminCmd("sm_refreshcampaigns", RefreshCampaignsCmd, ADMFLAG_GENERIC, "Clears the cached campaign list and forces it to be read again");
+}
+
+public void OnConfigsExecuted()
+{
+    ReloadCampaignVoteConfig();
 }
 
 public Action VoteCampaignCmd(int client, int args)
@@ -168,6 +173,8 @@ Action ListCampaignsCmd(int client, int args)
     char fileName[PLATFORM_MAX_PATH];
     FileType type;
 
+    PrintToConsole(client, "name | title");
+
     while (dir.GetNext(fileName, sizeof(fileName), type))
     {
         if (type != FileType_File)
@@ -207,17 +214,7 @@ Action ListCampaignsCmd(int client, int args)
 
 Action RefreshCampaignsCmd(int client, int args)
 {
-    if (g_Campaigns != null)
-    {
-        delete g_Campaigns;
-        g_Campaigns = null;
-    }
-
-    if (!EnsureCampaignCache())
-    {
-        CReplyToCommand(client, "%s%t", TAG, "ReadError");
-        return Plugin_Handled;
-    }
+    ReloadCampaignVoteConfig();
 
     CReplyToCommand(client, "%s%t", TAG, "CampaignsRefreshed");
 
@@ -357,9 +354,23 @@ bool IsValidCampaignName(const char[] name)
     return true;
 }
 
-void InitCustomTitlesCampaigns()
+void ReloadCampaignVoteConfig()
 {
-    g_CustomTitlesCampaigns = new StringMap();
+    g_CustomTitlesCampaignsLocked = false;
+    g_IgnoredCampaignsLocked = false;
+
+    g_CustomTitlesCampaigns.Clear();
+    g_IgnoredCampaigns.Clear();
+
+    AddIgnoredCampaign("credits");
+
+    if (g_Campaigns != null)
+    {
+        delete g_Campaigns;
+        g_Campaigns = null;
+    }
+
+    ServerCommand("exec %s", "sourcemod/campaign_vote.cfg");
 }
 
 void AddCustomTitleCampaign(const char[] name, const char[] title)
@@ -368,13 +379,6 @@ void AddCustomTitleCampaign(const char[] name, const char[] title)
         return;
 
     g_CustomTitlesCampaigns.SetString(name, title, false);
-}
-
-void InitIgnoredCampaigns()
-{
-    g_IgnoredCampaigns = new StringMap();
-
-    AddIgnoredCampaign("credits");
 }
 
 void AddIgnoredCampaign(const char[] name)
