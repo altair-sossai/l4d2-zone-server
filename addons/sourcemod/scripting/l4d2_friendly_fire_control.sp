@@ -121,6 +121,9 @@ void PlayerHurt_Event(Event event, const char[] name, bool dontBroadcast)
     if (!IsStanding(victim))
         return;
 
+    if (IsSurvivorAttacked(victim))
+        return;
+
     if (float(TotalHealth(victim)) <= g_cvMinHealth.FloatValue)
         return;
 
