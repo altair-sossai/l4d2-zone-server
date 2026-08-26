@@ -12,4 +12,8 @@
     {
         "es"    "El resultado de esta impresión está en la consola del juego. Míralo allí."
     }
+    "CampaignsRefreshed"
+    {
+        "es"    "Lista de campañas actualizada."
+    }
 }

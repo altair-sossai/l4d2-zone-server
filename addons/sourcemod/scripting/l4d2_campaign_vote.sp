@@ -65,6 +65,7 @@ public void OnPluginStart()
     RegServerCmd("l4d2_campaign_vote_ignore_lock", IgnoreCampaignLockCmd, "Locks the ignored list so later l4d2_campaign_vote_ignore calls are ignored. Call this once right after the last entry in your config");
 
     RegAdminCmd("sm_listcampaigns", ListCampaignsCmd, ADMFLAG_GENERIC, "Lists in console the raw name and DisplayTitle of every campaign found in the missions folder");
+    RegAdminCmd("sm_refreshcampaigns", RefreshCampaignsCmd, ADMFLAG_GENERIC, "Clears the cached campaign list and forces it to be read again");
 }
 
 public Action VoteCampaignCmd(int client, int args)
@@ -200,6 +201,25 @@ Action ListCampaignsCmd(int client, int args)
     delete dir;
 
     CReplyToCommand(client, "%s%t", TAG, "ListPrintedToConsole");
+
+    return Plugin_Handled;
+}
+
+Action RefreshCampaignsCmd(int client, int args)
+{
+    if (g_Campaigns != null)
+    {
+        delete g_Campaigns;
+        g_Campaigns = null;
+    }
+
+    if (!EnsureCampaignCache())
+    {
+        CReplyToCommand(client, "%s%t", TAG, "ReadError");
+        return Plugin_Handled;
+    }
+
+    CReplyToCommand(client, "%s%t", TAG, "CampaignsRefreshed");
 
     return Plugin_Handled;
 }

@@ -12,4 +12,8 @@
     {
         "en"    "The output of this listing is in the game console. Check it there."
     }
+    "CampaignsRefreshed"
+    {
+        "en"    "Campaign list refreshed."
+    }
 }

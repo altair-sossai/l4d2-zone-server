@@ -12,4 +12,8 @@
     {
         "pt"    "O resultado dessa impressão está no console do jogo. Veja por lá."
     }
+    "CampaignsRefreshed"
+    {
+        "pt"    "Lista de campanhas atualizada."
+    }
 }
