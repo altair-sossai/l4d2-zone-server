@@ -8,4 +8,8 @@
     {
         "pt"    "Não foi possível ler a lista de campanhas."
     }
+    "ListPrintedToConsole"
+    {
+        "pt"    "O resultado dessa impressão está no console do jogo. Veja por lá."
+    }
 }

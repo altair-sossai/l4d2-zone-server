@@ -63,6 +63,8 @@ public void OnPluginStart()
 
     RegServerCmd("l4d2_campaign_vote_ignore", IgnoreCampaignCmd, "Adds a campaign name to be hidden from the vote menu (e.g. l4d2_campaign_vote_ignore \"credits\"). Ignored once the list is locked");
     RegServerCmd("l4d2_campaign_vote_ignore_lock", IgnoreCampaignLockCmd, "Locks the ignored list so later l4d2_campaign_vote_ignore calls are ignored. Call this once right after the last entry in your config");
+
+    RegAdminCmd("sm_listcampaigns", ListCampaignsCmd, ADMFLAG_GENERIC, "Lists in console the raw name and DisplayTitle of every campaign found in the missions folder");
 }
 
 public Action VoteCampaignCmd(int client, int args)
@@ -149,6 +151,55 @@ Action IgnoreCampaignCmd(int args)
 Action IgnoreCampaignLockCmd(int args)
 {
     g_IgnoredCampaignsLocked = true;
+
+    return Plugin_Handled;
+}
+
+Action ListCampaignsCmd(int client, int args)
+{
+    DirectoryListing dir = OpenDirectory("missions", true, NULL_STRING);
+    if (dir == null)
+    {
+        CReplyToCommand(client, "%s%t", TAG, "ReadError");
+        return Plugin_Handled;
+    }
+
+    char fileName[PLATFORM_MAX_PATH];
+    FileType type;
+
+    while (dir.GetNext(fileName, sizeof(fileName), type))
+    {
+        if (type != FileType_File)
+            continue;
+
+        int len = strlen(fileName);
+        if (len < 4 || strcmp(fileName[len - 4], ".txt", false) != 0)
+            continue;
+
+        char path[PLATFORM_MAX_PATH];
+        Format(path, sizeof(path), "missions/%s", fileName);
+
+        KeyValues kv = new KeyValues("Mission");
+        if (!kv.ImportFromFile(path))
+        {
+            delete kv;
+            continue;
+        }
+
+        char name[64];
+        kv.GetString("Name", name, sizeof(name), "");
+
+        char displayTitle[128];
+        kv.GetString("DisplayTitle", displayTitle, sizeof(displayTitle), "");
+
+        delete kv;
+
+        PrintToConsole(client, "%s | %s", name, displayTitle);
+    }
+
+    delete dir;
+
+    CReplyToCommand(client, "%s%t", TAG, "ListPrintedToConsole");
 
     return Plugin_Handled;
 }

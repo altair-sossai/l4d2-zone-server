@@ -8,4 +8,8 @@
     {
         "en"    "Could not read the campaign list."
     }
+    "ListPrintedToConsole"
+    {
+        "en"    "The output of this listing is in the game console. Check it there."
+    }
 }
