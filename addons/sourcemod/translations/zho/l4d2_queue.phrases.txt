@@ -47,4 +47,9 @@
         "#format"    "{1:N}"
         "zho"        "{blue}{1}{default} 正在控制坦克，請在坦克死亡後再申請你的名額。"
     }
+    "SlotClaimLimit"
+    {
+        "#format"    "{1:N}"
+        "zho"        "你搶占 {blue}{1}{default} 的名額次數過多。"
+    }
 }

@@ -47,4 +47,9 @@
         "#format"    "{1:N}"
         "chi"        "{blue}{1}{default} 正在控制坦克，请在坦克死亡后再申请你的名额。"
     }
+    "SlotClaimLimit"
+    {
+        "#format"    "{1:N}"
+        "chi"        "你抢占 {blue}{1}{default} 的名额次数过多。"
+    }
 }

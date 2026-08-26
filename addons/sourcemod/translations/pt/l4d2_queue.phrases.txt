@@ -47,4 +47,9 @@
         "#format"    "{1:N}"
         "pt"         "{blue}{1}{default} está controlando o tank, solicite a sua vaga novamente quando o tank morrer."
     }
+    "SlotClaimLimit"
+    {
+        "#format"    "{1:N}"
+        "pt"         "Você já assumiu a vaga de {blue}{1}{default} vezes demais."
+    }
 }

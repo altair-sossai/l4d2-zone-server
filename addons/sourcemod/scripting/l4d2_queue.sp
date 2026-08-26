@@ -15,20 +15,22 @@
 #define SLOT_TAG "{orange}[%t] {default}%t", "Slot"
 #define QUEUE_TAG "{orange}%t {default}%s", "Queue"
 
-ConVar g_cvDisconnectTimeout;
-ConVar g_cvEndMapDelay;
-ConVar g_cvMinLerp;
-ConVar g_cvMaxLerp;
+ConVar g_cvDisconnectTimeout,
+       g_cvEndMapDelay,
+       g_cvMaxClaims,
+       g_cvMinLerp,
+       g_cvMaxLerp;
 
-bool g_bLerpMonitorIsAvailable = false;
+ArrayList g_aQueue,
+          g_aTeamA,
+          g_aTeamB;
 
-ArrayList g_aQueue;
-ArrayList g_aTeamA;
-ArrayList g_aTeamB;
+int g_iClaims[MAXPLAYERS + 1][MAXPLAYERS + 1];
 
 int g_iWinningTeam = -1;
 
-bool g_bFixingTeams = false,
+bool g_bLerpMonitorIsAvailable = false,
+     g_bFixingTeams = false,
      g_bQueueShown = false,
      g_bMixInProgress = false,
      g_bRoundOver = false;
@@ -54,6 +56,7 @@ public void OnPluginStart()
 
     g_cvDisconnectTimeout = CreateConVar("l4d2_queue_disconnect_timeout", "300", "How many seconds a disconnected player stays in the queue before being removed", FCVAR_NOTIFY, true, 0.0);
     g_cvEndMapDelay = CreateConVar("l4d2_queue_endmap_delay", "8.0", "How many seconds after the map's second round ends before showing the queue to everyone (waits for the MVP/stats to be shown first)", FCVAR_NOTIFY, true, 0.0);
+    g_cvMaxClaims = CreateConVar("l4d2_queue_max_claims", "2", "How many times a player can claim a slot from the same player before the game goes live", FCVAR_NOTIFY, true, 0.0);
 
     g_aQueue = new ArrayList(sizeof(Player));
     g_aTeamA = new ArrayList(ByteCountToCells(64));
@@ -350,6 +353,8 @@ public void OnRoundIsLive()
 {
     g_bFixingTeams = false;
     g_bMixInProgress = false;
+
+    ClearClaims();
 
     if (IsNewGame())
         SnapshotTeams();
@@ -813,13 +818,30 @@ void MovePlayerToTeam(int client, int team)
     }
 }
 
-void ClaimSlot(int client, int bumped, int team)
+bool ClaimSlot(int client, int bumped, int team)
 {
+    if (g_iClaims[client][bumped] >= g_cvMaxClaims.IntValue)
+    {
+        CPrintToChat(client, SLOT_TAG, "SlotClaimLimit", bumped);
+        return false;
+    }
+
     MovePlayerToTeam(bumped, L4D_TEAM_SPECTATOR);
     MovePlayerToTeam(client, team);
 
+    g_iClaims[client][bumped]++;
+
     CPrintToChat(client, SLOT_TAG, "SlotClaimed", bumped);
     CPrintToChat(bumped, SLOT_TAG, "SlotLost", client);
+
+    return true;
+}
+
+void ClearClaims()
+{
+    for (int i = 0; i <= MaxClients; i++)
+        for (int j = 0; j <= MaxClients; j++)
+            g_iClaims[i][j] = 0;
 }
 
 bool MoveToFirstOpenTeam(int client)
