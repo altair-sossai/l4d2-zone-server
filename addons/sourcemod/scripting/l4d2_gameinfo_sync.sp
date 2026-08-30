@@ -15,6 +15,7 @@
 #include <readyup>
 #include <l4d2_boss_percents>
 #include <l4d2_hybrid_scoremod>
+#include <l4d2_skill_detect>
 
 #define GAMEINFO_HTTP_CONNECT_TIMEOUT 3
 #define GAMEINFO_HTTP_TIMEOUT 5
@@ -193,6 +194,189 @@ public void L4D2_OnEndVersusModeRound_Post()
     SendPlayers();
 
     CreateTimer(2.5, L4D2_OnEndVersusModeRound_Post_Timer);
+}
+
+public void OnSkeet(int survivor, int hunter)
+{
+    SendSkeet(survivor, hunter, "Shotgun");
+}
+
+public void OnSkeetMelee(int survivor, int hunter)
+{
+    SendSkeet(survivor, hunter, "Melee");
+}
+
+public void OnSkeetGL(int survivor, int hunter)
+{
+    SendSkeet(survivor, hunter, "Grenade");
+}
+
+public void OnSkeetSniper(int survivor, int hunter)
+{
+    SendSkeet(survivor, hunter, "Sniper");
+}
+
+public void OnSkeetHurt(int survivor, int hunter, int damage, bool isOverkill)
+{
+    SendSkeetHurt(survivor, hunter, damage, isOverkill, "Shotgun");
+}
+
+public void OnSkeetMeleeHurt(int survivor, int hunter, int damage, bool isOverkill)
+{
+    SendSkeetHurt(survivor, hunter, damage, isOverkill, "Melee");
+}
+
+public void OnSkeetSniperHurt(int survivor, int hunter, int damage, bool isOverkill)
+{
+    SendSkeetHurt(survivor, hunter, damage, isOverkill, "Sniper");
+}
+
+public void OnHunterDeadstop(int survivor, int hunter)
+{
+    JSONObject event = BuildEvent("hunterDeadstop", survivor);
+    SetPlayer(event, "hunter", hunter);
+    SendEvent(event);
+}
+
+public void OnBoomerPop(int survivor, int boomer, int shoveCount, float timeAlive)
+{
+    JSONObject event = BuildEvent("boomerPop", survivor);
+    SetPlayer(event, "boomer", boomer);
+    event.SetInt("shoveCount", shoveCount);
+    event.SetFloat("timeAlive", timeAlive);
+    SendEvent(event);
+}
+
+public void OnChargerLevel(int survivor, int charger)
+{
+    JSONObject event = BuildEvent("chargerLevel", survivor);
+    SetPlayer(event, "charger", charger);
+    SendEvent(event);
+}
+
+public void OnChargerLevelHurt(int survivor, int charger, int damage)
+{
+    JSONObject event = BuildEvent("chargerLevelHurt", survivor);
+    SetPlayer(event, "charger", charger);
+    event.SetInt("damage", damage);
+    SendEvent(event);
+}
+
+public void OnWitchCrown(int survivor, int damage)
+{
+    JSONObject event = BuildEvent("witchCrown", survivor);
+    event.SetInt("damage", damage);
+    SendEvent(event);
+}
+
+public void OnWitchCrownHurt(int survivor, int damage, int chipdamage)
+{
+    JSONObject event = BuildEvent("witchCrownHurt", survivor);
+    event.SetInt("damage", damage);
+    event.SetInt("chipDamage", chipdamage);
+    SendEvent(event);
+}
+
+public void OnTongueCut(int survivor, int smoker)
+{
+    JSONObject event = BuildEvent("tongueCut", survivor);
+    SetPlayer(event, "smoker", smoker);
+    SendEvent(event);
+}
+
+public void OnSmokerSelfClear(int survivor, int smoker, bool withShove)
+{
+    JSONObject event = BuildEvent("smokerSelfClear", survivor);
+    SetPlayer(event, "smoker", smoker);
+    event.SetBool("withShove", withShove);
+    SendEvent(event);
+}
+
+public void OnTankRockSkeeted(int survivor, int tank)
+{
+    JSONObject event = BuildEvent("tankRockSkeeted", survivor);
+    SetPlayer(event, "tank", tank);
+    SendEvent(event);
+}
+
+public void OnTankRockEaten(int tank, int survivor)
+{
+    JSONObject event = BuildEvent("tankRockEaten", tank);
+    SetPlayer(event, "victim", survivor);
+    SendEvent(event);
+}
+
+public void OnHunterHighPounce(int hunter, int survivor, int actualDamage, float calculatedDamage, float height, bool reportedHigh)
+{
+    JSONObject event = BuildEvent("hunterHighPounce", hunter);
+    SetPlayer(event, "victim", survivor);
+    event.SetInt("damage", actualDamage);
+    event.SetFloat("calculatedDamage", calculatedDamage);
+    event.SetFloat("height", height);
+    event.SetBool("reportedHigh", reportedHigh);
+    SendEvent(event);
+}
+
+public void OnJockeyHighPounce(int survivor, int jockey, float height, bool reportedHigh)
+{
+    JSONObject event = BuildEvent("jockeyHighPounce", jockey);
+    SetPlayer(event, "victim", survivor);
+    event.SetFloat("height", height);
+    event.SetBool("reportedHigh", reportedHigh);
+    SendEvent(event);
+}
+
+public void OnDeathCharge(int charger, int survivor, float height, float distance, bool wasCarried)
+{
+    JSONObject event = BuildEvent("deathCharge", charger);
+    SetPlayer(event, "victim", survivor);
+    event.SetFloat("height", height);
+    event.SetFloat("distance", distance);
+    event.SetBool("wasCarried", wasCarried);
+    SendEvent(event);
+}
+
+public void OnSpecialClear(int clearer, int pinner, int pinvictim, int zombieClass, float timeA, float timeB, bool withShove)
+{
+    JSONObject event = BuildEvent("specialClear", clearer);
+    SetPlayer(event, "pinner", pinner);
+    SetPlayer(event, "pinVictim", pinvictim);
+    event.SetInt("zombieClass", zombieClass);
+    event.SetFloat("timeA", timeA);
+    event.SetFloat("timeB", timeB);
+    event.SetBool("withShove", withShove);
+    SendEvent(event);
+}
+
+public void OnBoomerVomitLanded(int boomer, int amount)
+{
+    JSONObject event = BuildEvent("boomerVomitLanded", boomer);
+    event.SetInt("amount", amount);
+    SendEvent(event);
+}
+
+public void OnSpecialShoved(int survivor, int infected, int zombieClass)
+{
+    JSONObject event = BuildEvent("specialShoved", survivor);
+    SetPlayer(event, "infected", infected);
+    event.SetInt("zombieClass", zombieClass);
+    SendEvent(event);
+}
+
+public void OnBunnyHopStreak(int survivor, int streak, float maxVelocity)
+{
+    JSONObject event = BuildEvent("bunnyHopStreak", survivor);
+    event.SetInt("streak", streak);
+    event.SetFloat("maxVelocity", maxVelocity);
+    SendEvent(event);
+}
+
+public void OnCarAlarmTriggered(int survivor, int infected, CarAlarmTriggerReason reason)
+{
+    JSONObject event = BuildEvent("carAlarmTriggered", survivor);
+    SetPlayer(event, "infected", infected);
+    event.SetInt("reason", view_as<int>(reason));
+    SendEvent(event);
 }
 
 Action Say_Callback(int client, char[] command, int args)
@@ -548,6 +732,38 @@ void SendPlayers()
     request.Put(command, SendPlayersResponse, command);
 }
 
+void SendSkeet(int survivor, int hunter, const char[] skeetType)
+{
+    JSONObject event = BuildEvent("skeet", survivor);
+    SetPlayer(event, "hunter", hunter);
+    event.SetString("skeetType", skeetType);
+    event.SetBool("isTeamSkeet", survivor == -2);
+    SendEvent(event);
+}
+
+void SendSkeetHurt(int survivor, int hunter, int damage, bool isOverkill, const char[] skeetType)
+{
+    JSONObject event = BuildEvent("skeetHurt", survivor);
+    SetPlayer(event, "hunter", hunter);
+    event.SetString("skeetType", skeetType);
+    event.SetInt("damage", damage);
+    event.SetBool("isOverkill", isOverkill);
+    SendEvent(event);
+}
+
+void SendEvent(JSONObject event)
+{
+    if (strlen(g_sUrl) == 0)
+    {
+        delete event;
+        return;
+    }
+
+    HTTPRequest request = BuildHTTPRequest("/api/game-info/events");
+
+    request.Post(event, DoNothing, event);
+}
+
 void CheckForNewExternalMessages()
 {
     if (g_bInTransition || g_bExternalMessagesRequestPending)
@@ -729,6 +945,49 @@ void RefreshCredentials()
 void OnCredentialsChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
     RefreshCredentials();
+}
+
+JSONObject BuildEvent(const char[] type, int actor)
+{
+    JSONObject event = new JSONObject();
+    event.SetString("type", type);
+    SetPlayer(event, "actor", actor);
+
+    return event;
+}
+
+void SetPlayer(JSONObject event, const char[] key, int client)
+{
+    JSONObject player = BuildPlayer(client);
+    if (player == null)
+        return;
+
+    event.Set(key, player);
+
+    delete player;
+}
+
+JSONObject BuildPlayer(int client)
+{
+    if (client < 1 || client > MaxClients || !IsClientInGame(client))
+        return null;
+
+    JSONObject player = new JSONObject();
+    bool isBot = IsFakeClient(client);
+
+    char name[MAX_NAME_LENGTH];
+    GetClientName(client, name, sizeof(name));
+    player.SetString("name", name);
+    player.SetBool("isBot", isBot);
+
+    if (!isBot)
+    {
+        char communityId[25];
+        if (GetCommunityId(client, communityId, sizeof(communityId)))
+            player.SetString("communityId", communityId);
+    }
+
+    return player;
 }
 
 HTTPRequest BuildHTTPRequest(char[] path)
