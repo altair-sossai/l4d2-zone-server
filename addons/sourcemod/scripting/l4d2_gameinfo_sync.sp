@@ -337,6 +337,9 @@ public void OnDeathCharge(int charger, int survivor, float height, float distanc
 
 public void OnSpecialClear(int clearer, int pinner, int pinvictim, int zombieClass, float timeA, float timeB, bool withShove)
 {
+    if (clearer == pinvictim)
+        return;
+
     float clearTime = (zombieClass == L4D2Infected_Smoker || zombieClass == L4D2Infected_Charger) ? timeB : timeA;
 
     if (clearTime < 0.0 || clearTime > g_hSpecialClearMaxSeconds.FloatValue)
