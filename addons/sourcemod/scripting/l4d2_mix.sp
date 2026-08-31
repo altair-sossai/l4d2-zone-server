@@ -44,8 +44,7 @@ char g_sCurrentMaxVotedCaptainAuthId[MAX_STR_LEN],
      g_sSurvivorCaptainAuthId[MAX_STR_LEN],
      g_sInfectedCaptainAuthId[MAX_STR_LEN];
 
-bool g_bIsMixAllowed = false,
-     g_bIsPickingCaptain = false;
+bool g_bIsMixAllowed = false;
 
 Handle g_hMixStartedForward,
        g_hMixStoppedForward,
@@ -196,7 +195,6 @@ Action Cmd_MixStart(int client, int args)
         }
 
         g_hCaptainVoteTimer = CreateTimer(11.0, Menu_StateHandler, _, TIMER_REPEAT);
-        g_bIsPickingCaptain = true;
     }
     else if (mixConditions == COND_NEED_MORE_VOTES)
     {
@@ -250,13 +248,12 @@ void StopMix()
     Call_StartForward(g_hMixStoppedForward);
     Call_Finish();
 
-    if (g_bIsPickingCaptain && g_hCaptainVoteTimer != null)
-    {
-        KillTimer(g_hCaptainVoteTimer);
-    }
+    Handle captainVoteTimer = g_hCaptainVoteTimer;
 
     g_hCaptainVoteTimer = null;
-    g_bIsPickingCaptain = false;
+
+    if (captainVoteTimer != null)
+        KillTimer(captainVoteTimer);
 
     g_iMixCallsCount = 0;
 
@@ -437,7 +434,6 @@ Action Menu_StateHandler(Handle timer, any data)
 
         case STATE_PICK_TEAMS:
         {
-            g_bIsPickingCaptain = false;
             g_iSurvivorsPick = GetURandomInt() & 1;
             CreateTimer(1.0, Menu_TeamPickHandler, _, TIMER_REPEAT);
         }
@@ -445,6 +441,9 @@ Action Menu_StateHandler(Handle timer, any data)
 
     if (g_iCurrentState == STATE_NO_MIX || g_iCurrentState == STATE_PICK_TEAMS)
     {
+        if (timer == g_hCaptainVoteTimer)
+            g_hCaptainVoteTimer = null;
+
         return Plugin_Stop; 
     }
     else
