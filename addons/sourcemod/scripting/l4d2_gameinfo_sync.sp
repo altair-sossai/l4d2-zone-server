@@ -35,7 +35,8 @@ ConVar
     g_hConfigurationName,
     g_hVersusBossBuffer,
     g_hRelatedAccountsChat,
-    g_hBoomerVomitMinSurvivors;
+    g_hBoomerVomitMinSurvivors,
+    g_hSpecialClearMaxSeconds;
 
 char
     g_sConfigurationName[64],
@@ -78,6 +79,7 @@ public void OnPluginStart()
     g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
     g_hRelatedAccountsChat = CreateConVar("gameinfo_related_accounts_chat", "1", "Announce related accounts (same IP) in chat", _, true, 0.0, true, 1.0);
     g_hBoomerVomitMinSurvivors = CreateConVar("gameinfo_boomer_vomit_min_survivors", "3", "Minimum number of survivors hit to report a boomer vomit event", _, true, 1.0);
+    g_hSpecialClearMaxSeconds = CreateConVar("gameinfo_special_clear_max_seconds", "1.5", "Maximum clear time in seconds to report a special clear (insta-clear) event", _, true, 0.0);
 
     g_hUrl.AddChangeHook(OnCredentialsChanged);
     g_hSecretKey.AddChangeHook(OnCredentialsChanged);
@@ -91,6 +93,7 @@ public void OnPluginStart()
     HookEvent("player_hurt", PlayerHurt_Event);
     HookEvent("player_death", PlayerDeath_Event, EventHookMode_Post);
     HookEvent("player_disconnect", PlayerDisconnect_Event);
+    HookEvent("player_bot_replace", PlayerBotReplace_Event);
 
     CreateTimer(5.0, SyncData_Timer, _, TIMER_REPEAT);
 
@@ -206,6 +209,9 @@ public void L4D2_OnEndVersusModeRound_Post()
 public void L4D_OnSpawnTank_Post(int client, const float vecPos[3], const float vecAng[3])
 {
     if (g_bInTransition || GetIsInReady())
+        return;
+
+    if (IsFakeClient(client))
         return;
 
     SendTankSpawned(client);
@@ -329,12 +335,16 @@ public void OnDeathCharge(int charger, int survivor, float height, float distanc
 
 public void OnSpecialClear(int clearer, int pinner, int pinvictim, int zombieClass, float timeA, float timeB, bool withShove)
 {
+    float clearTime = (zombieClass == L4D2Infected_Smoker || zombieClass == L4D2Infected_Charger) ? timeB : timeA;
+
+    if (clearTime < 0.0 || clearTime > g_hSpecialClearMaxSeconds.FloatValue)
+        return;
+
     JSONObject event = BuildEvent("specialClear", clearer);
     SetPlayer(event, "pinner", pinner);
     SetPlayer(event, "pinVictim", pinvictim);
     event.SetInt("zombieClass", zombieClass);
-    event.SetFloat("timeA", timeA);
-    event.SetFloat("timeB", timeB);
+    event.SetFloat("clearTime", clearTime);
     event.SetBool("withShove", withShove);
     SendEvent(event);
 }
@@ -440,6 +450,24 @@ void PlayerDeath_Event(Event hEvent, const char[] eName, bool dontBroadcast)
         g_bTankIsDead = true;
         SendTankDied(victim);
     }
+}
+
+void PlayerBotReplace_Event(Event event, const char[] name, bool dontBroadcast)
+{
+    int newTank = GetClientOfUserId(event.GetInt("bot"));
+
+    if (!IsValidClient(newTank))
+        return;
+
+    if (GetClientTeam(newTank) != L4D2Team_Infected)
+        return;
+
+    if (GetEntProp(newTank, Prop_Send, "m_zombieClass") != L4D2Infected_Tank)
+        return;
+
+    int formerTank = GetClientOfUserId(event.GetInt("player"));
+
+    SendTankBecameBot(formerTank);
 }
 
 void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -771,6 +799,15 @@ void SendTankSpawned(int tank)
 void SendTankDied(int tank)
 {
     JSONObject event = BuildEvent("tankDied", tank);
+    SendEvent(event);
+}
+
+void SendTankBecameBot(int formerTank)
+{
+    if (g_bInTransition || GetIsInReady())
+        return;
+
+    JSONObject event = BuildEvent("tankBecameBot", formerTank);
     SendEvent(event);
 }
 
