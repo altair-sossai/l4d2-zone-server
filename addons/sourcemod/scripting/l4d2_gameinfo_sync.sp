@@ -206,15 +206,15 @@ public void L4D2_OnEndVersusModeRound_Post()
     CreateTimer(2.5, L4D2_OnEndVersusModeRound_Post_Timer);
 }
 
-public void L4D_OnSpawnTank_Post(int client, const float vecPos[3], const float vecAng[3])
+public void L4D_OnLeaveStasis(int tank)
 {
     if (g_bInTransition || GetIsInReady())
         return;
 
-    if (IsFakeClient(client))
+    if (IsFakeClient(tank))
         return;
 
-    SendTankSpawned(client);
+    SendTankSpawned(tank);
 }
 
 public void OnSkeet(int survivor, int hunter)
@@ -792,19 +792,28 @@ void SendPause(bool paused)
 
 void SendTankSpawned(int tank)
 {
+    if (!IsValidClient(tank))
+        return;
+
     JSONObject event = BuildEvent("tankSpawned", tank);
     SendEvent(event);
 }
 
 void SendTankDied(int tank)
 {
+    if (g_bInTransition || GetIsInReady())
+        return;
+
+    if (!IsValidClient(tank))
+        return;
+
     JSONObject event = BuildEvent("tankDied", tank);
     SendEvent(event);
 }
 
 void SendTankBecameBot(int formerTank)
 {
-    if (g_bInTransition || GetIsInReady())
+    if (g_bInTransition || g_bRoundOver || GetIsInReady())
         return;
 
     JSONObject event = BuildEvent("tankBecameBot", formerTank);
