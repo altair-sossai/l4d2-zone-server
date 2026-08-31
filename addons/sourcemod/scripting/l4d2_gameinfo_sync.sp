@@ -34,7 +34,8 @@ ConVar
     g_hSecretKey,
     g_hConfigurationName,
     g_hVersusBossBuffer,
-    g_hRelatedAccountsChat;
+    g_hRelatedAccountsChat,
+    g_hBoomerVomitMinSurvivors;
 
 char
     g_sConfigurationName[64],
@@ -76,6 +77,7 @@ public void OnPluginStart()
     g_hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
     g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
     g_hRelatedAccountsChat = CreateConVar("gameinfo_related_accounts_chat", "1", "Announce related accounts (same IP) in chat", _, true, 0.0, true, 1.0);
+    g_hBoomerVomitMinSurvivors = CreateConVar("gameinfo_boomer_vomit_min_survivors", "3", "Minimum number of survivors hit to report a boomer vomit event", _, true, 1.0);
 
     g_hUrl.AddChangeHook(OnCredentialsChanged);
     g_hSecretKey.AddChangeHook(OnCredentialsChanged);
@@ -173,16 +175,20 @@ public void OnRoundIsLive()
     ClearInfectedDamage();
     ClearSurvivorProgress();
     CreateTimer(2.0, OnRoundIsLive_Timer);
+
+    SendRoundLive();
 }
 
 public void OnPause()
 {
     SendRound();
+    SendPause(true);
 }
 
 public void OnUnpause()
 {
     SendRound();
+    SendPause(false);
 }
 
 public void L4D2_OnEndVersusModeRound_Post()
@@ -192,8 +198,17 @@ public void L4D2_OnEndVersusModeRound_Post()
     SendRound();
     SendScoreboard();
     SendPlayers();
+    SendRoundEnded();
 
     CreateTimer(2.5, L4D2_OnEndVersusModeRound_Post_Timer);
+}
+
+public void L4D_OnSpawnTank_Post(int client, const float vecPos[3], const float vecAng[3])
+{
+    if (g_bInTransition || GetIsInReady())
+        return;
+
+    SendTankSpawned(client);
 }
 
 public void OnSkeet(int survivor, int hunter)
@@ -229,22 +244,6 @@ public void OnSkeetMeleeHurt(int survivor, int hunter, int damage, bool isOverki
 public void OnSkeetSniperHurt(int survivor, int hunter, int damage, bool isOverkill)
 {
     SendSkeetHurt(survivor, hunter, damage, isOverkill, "Sniper");
-}
-
-public void OnHunterDeadstop(int survivor, int hunter)
-{
-    JSONObject event = BuildEvent("hunterDeadstop", survivor);
-    SetPlayer(event, "hunter", hunter);
-    SendEvent(event);
-}
-
-public void OnBoomerPop(int survivor, int boomer, int shoveCount, float timeAlive)
-{
-    JSONObject event = BuildEvent("boomerPop", survivor);
-    SetPlayer(event, "boomer", boomer);
-    event.SetInt("shoveCount", shoveCount);
-    event.SetFloat("timeAlive", timeAlive);
-    SendEvent(event);
 }
 
 public void OnChargerLevel(int survivor, int charger)
@@ -308,21 +307,13 @@ public void OnTankRockEaten(int tank, int survivor)
 
 public void OnHunterHighPounce(int hunter, int survivor, int actualDamage, float calculatedDamage, float height, bool reportedHigh)
 {
+    if (!reportedHigh)
+        return;
+
     JSONObject event = BuildEvent("hunterHighPounce", hunter);
     SetPlayer(event, "victim", survivor);
-    event.SetInt("damage", actualDamage);
     event.SetFloat("calculatedDamage", calculatedDamage);
     event.SetFloat("height", height);
-    event.SetBool("reportedHigh", reportedHigh);
-    SendEvent(event);
-}
-
-public void OnJockeyHighPounce(int survivor, int jockey, float height, bool reportedHigh)
-{
-    JSONObject event = BuildEvent("jockeyHighPounce", jockey);
-    SetPlayer(event, "victim", survivor);
-    event.SetFloat("height", height);
-    event.SetBool("reportedHigh", reportedHigh);
     SendEvent(event);
 }
 
@@ -350,24 +341,11 @@ public void OnSpecialClear(int clearer, int pinner, int pinvictim, int zombieCla
 
 public void OnBoomerVomitLanded(int boomer, int amount)
 {
+    if (amount < g_hBoomerVomitMinSurvivors.IntValue)
+        return;
+
     JSONObject event = BuildEvent("boomerVomitLanded", boomer);
     event.SetInt("amount", amount);
-    SendEvent(event);
-}
-
-public void OnSpecialShoved(int survivor, int infected, int zombieClass)
-{
-    JSONObject event = BuildEvent("specialShoved", survivor);
-    SetPlayer(event, "infected", infected);
-    event.SetInt("zombieClass", zombieClass);
-    SendEvent(event);
-}
-
-public void OnBunnyHopStreak(int survivor, int streak, float maxVelocity)
-{
-    JSONObject event = BuildEvent("bunnyHopStreak", survivor);
-    event.SetInt("streak", streak);
-    event.SetFloat("maxVelocity", maxVelocity);
     SendEvent(event);
 }
 
@@ -444,15 +422,24 @@ void PlayerHurt_Event(Handle event, const char[] name, bool dontBroadcast)
 
 void PlayerDeath_Event(Event hEvent, const char[] eName, bool dontBroadcast)
 {
-    if (g_bTankIsDead)
-        return;
-
     int victim = GetClientOfUserId(hEvent.GetInt("userid"));
 
-    if (!IsValidClient(victim) || GetClientTeam(victim) != L4D2Team_Infected)
+    if (!IsValidClient(victim))
         return;
 
-    g_bTankIsDead = GetEntProp(victim, Prop_Send, "m_zombieClass") == L4D2Infected_Tank;
+    int team = GetClientTeam(victim);
+
+    if (team == L4D2Team_Survivor)
+    {
+        SendPlayerDeath(victim);
+        return;
+    }
+
+    if (team == L4D2Team_Infected && !g_bTankIsDead && GetEntProp(victim, Prop_Send, "m_zombieClass") == L4D2Infected_Tank)
+    {
+        g_bTankIsDead = true;
+        SendTankDied(victim);
+    }
 }
 
 void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -748,6 +735,51 @@ void SendSkeetHurt(int survivor, int hunter, int damage, bool isOverkill, const 
     event.SetString("skeetType", skeetType);
     event.SetInt("damage", damage);
     event.SetBool("isOverkill", isOverkill);
+    SendEvent(event);
+}
+
+void SendRoundLive()
+{
+    JSONObject event = BuildEvent("roundLive", 0);
+    event.SetBool("secondHalf", GameRules_GetProp("m_bInSecondHalfOfRound") ? true : false);
+    SendEvent(event);
+}
+
+void SendRoundEnded()
+{
+    int flipped = GameRules_GetProp("m_bAreTeamsFlipped");
+
+    JSONObject event = BuildEvent("roundEnded", 0);
+    event.SetInt("survivorScore", GetTeamTotalScore(flipped ? 1 : 0, flipped ? 2 : 1));
+    event.SetInt("infectedScore", GetTeamTotalScore(flipped ? 0 : 1, flipped ? 1 : 2));
+    SendEvent(event);
+}
+
+void SendPause(bool paused)
+{
+    JSONObject event = BuildEvent("pause", 0);
+    event.SetBool("paused", paused);
+    SendEvent(event);
+}
+
+void SendTankSpawned(int tank)
+{
+    JSONObject event = BuildEvent("tankSpawned", tank);
+    SendEvent(event);
+}
+
+void SendTankDied(int tank)
+{
+    JSONObject event = BuildEvent("tankDied", tank);
+    SendEvent(event);
+}
+
+void SendPlayerDeath(int survivor)
+{
+    if (g_bInTransition || GetIsInReady())
+        return;
+
+    JSONObject event = BuildEvent("playerDeath", survivor);
     SendEvent(event);
 }
 
