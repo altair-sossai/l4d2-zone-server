@@ -211,8 +211,10 @@ public void L4D_OnSpawnTank_Post(int client, const float vecPos[3], const float 
     if (g_bInTransition || GetIsInReady())
         return;
 
-    if (IsFakeClient(client))
+    if (!IsValidClient(client))
         return;
+
+    g_bTankIsDead = false;
 
     SendTankSpawned(client);
 }
