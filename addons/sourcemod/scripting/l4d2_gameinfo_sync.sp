@@ -206,15 +206,15 @@ public void L4D2_OnEndVersusModeRound_Post()
     CreateTimer(2.5, L4D2_OnEndVersusModeRound_Post_Timer);
 }
 
-public void L4D_OnLeaveStasis(int tank)
+public void L4D_OnSpawnTank_Post(int client, const float vecPos[3], const float vecAng[3])
 {
     if (g_bInTransition || GetIsInReady())
         return;
 
-    if (IsFakeClient(tank))
+    if (IsFakeClient(client))
         return;
 
-    SendTankSpawned(tank);
+    SendTankSpawned(client);
 }
 
 public void OnSkeet(int survivor, int hunter)
