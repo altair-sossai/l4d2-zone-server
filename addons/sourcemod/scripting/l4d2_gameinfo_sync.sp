@@ -194,6 +194,16 @@ public void OnUnpause()
     SendPause(false);
 }
 
+public void OnMixStarted()
+{
+    SendMixStarted();
+}
+
+public void OnMixStopped()
+{
+    SendMixStopped();
+}
+
 public void L4D2_OnEndVersusModeRound_Post()
 {
     g_bRoundOver = true;
@@ -775,6 +785,18 @@ void SendRoundLive()
 {
     JSONObject event = BuildEvent("roundLive", 0);
     event.SetBool("secondHalf", GameRules_GetProp("m_bInSecondHalfOfRound") ? true : false);
+    SendEvent(event);
+}
+
+void SendMixStarted()
+{
+    JSONObject event = BuildEvent("mixStarted", 0);
+    SendEvent(event);
+}
+
+void SendMixStopped()
+{
+    JSONObject event = BuildEvent("mixStopped", 0);
     SendEvent(event);
 }
 
