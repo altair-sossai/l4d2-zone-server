@@ -199,11 +199,6 @@ public void OnMixStarted()
     SendMixStarted();
 }
 
-public void OnMixStopped()
-{
-    SendMixStopped();
-}
-
 public void L4D2_OnEndVersusModeRound_Post()
 {
     g_bRoundOver = true;
@@ -794,11 +789,6 @@ void SendMixStarted()
     SendEvent(event);
 }
 
-void SendMixStopped()
-{
-    JSONObject event = BuildEvent("mixStopped", 0);
-    SendEvent(event);
-}
 
 void SendRoundEnded()
 {
