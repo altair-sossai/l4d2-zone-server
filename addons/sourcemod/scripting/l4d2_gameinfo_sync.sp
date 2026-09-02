@@ -35,8 +35,7 @@ ConVar
     g_hConfigurationName,
     g_hVersusBossBuffer,
     g_hRelatedAccountsChat,
-    g_hBoomerVomitMinSurvivors,
-    g_hSpecialClearMaxSeconds;
+    g_hBoomerVomitMinSurvivors;
 
 char
     g_sConfigurationName[64],
@@ -79,7 +78,6 @@ public void OnPluginStart()
     g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
     g_hRelatedAccountsChat = CreateConVar("gameinfo_related_accounts_chat", "1", "Announce related accounts (same IP) in chat", _, true, 0.0, true, 1.0);
     g_hBoomerVomitMinSurvivors = CreateConVar("gameinfo_boomer_vomit_min_survivors", "3", "Minimum number of survivors hit to report a boomer vomit event", _, true, 1.0);
-    g_hSpecialClearMaxSeconds = CreateConVar("gameinfo_special_clear_max_seconds", "1.5", "Maximum clear time in seconds to report a special clear (insta-clear) event", _, true, 0.0);
 
     g_hUrl.AddChangeHook(OnCredentialsChanged);
     g_hSecretKey.AddChangeHook(OnCredentialsChanged);
@@ -296,14 +294,6 @@ public void OnTongueCut(int survivor, int smoker)
     SendEvent(event);
 }
 
-public void OnSmokerSelfClear(int survivor, int smoker, bool withShove)
-{
-    JSONObject event = BuildEvent("smokerSelfClear", survivor);
-    SetPlayer(event, "smoker", smoker);
-    event.SetBool("withShove", withShove);
-    SendEvent(event);
-}
-
 public void OnTankRockSkeeted(int survivor, int tank)
 {
     JSONObject event = BuildEvent("tankRockSkeeted", survivor);
@@ -337,25 +327,6 @@ public void OnDeathCharge(int charger, int survivor, float height, float distanc
     event.SetFloat("height", height);
     event.SetFloat("distance", distance);
     event.SetBool("wasCarried", wasCarried);
-    SendEvent(event);
-}
-
-public void OnSpecialClear(int clearer, int pinner, int pinvictim, int zombieClass, float timeA, float timeB, bool withShove)
-{
-    if (clearer == pinvictim)
-        return;
-
-    float clearTime = (zombieClass == L4D2Infected_Smoker || zombieClass == L4D2Infected_Charger) ? timeB : timeA;
-
-    if (clearTime < 0.0 || clearTime > g_hSpecialClearMaxSeconds.FloatValue)
-        return;
-
-    JSONObject event = BuildEvent("specialClear", clearer);
-    SetPlayer(event, "pinner", pinner);
-    SetPlayer(event, "pinVictim", pinvictim);
-    event.SetInt("zombieClass", zombieClass);
-    event.SetFloat("clearTime", clearTime);
-    event.SetBool("withShove", withShove);
     SendEvent(event);
 }
 
