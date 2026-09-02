@@ -59,10 +59,11 @@ bool
     g_bExternalMessagesRequestPending = false,
     g_bServerCommandsRequestPending = false;
 
-int 
+int
     g_iInfectedDamage[MAXPLAYERS + 1],
     g_iTankPercent,
-    g_iWitchPercent;
+    g_iWitchPercent,
+    g_iTankController = 0;
 
 float
     g_fSurvivorProgress[MAXPLAYERS + 1],
@@ -92,6 +93,7 @@ public void OnPluginStart()
     HookEvent("player_death", PlayerDeath_Event, EventHookMode_Post);
     HookEvent("player_disconnect", PlayerDisconnect_Event);
     HookEvent("player_bot_replace", PlayerBotReplace_Event);
+    HookEvent("bot_player_replace", BotPlayerReplace_Event);
 
     CreateTimer(5.0, SyncData_Timer, _, TIMER_REPEAT);
 
@@ -172,6 +174,7 @@ public void OnRoundIsLive()
 {
     g_bInTransition = false;
     g_bTankIsDead = false;
+    g_iTankController = 0;
 
     ClearInfectedDamage();
     ClearSurvivorProgress();
@@ -218,8 +221,18 @@ public void L4D_OnSpawnTank_Post(int client, const float vecPos[3], const float 
         return;
 
     g_bTankIsDead = false;
+    g_iTankController = 0;
+}
 
-    SendTankSpawned(client);
+public void L4D_OnReplaceTank(int oldTank, int newTank)
+{
+    if (oldTank == newTank)
+        return;
+
+    if (!IsValidClient(newTank) || IsFakeClient(newTank))
+        return;
+
+    SendTankSpawned(newTank);
 }
 
 public void OnSkeet(int survivor, int hunter)
@@ -429,6 +442,7 @@ void PlayerDeath_Event(Event hEvent, const char[] eName, bool dontBroadcast)
     if (team == L4D2Team_Infected && !g_bTankIsDead && GetEntProp(victim, Prop_Send, "m_zombieClass") == L4D2Infected_Tank)
     {
         g_bTankIsDead = true;
+        g_iTankController = 0;
         SendTankDied(victim);
     }
 }
@@ -448,7 +462,28 @@ void PlayerBotReplace_Event(Event event, const char[] name, bool dontBroadcast)
 
     int formerTank = GetClientOfUserId(event.GetInt("player"));
 
+    if (!IsValidClient(formerTank))
+        return;
+
+    g_iTankController = 0;
+
     SendTankBecameBot(formerTank);
+}
+
+void BotPlayerReplace_Event(Event event, const char[] name, bool dontBroadcast)
+{
+    int newTank = GetClientOfUserId(event.GetInt("player"));
+
+    if (!IsValidClient(newTank))
+        return;
+
+    if (GetClientTeam(newTank) != L4D2Team_Infected)
+        return;
+
+    if (GetEntProp(newTank, Prop_Send, "m_zombieClass") != L4D2Infected_Tank)
+        return;
+
+    SendTankSpawned(newTank);
 }
 
 void PlayerDisconnect_Event(Handle event, const char[] name, bool dontBroadcast)
@@ -780,8 +815,18 @@ void SendPause(bool paused)
 
 void SendTankSpawned(int tank)
 {
+    if (g_bInTransition || GetIsInReady())
+        return;
+
     if (!IsValidClient(tank))
         return;
+
+    int userid = GetClientUserId(tank);
+
+    if (userid == g_iTankController)
+        return;
+
+    g_iTankController = userid;
 
     JSONObject event = BuildEvent("tankSpawned", tank);
     SendEvent(event);
