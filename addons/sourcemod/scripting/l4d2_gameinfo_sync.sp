@@ -272,6 +272,9 @@ public void OnSkeetSniperHurt(int survivor, int hunter, int damage, bool isOverk
 
 public void OnChargerLevel(int survivor, int charger)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("chargerLevel", survivor);
     SetPlayer(event, "charger", charger);
     SendEvent(event);
@@ -279,6 +282,9 @@ public void OnChargerLevel(int survivor, int charger)
 
 public void OnChargerLevelHurt(int survivor, int charger, int damage)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("chargerLevelHurt", survivor);
     SetPlayer(event, "charger", charger);
     event.SetInt("damage", damage);
@@ -287,6 +293,9 @@ public void OnChargerLevelHurt(int survivor, int charger, int damage)
 
 public void OnWitchCrown(int survivor, int damage)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("witchCrown", survivor);
     event.SetInt("damage", damage);
     SendEvent(event);
@@ -294,6 +303,9 @@ public void OnWitchCrown(int survivor, int damage)
 
 public void OnWitchCrownHurt(int survivor, int damage, int chipdamage)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("witchCrownHurt", survivor);
     event.SetInt("damage", damage);
     event.SetInt("chipDamage", chipdamage);
@@ -302,6 +314,9 @@ public void OnWitchCrownHurt(int survivor, int damage, int chipdamage)
 
 public void OnTongueCut(int survivor, int smoker)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("tongueCut", survivor);
     SetPlayer(event, "smoker", smoker);
     SendEvent(event);
@@ -309,6 +324,9 @@ public void OnTongueCut(int survivor, int smoker)
 
 public void OnTankRockSkeeted(int survivor, int tank)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("tankRockSkeeted", survivor);
     SetPlayer(event, "tank", tank);
     SendEvent(event);
@@ -355,6 +373,9 @@ public void OnBoomerVomitLanded(int boomer, int amount)
 
 public void OnCarAlarmTriggered(int survivor, int infected, CarAlarmTriggerReason reason)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("carAlarmTriggered", survivor);
     SetPlayer(event, "infected", infected);
     event.SetInt("reason", view_as<int>(reason));
@@ -765,15 +786,23 @@ void SendPlayers()
 
 void SendSkeet(int survivor, int hunter, const char[] skeetType)
 {
+    bool isTeamSkeet = survivor == -2;
+
+    if (!isTeamSkeet && !IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("skeet", survivor);
     SetPlayer(event, "hunter", hunter);
     event.SetString("skeetType", skeetType);
-    event.SetBool("isTeamSkeet", survivor == -2);
+    event.SetBool("isTeamSkeet", isTeamSkeet);
     SendEvent(event);
 }
 
 void SendSkeetHurt(int survivor, int hunter, int damage, bool isOverkill, const char[] skeetType)
 {
+    if (!IsValidClient(survivor))
+        return;
+
     JSONObject event = BuildEvent("skeetHurt", survivor);
     SetPlayer(event, "hunter", hunter);
     event.SetString("skeetType", skeetType);
