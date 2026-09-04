@@ -60,6 +60,15 @@
     {
         "zho"    "兩支隊伍必須滿員才能開始 Mix。"
     }
+    "SameCaptainTwice"
+    {
+        "zho"    "你不能讓同一名玩家同時擔任兩位隊長。"
+    }
+    "CaptainNotPlaying"
+    {
+        "#format"    "{1:N}"
+        "zho"        "{lightgreen}{1} {default}不在隊伍中。請從隊伍中選擇一名玩家。"
+    }
     "MenuPickFirstCaptain"
     {
         "zho"    "Mix Manager - 選擇第一位隊長"
@@ -101,15 +110,30 @@
     {
         "zho"    "找不到隊長。Mix 已取消。"
     }
+    "CaptainVoteCast"
+    {
+        "#format"    "{1:N},{2:N}"
+        "zho"        "{lightgreen}{1} {default}投票給了 {lightgreen}{2}{default}。"
+    }
     "FirstCaptain"
     {
         "#format"    "{1:N},{2:d}"
         "zho"        "第一位隊長：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
     }
+    "FirstCaptainNoVotes"
+    {
+        "#format"    "{1:N}"
+        "zho"        "第一位隊長：{lightgreen}{1}{default}。"
+    }
     "SecondCaptain"
     {
         "#format"    "{1:N},{2:d}"
         "zho"        "第二位隊長：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
+    }
+    "SecondCaptainNoVotes"
+    {
+        "#format"    "{1:N}"
+        "zho"        "第二位隊長：{lightgreen}{1}{default}。"
     }
     "PickedSurvivors"
     {

@@ -60,6 +60,15 @@
     {
         "pt"    "As duas equipes precisam estar completas para iniciar um mix."
     }
+    "SameCaptainTwice"
+    {
+        "pt"    "Você não pode escolher o mesmo jogador como os dois capitães."
+    }
+    "CaptainNotPlaying"
+    {
+        "#format"    "{1:N}"
+        "pt"         "{lightgreen}{1} {default}não está em uma equipe. Escolha um jogador das equipes."
+    }
     "MenuPickFirstCaptain"
     {
         "pt"    "Mix Manager - Escolha o primeiro capitão"
@@ -101,15 +110,30 @@
     {
         "pt"    "O capitão não foi encontrado. Mix cancelado."
     }
+    "CaptainVoteCast"
+    {
+        "#format"    "{1:N},{2:N}"
+        "pt"         "{lightgreen}{1} {default}votou em {lightgreen}{2}{default}."
+    }
     "FirstCaptain"
     {
         "#format"    "{1:N},{2:d}"
         "pt"         "Primeiro capitão: {lightgreen}{1}{default} ({olive}votos: {2}{default})."
     }
+    "FirstCaptainNoVotes"
+    {
+        "#format"    "{1:N}"
+        "pt"         "Primeiro capitão: {lightgreen}{1}{default}."
+    }
     "SecondCaptain"
     {
         "#format"    "{1:N},{2:d}"
         "pt"         "Segundo capitão: {lightgreen}{1}{default} ({olive}votos: {2}{default})."
+    }
+    "SecondCaptainNoVotes"
+    {
+        "#format"    "{1:N}"
+        "pt"         "Segundo capitão: {lightgreen}{1}{default}."
     }
     "PickedSurvivors"
     {

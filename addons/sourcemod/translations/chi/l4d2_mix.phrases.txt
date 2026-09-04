@@ -60,6 +60,15 @@
     {
         "chi"    "两支队伍必须满员才能开始 Mix。"
     }
+    "SameCaptainTwice"
+    {
+        "chi"    "你不能让同一名玩家同时担任两位队长。"
+    }
+    "CaptainNotPlaying"
+    {
+        "#format"    "{1:N}"
+        "chi"        "{lightgreen}{1} {default}不在队伍中。请从队伍中选择一名玩家。"
+    }
     "MenuPickFirstCaptain"
     {
         "chi"    "Mix Manager - 选择第一位队长"
@@ -101,15 +110,30 @@
     {
         "chi"    "未找到队长。Mix 已取消。"
     }
+    "CaptainVoteCast"
+    {
+        "#format"    "{1:N},{2:N}"
+        "chi"        "{lightgreen}{1} {default}投票给了 {lightgreen}{2}{default}。"
+    }
     "FirstCaptain"
     {
         "#format"    "{1:N},{2:d}"
         "chi"        "第一位队长：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
     }
+    "FirstCaptainNoVotes"
+    {
+        "#format"    "{1:N}"
+        "chi"        "第一位队长：{lightgreen}{1}{default}。"
+    }
     "SecondCaptain"
     {
         "#format"    "{1:N},{2:d}"
         "chi"        "第二位队长：{lightgreen}{1}{default}（{olive}{2} 票{default}）。"
+    }
+    "SecondCaptainNoVotes"
+    {
+        "#format"    "{1:N}"
+        "chi"        "第二位队长：{lightgreen}{1}{default}。"
     }
     "PickedSurvivors"
     {

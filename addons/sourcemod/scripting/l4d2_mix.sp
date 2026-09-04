@@ -155,6 +155,57 @@ Action Cmd_MixStart(int client, int args)
         return Plugin_Handled;
     } 
     
+    if (args >= 1 && GetAdminFlag(GetUserAdmin(client), Admin_Changemap))
+    {
+        char survivorAuthId[MAX_STR_LEN];
+        char infectedAuthId[MAX_STR_LEN];
+
+        if (!ResolveCaptainByName(client, 1, survivorAuthId, MAX_STR_LEN))
+        {
+            return Plugin_Handled;
+        }
+
+        bool hasSecondCaptain = args >= 2;
+
+        if (hasSecondCaptain)
+        {
+            if (!ResolveCaptainByName(client, 2, infectedAuthId, MAX_STR_LEN))
+            {
+                return Plugin_Handled;
+            }
+
+            if (StrEqual(survivorAuthId, infectedAuthId))
+            {
+                CPrintToChat(client, "%t %t", "MixTag", "SameCaptainTwice");
+                return Plugin_Handled;
+            }
+        }
+
+        if (!SavePlayers())
+        {
+            CPrintToChat(client, "%t %t", "MixTag", "JoinTeams");
+            return Plugin_Handled;
+        }
+
+        CPrintToChatAll("%t %t", "MixTag", "StartedByAdmin", client);
+
+        BeginMix();
+
+        if (AssignFirstCaptain(survivorAuthId, 0))
+        {
+            if (hasSecondCaptain)
+            {
+                AssignSecondCaptain(infectedAuthId, 0);
+            }
+            else
+            {
+                StartCaptainVote();
+            }
+        }
+
+        return Plugin_Handled;
+    }
+
     if (GetClientTeam(client) == L4D2Team_Spectator && !GetAdminFlag(GetUserAdmin(client), Admin_Changemap))
     {
         CPrintToChat(client, "%t %t", "MixTag", "SpectatorCannotStart");
@@ -175,26 +226,8 @@ Action Cmd_MixStart(int client, int args)
             CPrintToChatAll("%t %t", "MixTag", "StartedByVote");
         }
 
-        g_iCurrentState = STATE_FIRST_CAPT;
-        StartMix();
-
-        g_smSwapWhitelist.Clear();
-        SwapAllPlayersToSpec();
-
-        // Initialise values
-        g_iMixCallsCount = 0;
-        g_smVoteResults.Clear();
-        g_iMaxVoteCount = 0;
-        strcopy(g_sCurrentMaxVotedCaptainAuthId, MAX_STR_LEN, " ");
-        g_iPickCount = 0;
-
-        if (Menu_Initialise())
-        {
-            Menu_AddAllSpectators();
-            Menu_DisplayToAllSpecs();
-        }
-
-        g_hCaptainVoteTimer = CreateTimer(11.0, Menu_StateHandler, _, TIMER_REPEAT);
+        BeginMix();
+        StartCaptainVote();
     }
     else if (mixConditions == COND_NEED_MORE_VOTES)
     {
@@ -226,9 +259,56 @@ Action Cmd_MixStop(int client, int args)
     return Plugin_Handled;
 }
 
+bool ResolveCaptainByName(int client, int argIndex, char[] authId, int maxlen)
+{
+    char name[MAX_STR_LEN];
+    GetCmdArg(argIndex, name, sizeof(name));
+
+    int target = FindTarget(client, name, true, false);
+
+    if (target <= 0)
+        return false;
+
+    if (!IsSurvivor(target) && !IsInfected(target))
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "CaptainNotPlaying", target);
+        return false;
+    }
+
+    GetClientAuthId(target, AuthId_SteamID64, authId, maxlen);
+
+    return true;
+}
+
 /* =============================================================================
  * Mix start / stop
  * ========================================================================== */
+
+void BeginMix()
+{
+    g_iCurrentState = STATE_FIRST_CAPT;
+    StartMix();
+
+    g_smSwapWhitelist.Clear();
+    SwapAllPlayersToSpec();
+
+    g_iMixCallsCount = 0;
+    g_smVoteResults.Clear();
+    g_iMaxVoteCount = 0;
+    strcopy(g_sCurrentMaxVotedCaptainAuthId, MAX_STR_LEN, " ");
+    g_iPickCount = 0;
+}
+
+void StartCaptainVote()
+{
+    if (Menu_Initialise())
+    {
+        Menu_AddAllSpectators();
+        Menu_DisplayToAllSpecs();
+    }
+
+    g_hCaptainVoteTimer = CreateTimer(11.0, Menu_StateHandler, _, TIMER_REPEAT);
+}
 
 void StartMix()
 {
@@ -380,6 +460,35 @@ bool SavePlayers()
  * Captain & team picking (state machine)
  * ========================================================================== */
 
+bool AssignFirstCaptain(const char[] authId, int numVotes)
+{
+    if (SwapPlayerToTeam(authId, L4D2Team_Survivor, numVotes))
+    {
+        strcopy(g_sSurvivorCaptainAuthId, MAX_STR_LEN, authId);
+        g_iCurrentState = STATE_SECOND_CAPT;
+        return true;
+    }
+
+    CPrintToChatAll("%t %t", "MixTag", "FirstCaptainNotFound");
+    StopMix();
+    return false;
+}
+
+bool AssignSecondCaptain(const char[] authId, int numVotes)
+{
+    if (SwapPlayerToTeam(authId, L4D2Team_Infected, numVotes))
+    {
+        strcopy(g_sInfectedCaptainAuthId, MAX_STR_LEN, authId);
+        g_iCurrentState = STATE_PICK_TEAMS;
+        CreateTimer(0.5, Menu_StateHandler);
+        return true;
+    }
+
+    CPrintToChatAll("%t %t", "MixTag", "SecondCaptainNotFound");
+    StopMix();
+    return false;
+}
+
 Action Menu_StateHandler(Handle timer, any data)
 {
     switch(g_iCurrentState)
@@ -389,11 +498,9 @@ Action Menu_StateHandler(Handle timer, any data)
             int numVotes = 0;
             g_smVoteResults.GetValue(g_sCurrentMaxVotedCaptainAuthId, numVotes);
             g_smVoteResults.Clear();
-           
-            if (SwapPlayerToTeam(g_sCurrentMaxVotedCaptainAuthId, L4D2Team_Survivor, numVotes))
+
+            if (AssignFirstCaptain(g_sCurrentMaxVotedCaptainAuthId, numVotes))
             {
-                strcopy(g_sSurvivorCaptainAuthId, MAX_STR_LEN, g_sCurrentMaxVotedCaptainAuthId);
-                g_iCurrentState = STATE_SECOND_CAPT;
                 g_iMaxVoteCount = 0;
 
                 if (Menu_Initialise())
@@ -401,11 +508,6 @@ Action Menu_StateHandler(Handle timer, any data)
                     Menu_AddAllSpectators();
                     Menu_DisplayToAllSpecs();
                 }
-            }
-            else
-            {
-                CPrintToChatAll("%t %t", "MixTag", "FirstCaptainNotFound");
-                StopMix();
             }
 
             strcopy(g_sCurrentMaxVotedCaptainAuthId, MAX_STR_LEN, " ");
@@ -417,17 +519,7 @@ Action Menu_StateHandler(Handle timer, any data)
             g_smVoteResults.GetValue(g_sCurrentMaxVotedCaptainAuthId, numVotes);
             g_smVoteResults.Clear();
 
-            if (SwapPlayerToTeam(g_sCurrentMaxVotedCaptainAuthId, L4D2Team_Infected, numVotes))
-            {
-                strcopy(g_sInfectedCaptainAuthId, MAX_STR_LEN, g_sCurrentMaxVotedCaptainAuthId);
-                g_iCurrentState = STATE_PICK_TEAMS;
-                CreateTimer(0.5, Menu_StateHandler); 
-            }
-            else
-            {
-                CPrintToChatAll("%t %t", "MixTag", "SecondCaptainNotFound");
-                StopMix();
-            }
+            AssignSecondCaptain(g_sCurrentMaxVotedCaptainAuthId, numVotes);
 
             strcopy(g_sCurrentMaxVotedCaptainAuthId, MAX_STR_LEN, " ");
         }
@@ -475,7 +567,16 @@ Action Menu_TeamPickHandler(Handle timer)
             {
                 if (GetSpectatorsCount() > 0)
                 {
-                    g_mMixMenu.Display(captain, 1);
+                    if (g_mMixMenu.ItemCount == 1)
+                    {
+                        char lastAuthId[MAX_STR_LEN];
+                        g_mMixMenu.GetItem(0, lastAuthId, MAX_STR_LEN);
+                        ProcessTeamPick(captain, lastAuthId);
+                    }
+                    else
+                    {
+                        g_mMixMenu.Display(captain, 1);
+                    }
                 }
                 else
                 {
@@ -495,6 +596,39 @@ Action Menu_TeamPickHandler(Handle timer)
         }
     }
     return Plugin_Stop;
+}
+
+void ProcessTeamPick(int captain, const char[] authId)
+{
+    int team = GetClientTeamEx(captain);
+
+    if (team == L4D2Team_Spectator || (team == L4D2Team_Infected && g_iSurvivorsPick == 1) || (team == L4D2Team_Survivor && g_iSurvivorsPick == 0))
+    {
+        CPrintToChatAll("%t %t", "MixTag", "CaptainWrongTeam", captain);
+        StopMix();
+        return;
+    }
+
+    if (SwapPlayerToTeam(authId, team, 0))
+    {
+        int requiredPicks = Slots() - 2;
+        g_iPickCount++;
+        if (g_iPickCount >= requiredPicks)
+        {
+            CPrintToChatAll("%t %t", "MixTag", "TeamsPicked");
+            IncreaseRequiredStartVotes();
+            StopMix();
+        }
+        else if (g_iPickCount != requiredPicks - 2)
+        {
+            g_iSurvivorsPick = g_iSurvivorsPick == 1 ? 0 : 1;
+        }
+    }
+    else
+    {
+        CPrintToChatAll("%t %t", "MixTag", "PickedMemberNotFound");
+        StopMix();
+    }
 }
 
 int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
@@ -525,6 +659,13 @@ int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
             char authId[MAX_STR_LEN];
             menu.GetItem(param2, authId, MAX_STR_LEN);
 
+            int candidate = GetClientFromAuthId(authId);
+
+            if (candidate > 0)
+            {
+                CPrintToChatAll("%t %t", "MixTag", "CaptainVoteCast", param1, candidate);
+            }
+
             int voteCount = 0;
 
             if (!g_smVoteResults.GetValue(authId, voteCount))
@@ -542,39 +683,9 @@ int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
         }
         else if (g_iCurrentState == STATE_PICK_TEAMS)
         {
-            char authId[MAX_STR_LEN]; 
+            char authId[MAX_STR_LEN];
             menu.GetItem(param2, authId, MAX_STR_LEN);
-            int team = GetClientTeamEx(param1);
-
-            if (team == L4D2Team_Spectator || (team == L4D2Team_Infected && g_iSurvivorsPick == 1) || (team == L4D2Team_Survivor && g_iSurvivorsPick == 0))
-            {
-                CPrintToChatAll("%t %t", "MixTag", "CaptainWrongTeam", param1);
-                StopMix();
-            }
-            else
-            {
-               
-                if (SwapPlayerToTeam(authId, team, 0))
-                {
-                    int requiredPicks = Slots() - 2;
-                    g_iPickCount++;
-                    if (g_iPickCount >= requiredPicks)
-                    {
-                        CPrintToChatAll("%t %t", "MixTag", "TeamsPicked");
-                        IncreaseRequiredStartVotes();
-                        StopMix();
-                    }
-                    else if (g_iPickCount != requiredPicks - 2)
-                    {
-                        g_iSurvivorsPick = g_iSurvivorsPick == 1 ? 0 : 1;
-                    } 
-                }
-                else
-                {
-                    CPrintToChatAll("%t %t", "MixTag", "PickedMemberNotFound");
-                    StopMix();
-                }
-            }
+            ProcessTeamPick(param1, authId);
         }
     }
 
@@ -588,6 +699,8 @@ int Menu_MixHandler(Menu menu, MenuAction action, int param1, int param2)
 bool Menu_Initialise()
 {
     if (g_iCurrentState == STATE_NO_MIX) return false;
+
+    delete g_mMixMenu;
 
     g_mMixMenu = new Menu(Menu_MixHandler, MENU_ACTIONS_ALL);
     g_mMixMenu.ExitButton = false;
@@ -802,12 +915,26 @@ bool SwapPlayerToTeam(const char[] authId, int team, int numVotes)
         {
             case STATE_FIRST_CAPT:
             {
-                CPrintToChatAll("%t %t", "MixTag", "FirstCaptain", client, numVotes);
+                if (numVotes > 0)
+                {
+                    CPrintToChatAll("%t %t", "MixTag", "FirstCaptain", client, numVotes);
+                }
+                else
+                {
+                    CPrintToChatAll("%t %t", "MixTag", "FirstCaptainNoVotes", client);
+                }
             }
-            
+
             case STATE_SECOND_CAPT:
             {
-                CPrintToChatAll("%t %t", "MixTag", "SecondCaptain", client, numVotes);
+                if (numVotes > 0)
+                {
+                    CPrintToChatAll("%t %t", "MixTag", "SecondCaptain", client, numVotes);
+                }
+                else
+                {
+                    CPrintToChatAll("%t %t", "MixTag", "SecondCaptainNoVotes", client);
+                }
             }
 
             case STATE_PICK_TEAMS:
