@@ -65,7 +65,6 @@ public void OnPluginStart()
     LoadQueue();
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
-    HookEvent("player_team", PlayerTeam_Event, EventHookMode_Post);
 
     RegConsoleCmd("sm_fila", PrintQueueCmd, "Print the queue");
     RegConsoleCmd("sm_queue", PrintQueueCmd, "Print the queue");
@@ -138,18 +137,6 @@ Action ShowQueueEndMap_Timer(Handle timer)
     return Plugin_Stop;
 }
 
-void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
-{
-    if (!g_bFixingTeams || !IsNewGame())
-        return;
-
-    int client = GetClientOfUserId(event.GetInt("userid"));
-    if (!IsHumanClient(client))
-        return;
-
-    CreateTimer(1.0, FixTeam_Timer);
-}
-
 Action WinningTeam_Timer(Handle timer)
 {
     if (IsNewGame() || !L4D_HasMapStarted())
@@ -169,7 +156,9 @@ Action EnableFixTeam_Timer(Handle timer)
 
     g_bFixingTeams = true;
     FixTeams();
-    CreateTimer(60.0, DisableFixTeam_Timer);
+
+    if (g_bFixingTeams && PlayersInGame() > 0)
+        CreateTimer(30.0, DisableFixTeam_Timer);
 
     return Plugin_Continue;
 }
@@ -178,14 +167,14 @@ Action DisableFixTeam_Timer(Handle timer)
 {
     g_bFixingTeams = false;
 
-    return Plugin_Continue;
+    return Plugin_Stop;
 }
 
 Action FixTeam_Timer(Handle timer)
 {
     FixTeams();
 
-    return Plugin_Continue;
+    return Plugin_Stop;
 }
 
 Action PrintQueueCmd(int client, int args)
@@ -367,9 +356,18 @@ public void OnClientPostAdminCheck(int client)
     Enqueue(client);
 }
 
+public void OnClientPutInServer(int client)
+{
+    if (!g_bFixingTeams || !IsNewGame() || !IsHumanClient(client))
+        return;
+
+    CreateTimer(30.0, DisableFixTeam_Timer);
+    CreateTimer(3.0, FixTeam_Timer);
+}
+
 Action SuggestSlotCommand_Timer(Handle timer)
 {
-    if (!IsInReady() || !IsNewGame() || ConnectedPlayers() <= Slots())
+    if (!IsInReady() || !IsNewGame() || PlayersInGame() <= Slots())
         return Plugin_Stop;
 
     for (int client = 1; client <= MaxClients; client++)
@@ -890,7 +888,7 @@ bool IsSurvivorOrInfected(int team)
     return team == L4D_TEAM_SURVIVOR || team == L4D_TEAM_INFECTED;
 }
 
-int ConnectedPlayers()
+int PlayersInGame()
 {
     int count = 0;
 
