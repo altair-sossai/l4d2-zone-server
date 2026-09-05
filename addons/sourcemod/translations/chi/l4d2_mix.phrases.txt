@@ -69,6 +69,27 @@
         "#format"    "{1:N}"
         "chi"        "{lightgreen}{1} {default}不在队伍中。请从队伍中选择一名玩家。"
     }
+    "MixVoteInProgress"
+    {
+        "chi"    "已经有一个队长投票正在进行中。"
+    }
+    "CaptainVoteTitle"
+    {
+        "#format"    "{1:s},{2:s}"
+        "chi"        "{1} 和 {2} 作为队长？"
+    }
+    "CaptainVotePass"
+    {
+        "chi"    "队长已通过！"
+    }
+    "CaptainVoteFailed"
+    {
+        "chi"    "队长投票未通过。"
+    }
+    "CaptainVotePlayerLeft"
+    {
+        "chi"    "有玩家离开了队伍。Mix 已取消。"
+    }
     "MenuPickFirstCaptain"
     {
         "chi"    "Mix Manager - 选择第一位队长"

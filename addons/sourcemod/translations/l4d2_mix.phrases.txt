@@ -69,6 +69,27 @@
         "#format"    "{1:N}"
         "en"         "{lightgreen}{1} {default}is not on a team. Pick a player from the teams."
     }
+    "MixVoteInProgress"
+    {
+        "en"    "A captain vote is already in progress."
+    }
+    "CaptainVoteTitle"
+    {
+        "#format"    "{1:s},{2:s}"
+        "en"         "{1} and {2} as captains?"
+    }
+    "CaptainVotePass"
+    {
+        "en"    "Captains approved!"
+    }
+    "CaptainVoteFailed"
+    {
+        "en"    "The captain vote did not pass."
+    }
+    "CaptainVotePlayerLeft"
+    {
+        "en"    "A player left the teams. The mix was cancelled."
+    }
     "MenuPickFirstCaptain"
     {
         "en"    "Mix Manager - Pick the first captain"

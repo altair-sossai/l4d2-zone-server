@@ -69,6 +69,27 @@
         "#format"    "{1:N}"
         "es"         "{lightgreen}{1} {default}no está en un equipo. Elige un jugador de los equipos."
     }
+    "MixVoteInProgress"
+    {
+        "es"    "Ya hay una votación de capitanes en curso."
+    }
+    "CaptainVoteTitle"
+    {
+        "#format"    "{1:s},{2:s}"
+        "es"         "¿{1} y {2} como capitanes?"
+    }
+    "CaptainVotePass"
+    {
+        "es"    "¡Capitanes aprobados!"
+    }
+    "CaptainVoteFailed"
+    {
+        "es"    "La votación de capitanes no pasó."
+    }
+    "CaptainVotePlayerLeft"
+    {
+        "es"    "Un jugador salió de los equipos. El mix fue cancelado."
+    }
     "MenuPickFirstCaptain"
     {
         "es"    "Mix Manager - Elige al primer capitán"

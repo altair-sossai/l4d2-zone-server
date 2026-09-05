@@ -69,6 +69,27 @@
         "#format"    "{1:N}"
         "zho"        "{lightgreen}{1} {default}不在隊伍中。請從隊伍中選擇一名玩家。"
     }
+    "MixVoteInProgress"
+    {
+        "zho"    "已經有一個隊長投票正在進行中。"
+    }
+    "CaptainVoteTitle"
+    {
+        "#format"    "{1:s},{2:s}"
+        "zho"        "{1} 和 {2} 作為隊長？"
+    }
+    "CaptainVotePass"
+    {
+        "zho"    "隊長已通過！"
+    }
+    "CaptainVoteFailed"
+    {
+        "zho"    "隊長投票未通過。"
+    }
+    "CaptainVotePlayerLeft"
+    {
+        "zho"    "有玩家離開了隊伍。Mix 已取消。"
+    }
     "MenuPickFirstCaptain"
     {
         "zho"    "Mix Manager - 選擇第一位隊長"
