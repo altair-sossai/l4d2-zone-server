@@ -113,7 +113,7 @@
     "CaptainVoteCast"
     {
         "#format"    "{1:N},{2:N}"
-        "en"         "{lightgreen}{1} {default}voted for {lightgreen}{2}{default}."
+        "en"         "{olive}{1} {default}voted for {lightgreen}{2}{default}."
     }
     "FirstCaptain"
     {

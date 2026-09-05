@@ -113,7 +113,7 @@
     "CaptainVoteCast"
     {
         "#format"    "{1:N},{2:N}"
-        "chi"        "{lightgreen}{1} {default}投票给了 {lightgreen}{2}{default}。"
+        "chi"        "{olive}{1} {default}投票给了 {lightgreen}{2}{default}。"
     }
     "FirstCaptain"
     {
