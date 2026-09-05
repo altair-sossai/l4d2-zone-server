@@ -73,6 +73,11 @@
     {
         "zho"    "已經有一個隊長投票正在進行中。"
     }
+    "CaptainVoteProposed"
+    {
+        "#format"    "{1:N},{2:N},{3:N}"
+        "zho"        "{olive}{1} {default}提議由 {lightgreen}{2}{default} 和 {lightgreen}{3}{default} 擔任隊長。"
+    }
     "CaptainVoteTitle"
     {
         "#format"    "{1:s},{2:s}"

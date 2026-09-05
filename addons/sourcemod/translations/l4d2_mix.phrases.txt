@@ -73,6 +73,11 @@
     {
         "en"    "A captain vote is already in progress."
     }
+    "CaptainVoteProposed"
+    {
+        "#format"    "{1:N},{2:N},{3:N}"
+        "en"         "{olive}{1} {default}proposed {lightgreen}{2}{default} and {lightgreen}{3}{default} as captains."
+    }
     "CaptainVoteTitle"
     {
         "#format"    "{1:s},{2:s}"

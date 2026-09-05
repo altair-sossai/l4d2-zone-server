@@ -384,7 +384,10 @@ void StartCaptainProposalVote(int client, const char[] survivorAuthId, const cha
         CloseHandle(g_hMixVote);
         g_hMixVote = null;
         ResetMixVote();
+        return;
     }
+
+    CPrintToChatAll("%t %t", "MixTag", "CaptainVoteProposed", client, survivor, infected);
 }
 
 void MixVoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
@@ -1025,42 +1028,46 @@ void SwapAllPlayersToSpec()
 bool SwapPlayerToTeam(const char[] authId, int team, int numVotes)
 {
     int client = GetClientFromAuthId(authId);
-    bool foundClient = client > 0;
 
-    if (foundClient)
+    if (client <= 0)
+        return false;
+
+    g_smSwapWhitelist.SetValue(authId, team);
+
+    if (!ChangeClientTeamEx(client, team))
     {
-        g_smSwapWhitelist.SetValue(authId, team);
-        ChangeClientTeamEx(client, team);
+        g_smSwapWhitelist.Remove(authId);
+        return false;
+    }
 
-        switch(g_iCurrentState)
+    switch(g_iCurrentState)
+    {
+        case STATE_FIRST_CAPT:
         {
-            case STATE_FIRST_CAPT:
-            {
-                if (numVotes > 0)
-                    CPrintToChatAll("%t %t", "MixTag", "FirstCaptain", client, numVotes);
-                else
-                    CPrintToChatAll("%t %t", "MixTag", "FirstCaptainNoVotes", client);
-            }
+            if (numVotes > 0)
+                CPrintToChatAll("%t %t", "MixTag", "FirstCaptain", client, numVotes);
+            else
+                CPrintToChatAll("%t %t", "MixTag", "FirstCaptainNoVotes", client);
+        }
 
-            case STATE_SECOND_CAPT:
-            {
-                if (numVotes > 0)
-                    CPrintToChatAll("%t %t", "MixTag", "SecondCaptain", client, numVotes);
-                else
-                    CPrintToChatAll("%t %t", "MixTag", "SecondCaptainNoVotes", client);
-            }
+        case STATE_SECOND_CAPT:
+        {
+            if (numVotes > 0)
+                CPrintToChatAll("%t %t", "MixTag", "SecondCaptain", client, numVotes);
+            else
+                CPrintToChatAll("%t %t", "MixTag", "SecondCaptainNoVotes", client);
+        }
 
-            case STATE_PICK_TEAMS:
-            {
-                if (g_iSurvivorsPick == 1)
-                    CPrintToChatAll("%t %t", "MixTag", "PickedSurvivors", client);
-                else
-                    CPrintToChatAll("%t %t", "MixTag", "PickedInfected", client);
-            }
+        case STATE_PICK_TEAMS:
+        {
+            if (g_iSurvivorsPick == 1)
+                CPrintToChatAll("%t %t", "MixTag", "PickedSurvivors", client);
+            else
+                CPrintToChatAll("%t %t", "MixTag", "PickedInfected", client);
         }
     }
 
-    return foundClient;
+    return true;
 }
 
 bool ChangeClientTeamEx(int client, int team)

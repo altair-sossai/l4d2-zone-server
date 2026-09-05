@@ -73,6 +73,11 @@
     {
         "chi"    "已经有一个队长投票正在进行中。"
     }
+    "CaptainVoteProposed"
+    {
+        "#format"    "{1:N},{2:N},{3:N}"
+        "chi"        "{olive}{1} {default}提议由 {lightgreen}{2}{default} 和 {lightgreen}{3}{default} 担任队长。"
+    }
     "CaptainVoteTitle"
     {
         "#format"    "{1:s},{2:s}"

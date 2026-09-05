@@ -73,6 +73,11 @@
     {
         "pt"    "Já há uma votação de capitães em andamento."
     }
+    "CaptainVoteProposed"
+    {
+        "#format"    "{1:N},{2:N},{3:N}"
+        "pt"         "{olive}{1} {default}propôs {lightgreen}{2}{default} e {lightgreen}{3}{default} como capitães."
+    }
     "CaptainVoteTitle"
     {
         "#format"    "{1:s},{2:s}"
