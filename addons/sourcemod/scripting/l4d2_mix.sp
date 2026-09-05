@@ -53,9 +53,9 @@ Handle g_hMixStartedForward,
 public Plugin myinfo =
 {
     name = "L4D2 Mix Manager",
-    author = "Luckylock",
+    author = "Luckylock (co-author: Altair Sossai)",
     description = "Provides ability to pick captains and teams through menus",
-    version = "4",
+    version = "5.0.0",
     url = "https://github.com/LuckyServ/"
 };
 
