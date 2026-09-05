@@ -2,6 +2,7 @@
 #pragma newdecls required
 
 #include <sourcemod>
+#include <left4dhooks>
 #include <sdktools_sound>
 #include <l4d2util_constants>
 #include <colors>
@@ -149,7 +150,7 @@ Action Cmd_MixStart(int client, int args)
         return Plugin_Handled;
     } 
     
-    if (!g_bIsMixAllowed)
+    if (!g_bIsMixAllowed || !IsNewGame())
     {
         CPrintToChat(client, "%t %t", "MixTag", "NotAllowedLive");
         return Plugin_Handled;
@@ -1106,4 +1107,10 @@ bool IsInfected(int client)
 bool IsHuman(int client)
 {
     return IsClientInGame(client) && !IsFakeClient(client);
+}
+
+bool IsNewGame()
+{
+    return L4D2Direct_GetVSCampaignScore(0) == 0
+        && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
