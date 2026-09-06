@@ -30,10 +30,6 @@
     {
         "zho"    "查看 {olive}!queue{default}。如果你排在正在遊戲的玩家前面，使用 {olive}!slot{default}。"
     }
-    "SlotFixing"
-    {
-        "zho"    "隊伍正在自動整理中，請稍候。"
-    }
     "SlotStartersOnly"
     {
         "zho"    "遊戲進行中，只有初始隊伍的玩家才能申請名額。"
