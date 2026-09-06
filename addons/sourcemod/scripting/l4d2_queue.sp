@@ -7,7 +7,7 @@
 #include <lerpmonitor>
 #include <colors>
 
-#define MAX_QUEUE_MESSAGE_LENGTH 140
+#define MAX_QUEUE_MESSAGE_LENGTH 120
 
 #define QUEUE_FILE "data/l4d2_queue.txt"
 #define QUEUE_MAX_AGE (30 * 60)
