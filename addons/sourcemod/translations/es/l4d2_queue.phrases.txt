@@ -30,6 +30,10 @@
     {
         "es"    "Revisa la {olive}!queue{default}. Si estás por delante de alguien que está jugando, usa {olive}!slot{default}."
     }
+    "SlotFixing"
+    {
+        "es"    "Los equipos se están organizando automáticamente, espera un momento."
+    }
     "SlotStartersOnly"
     {
         "es"    "Durante la partida, solo los jugadores de los equipos iniciales pueden solicitar una plaza."

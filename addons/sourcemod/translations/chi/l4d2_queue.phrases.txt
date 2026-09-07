@@ -30,6 +30,10 @@
     {
         "chi"    "查看 {olive}!queue{default}。如果你排在正在游戏的玩家前面，使用 {olive}!slot{default}。"
     }
+    "SlotFixing"
+    {
+        "chi"    "队伍正在自动整理中，请稍候。"
+    }
     "SlotStartersOnly"
     {
         "chi"    "游戏进行中，只有初始队伍的玩家才能申请名额。"

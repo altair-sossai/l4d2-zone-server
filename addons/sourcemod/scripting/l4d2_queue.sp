@@ -30,11 +30,10 @@ int g_iClaims[MAXPLAYERS + 1][MAXPLAYERS + 1];
 int g_iWinningTeam = -1;
 
 bool g_bLerpMonitorIsAvailable = false,
+     g_bFixingTeams = false,
      g_bQueueShown = false,
      g_bMixInProgress = false,
      g_bRoundOver = false;
-
-bool g_bTeamFixDispatched[MAXPLAYERS + 1];
 
 enum struct Player
 {
@@ -106,11 +105,10 @@ public void OnLibraryRemoved(const char[] name)
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
+    g_bFixingTeams = false;
     g_bQueueShown = false;
     g_bMixInProgress = false;
     g_bRoundOver = false;
-
-    ClearDispatched();
 
     CreateTimer(2.5, EnableFixTeam_Timer);
     CreateTimer(30.0, SuggestSlotCommand_Timer);
@@ -140,6 +138,18 @@ Action ShowQueueEndMap_Timer(Handle timer)
     return Plugin_Stop;
 }
 
+void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
+{
+    if (!g_bFixingTeams || !IsNewGame())
+        return;
+
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (!IsHumanClient(client))
+        return;
+
+    CreateTimer(1.0, FixTeam_Timer);
+}
+
 Action WinningTeam_Timer(Handle timer)
 {
     if (IsNewGame() || !L4D_HasMapStarted())
@@ -157,31 +167,25 @@ Action EnableFixTeam_Timer(Handle timer)
     
     ReorganizeQueue();
 
+    g_bFixingTeams = true;
     FixTeams();
+    CreateTimer(60.0, DisableFixTeam_Timer);
+
+    return Plugin_Continue;
+}
+
+Action DisableFixTeam_Timer(Handle timer)
+{
+    g_bFixingTeams = false;
 
     return Plugin_Continue;
 }
 
 Action FixTeam_Timer(Handle timer)
 {
-    if (IsNewGame() && IsInReady() && !g_bMixInProgress)
-        FixTeams();
+    FixTeams();
 
-    return Plugin_Stop;
-}
-
-void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
-{
-    if (!IsNewGame() || !IsInReady() || g_bMixInProgress)
-        return;
-
-    int client = GetClientOfUserId(event.GetInt("userid"));
-    if (!IsHumanClient(client) || g_bTeamFixDispatched[client])
-        return;
-
-    g_bTeamFixDispatched[client] = true;
-
-    CreateTimer(1.0, FixTeam_Timer);
+    return Plugin_Continue;
 }
 
 Action PrintQueueCmd(int client, int args)
@@ -198,6 +202,12 @@ Action RequestSlotCmd(int client, int args)
 {
     if (!IsHumanClient(client) || g_bRoundOver)
         return Plugin_Handled;
+
+    if (g_bFixingTeams)
+    {
+        CPrintToChat(client, SLOT_TAG, "SlotFixing");
+        return Plugin_Handled;
+    }
 
     if (g_bMixInProgress)
     {
@@ -330,6 +340,7 @@ Action RequestSlotInGame(int client)
 
 public void OnMixStarted()
 {
+    g_bFixingTeams = false;
     g_bMixInProgress = true;
 }
 
@@ -340,9 +351,9 @@ public void OnMixStopped()
 
 public void OnRoundIsLive()
 {
+    g_bFixingTeams = false;
     g_bMixInProgress = false;
 
-    ClearDispatched();
     ClearClaims();
 
     if (IsNewGame())
@@ -377,8 +388,6 @@ Action SuggestSlotCommand_Timer(Handle timer)
 
 public void OnClientDisconnect(int client)
 {
-    g_bTeamFixDispatched[client] = false;
-
     if (!IsHumanClient(client))
         return;
 
@@ -676,10 +685,15 @@ void FixTeams()
     RemoveExpiredPlayers();
 
     if (TeamsAreExactlyQueueFront())
+    {
+        g_bFixingTeams = false;
         return;
+    }
 
     if (!MustFixTheTeams())
         return;
+
+    g_bFixingTeams = false;
 
     int slots = Slots();
     int[] nextPlayers = new int[slots];
@@ -725,10 +739,15 @@ void FixTeams()
 
         MoveToFirstOpenTeam(client);
     }
+
+    g_bFixingTeams = !TeamsAreExactlyQueueFront();
 }
 
 bool MustFixTheTeams()
 {
+    if (!g_bFixingTeams)
+        return false;
+
     int availableSlots = Slots();
 
     if (g_aQueue.Length <= availableSlots)
@@ -823,12 +842,6 @@ void ClearClaims()
     for (int i = 0; i <= MaxClients; i++)
         for (int j = 0; j <= MaxClients; j++)
             g_iClaims[i][j] = 0;
-}
-
-void ClearDispatched()
-{
-    for (int client = 1; client <= MaxClients; client++)
-        g_bTeamFixDispatched[client] = false;
 }
 
 bool MoveToFirstOpenTeam(int client)

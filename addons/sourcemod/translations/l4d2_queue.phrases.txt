@@ -30,6 +30,10 @@
     {
         "en"    "Check the {olive}!queue{default}. If you are ahead of someone playing, use {olive}!slot{default}."
     }
+    "SlotFixing"
+    {
+        "en"    "The teams are being arranged automatically, please wait a moment."
+    }
     "SlotStartersOnly"
     {
         "en"    "During the game only players from the starting teams can request a slot."
