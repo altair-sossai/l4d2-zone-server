@@ -73,6 +73,7 @@ public Plugin myinfo =
 public void OnPluginStart()
 {
     LoadTranslations("l4d2_mix.phrases");
+    LoadTranslations("common.phrases");
 
     g_cvStartVotes = CreateConVar("l4d2_mix_start_votes", "2", "Number of votes required to start a mix", FCVAR_NOTIFY, true, 1.0, true, 8.0);
     g_cvAdditionalPlayersAfterMix = CreateConVar("l4d2_mix_additional_players_after_mix", "2", "Additional players required to vote after each mix starts before the game goes live (0 disables)", FCVAR_NOTIFY, true, 0.0);
