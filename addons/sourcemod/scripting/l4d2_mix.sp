@@ -264,27 +264,6 @@ Action Cmd_MixStop(int client, int args)
     return Plugin_Handled;
 }
 
-bool ResolveCaptainByName(int client, int argIndex, char[] authId, int maxlen)
-{
-    char name[MAX_STR_LEN];
-    GetCmdArg(argIndex, name, sizeof(name));
-
-    int target = FindTarget(client, name, true, false);
-
-    if (target <= 0)
-        return false;
-
-    if (!IsSurvivor(target) && !IsInfected(target))
-    {
-        CPrintToChat(client, "%t %t", "MixTag", "CaptainNotPlaying", target);
-        return false;
-    }
-
-    GetClientAuthId(target, AuthId_SteamID64, authId, maxlen);
-
-    return true;
-}
-
 bool ValidateCaptainPair(int client, char[] survivorAuthId, char[] infectedAuthId, int maxlen)
 {
     if (!ResolveCaptainByName(client, 1, survivorAuthId, maxlen))
@@ -306,6 +285,81 @@ bool ValidateCaptainPair(int client, char[] survivorAuthId, char[] infectedAuthI
     }
 
     return true;
+}
+
+bool ResolveCaptainByName(int client, int argIndex, char[] authId, int maxlen)
+{
+    char name[MAX_STR_LEN];
+    GetCmdArg(argIndex, name, sizeof(name));
+
+    int target = FindTargetByExactName(name);
+
+    if (target == -1)
+        target = FindTargetByNamePrefix(name);
+
+    if (target == -1)
+        target = FindTarget(client, name, true, false);
+
+    if (target <= 0)
+        return false;
+
+    if (!IsSurvivor(target) && !IsInfected(target))
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "CaptainNotPlaying", target);
+        return false;
+    }
+
+    GetClientAuthId(target, AuthId_SteamID64, authId, maxlen);
+
+    return true;
+}
+
+int FindTargetByExactName(const char[] name)
+{
+    int target = -1;
+    char clientName[MAX_NAME_LENGTH];
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i))
+            continue;
+
+        GetClientName(i, clientName, sizeof(clientName));
+
+        if (!StrEqual(clientName, name, false))
+            continue;
+
+        if (target != -1)
+            return -1;
+
+        target = i;
+    }
+
+    return target;
+}
+
+int FindTargetByNamePrefix(const char[] name)
+{
+    int target = -1;
+    char clientName[MAX_NAME_LENGTH];
+
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        if (!IsClientInGame(i) || IsFakeClient(i))
+            continue;
+
+        GetClientName(i, clientName, sizeof(clientName));
+
+        if (StrContains(clientName, name, false) != 0)
+            continue;
+
+        if (target != -1)
+            return -1;
+
+        target = i;
+    }
+
+    return target;
 }
 
 /* =============================================================================
