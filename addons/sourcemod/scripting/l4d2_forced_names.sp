@@ -6,8 +6,6 @@
 
 StringMap g_hNames;
 
-bool g_bNamesLocked = false;
-
 public Plugin myinfo =
 {
 	name = "L4D2 Forced Names",
@@ -21,9 +19,6 @@ public void OnPluginStart()
 {
 	g_hNames = new StringMap();
 
-	RegServerCmd("sm_forcename", ForceNameCmd, "Maps a SteamID to a forced player name");
-	RegServerCmd("sm_forcename_lock", ForceNameLockCmd, "Locks the forced names list so later sm_forcename calls are ignored");
-
 	HookEvent("player_changename", Event_NameChange, EventHookMode_Post);
 
 	LoadForcedNames();
@@ -36,45 +31,34 @@ public void OnConfigsExecuted()
 
 void LoadForcedNames()
 {
-	g_bNamesLocked = false;
 	g_hNames.Clear();
-	ServerCommand("exec %s", "sourcemod/forced_names.cfg");
 
-	RequestFrame(Frame_EnforceAll);
-}
+	char sPath[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, sPath, sizeof(sPath), "configs/forced_names.cfg");
 
-Action ForceNameCmd(int args)
-{
-	if (g_bNamesLocked)
-		return Plugin_Handled;
-
-	if (args < 2)
+	KeyValues kv = new KeyValues("ForcedNames");
+	if (kv.ImportFromFile(sPath) && kv.GotoFirstSubKey(false))
 	{
-		PrintToServer("[ForcedNames] Usage: sm_forcename \"<steamid>\" \"<name>\"");
-		return Plugin_Handled;
+		do
+		{
+			char sSteamId[32];
+			char sName[MAX_NAME_LENGTH];
+			kv.GetSectionName(sSteamId, sizeof(sSteamId));
+			kv.GetString(NULL_STRING, sName, sizeof(sName));
+
+			if (!IsSteamId(sSteamId))
+				continue;
+
+			sSteamId[6] = '0';
+			g_hNames.SetString(sSteamId, sName);
+			sSteamId[6] = '1';
+			g_hNames.SetString(sSteamId, sName);
+		}
+		while (kv.GotoNextKey(false));
 	}
+	delete kv;
 
-	char sSteamId[32];
-	char sName[MAX_NAME_LENGTH];
-	GetCmdArg(1, sSteamId, sizeof(sSteamId));
-	GetCmdArg(2, sName, sizeof(sName));
-
-	if (!IsSteamId(sSteamId))
-		return Plugin_Handled;
-
-	sSteamId[6] = '0';
-	g_hNames.SetString(sSteamId, sName);
-	sSteamId[6] = '1';
-	g_hNames.SetString(sSteamId, sName);
-
-	return Plugin_Handled;
-}
-
-Action ForceNameLockCmd(int args)
-{
-	g_bNamesLocked = true;
-
-	return Plugin_Handled;
+	Frame_EnforceAll();
 }
 
 void Event_NameChange(Event event, const char[] name, bool dontBroadcast)
@@ -96,7 +80,7 @@ void Frame_EnforceClient(int userid)
 	EnforceName(GetClientOfUserId(userid));
 }
 
-void Frame_EnforceAll(any data)
+void Frame_EnforceAll()
 {
 	for (int client = 1; client <= MaxClients; client++)
 	{

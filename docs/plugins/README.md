@@ -277,20 +277,19 @@ l4d2_early_victory_queue_lock
 
 **ConVars** — None.
 
-**Commands**
+**Commands** — None.
 
-| Command | Access | Description |
-|---------|--------|-------------|
-| `sm_forcename "<steamid>" "<name>"` | server cfg | Map a SteamID to a forced name |
-
-**How to configure** — Edit [`cfg/sourcemod/forced_names.cfg`](../../cfg/sourcemod/forced_names.cfg), one line per player:
+**How to configure** — Edit [`configs/forced_names.cfg`](../../addons/sourcemod/configs/forced_names.cfg), one `"<steamid>" "<name>"` pair per player, in KeyValues format:
 
 ```
-sm_forcename "STEAM_0:1:67149995" "Xei"
-sm_forcename "STEAM_0:1:28225724" "jon"
+"ForcedNames"
+{
+	"STEAM_0:1:67149995" "Xei" // https://steamcommunity.com/profiles/76561198094565719
+	"STEAM_0:1:28225724" "jon" // https://steamcommunity.com/profiles/76561198016717177
+}
 ```
 
-The plugin `exec`s this file automatically; no manual reload needed after a config re-exec.
+The plugin reads this file with the `KeyValues` API (not `exec`), so it's loaded automatically on plugin start and on every config execution — no manual reload needed, and unicode names aren't stripped like they would be through an `exec`'d cfg.
 
 ---
 
