@@ -31,9 +31,6 @@ enum struct Campaign
     char menuText[256];
 }
 
-bool g_CustomTitlesCampaignsLocked = false,
-     g_IgnoredCampaignsLocked = false;
-
 ArrayList g_Campaigns = null;
 
 StringMap g_CustomTitlesCampaigns = null,
@@ -58,12 +55,6 @@ public void OnPluginStart()
     RegConsoleCmd("sm_votecampaign", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
     RegConsoleCmd("sm_votecamp", VoteCampaignCmd, "Opens the campaign menu to start a map change vote");
 
-    RegServerCmd("l4d2_campaign_vote_title", CustomTitleCampaignCmd, "Sets a custom title for a campaign name (e.g. l4d2_campaign_vote_title \"L4D2C1\" \"My Custom Title\"). Ignored once the list is locked");
-    RegServerCmd("l4d2_campaign_vote_title_lock", CustomTitleCampaignLockCmd, "Locks the custom titles list so later l4d2_campaign_vote_title calls are ignored. Call this once right after the last entry in your config");
-
-    RegServerCmd("l4d2_campaign_vote_ignore", IgnoreCampaignCmd, "Adds a campaign name to be hidden from the vote menu (e.g. l4d2_campaign_vote_ignore \"credits\"). Ignored once the list is locked");
-    RegServerCmd("l4d2_campaign_vote_ignore_lock", IgnoreCampaignLockCmd, "Locks the ignored list so later l4d2_campaign_vote_ignore calls are ignored. Call this once right after the last entry in your config");
-
     RegAdminCmd("sm_listcampaigns", ListCampaignsCmd, ADMFLAG_GENERIC, "Lists in console the raw name and DisplayTitle of every campaign found in the missions folder");
     RegAdminCmd("sm_refreshcampaigns", RefreshCampaignsCmd, ADMFLAG_GENERIC, "Clears the cached campaign list and forces it to be read again");
 }
@@ -87,76 +78,6 @@ public Action VoteCampaignCmd(int client, int args)
 
     if (!menu.Display(client, MENU_TIME_FOREVER))
         delete menu;
-
-    return Plugin_Handled;
-}
-
-Action CustomTitleCampaignCmd(int args)
-{
-    if (args < 2)
-    {
-        LogError("[Campaigns] Usage: l4d2_campaign_vote_title <name> <title>");
-        return Plugin_Handled;
-    }
-
-    char name[64];
-    GetCmdArg(1, name, sizeof(name));
-    TrimString(name);
-
-    if (StringEmpty(name))
-    {
-        LogError("[Campaigns] Usage: l4d2_campaign_vote_title <name> <title>");
-        return Plugin_Handled;
-    }
-
-    char title[128];
-    GetCmdArg(2, title, sizeof(title));
-    TrimString(title);
-
-    if (StringEmpty(title))
-    {
-        LogError("[Campaigns] Usage: l4d2_campaign_vote_title <name> <title>");
-        return Plugin_Handled;
-    }
-
-    AddCustomTitleCampaign(name, title);
-
-    return Plugin_Handled;
-}
-
-Action CustomTitleCampaignLockCmd(int args)
-{
-    g_CustomTitlesCampaignsLocked = true;
-
-    return Plugin_Handled;
-}
-
-Action IgnoreCampaignCmd(int args)
-{
-    if (args < 1)
-    {
-        LogError("[Campaigns] Usage: l4d2_campaign_vote_ignore <name>");
-        return Plugin_Handled;
-    }
-
-    char name[64];
-    GetCmdArg(1, name, sizeof(name));
-    TrimString(name);
-
-    if (StringEmpty(name))
-    {
-        LogError("[Campaigns] Usage: l4d2_campaign_vote_ignore <name>");
-        return Plugin_Handled;
-    }
-
-    AddIgnoredCampaign(name);
-
-    return Plugin_Handled;
-}
-
-Action IgnoreCampaignLockCmd(int args)
-{
-    g_IgnoredCampaignsLocked = true;
 
     return Plugin_Handled;
 }
@@ -356,13 +277,10 @@ bool IsValidCampaignName(const char[] name)
 
 void ReloadCampaignVoteConfig()
 {
-    g_CustomTitlesCampaignsLocked = false;
-    g_IgnoredCampaignsLocked = false;
-
     g_CustomTitlesCampaigns.Clear();
     g_IgnoredCampaigns.Clear();
 
-    AddIgnoredCampaign("credits");
+    g_IgnoredCampaigns.SetString("credits", "", false);
 
     if (g_Campaigns != null)
     {
@@ -370,23 +288,51 @@ void ReloadCampaignVoteConfig()
         g_Campaigns = null;
     }
 
-    ServerCommand("exec %s", "sourcemod/campaign_vote.cfg");
-}
+    char sPath[PLATFORM_MAX_PATH];
+    BuildPath(Path_SM, sPath, sizeof(sPath), "configs/campaign_vote.cfg");
 
-void AddCustomTitleCampaign(const char[] name, const char[] title)
-{
-    if (g_CustomTitlesCampaignsLocked)
-        return;
+    KeyValues kv = new KeyValues("CampaignVote");
+    if (kv.ImportFromFile(sPath))
+    {
+        if (kv.JumpToKey("IgnoredCampaigns"))
+        {
+            if (kv.GotoFirstSubKey(false))
+            {
+                do
+                {
+                    char name[64];
+                    kv.GetSectionName(name, sizeof(name));
+                    g_IgnoredCampaigns.SetString(name, "", false);
+                }
+                while (kv.GotoNextKey(false));
 
-    g_CustomTitlesCampaigns.SetString(name, title, false);
-}
+                kv.GoBack();
+            }
 
-void AddIgnoredCampaign(const char[] name)
-{
-    if (g_IgnoredCampaignsLocked)
-        return;
+            kv.GoBack();
+        }
 
-    g_IgnoredCampaigns.SetString(name, "", false);
+        if (kv.JumpToKey("CustomTitles"))
+        {
+            if (kv.GotoFirstSubKey(false))
+            {
+                do
+                {
+                    char name[64];
+                    char title[128];
+                    kv.GetSectionName(name, sizeof(name));
+                    kv.GetString(NULL_STRING, title, sizeof(title));
+                    g_CustomTitlesCampaigns.SetString(name, title, false);
+                }
+                while (kv.GotoNextKey(false));
+
+                kv.GoBack();
+            }
+
+            kv.GoBack();
+        }
+    }
+    delete kv;
 }
 
 void ResolveDisplayName(const char[] name, char[] displayTitle, int maxlen)

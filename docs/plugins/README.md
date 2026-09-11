@@ -402,8 +402,10 @@ sm_cvar gameinfo_secret "your-secret-here"
 | Command | Access | Description |
 |---------|--------|-------------|
 | `sm_votecampaign` / `sm_votecamp` | all | Open the campaign menu and start a map change vote for the chosen campaign |
+| `sm_listcampaigns` | admin (generic) | Print the raw name and DisplayTitle of every campaign found in the missions folder to console |
+| `sm_refreshcampaigns` | admin (generic) | Clear the cached campaign list so it's read again on the next menu open |
 
-**How to configure** — No configuration needed; just load it. Player-facing UI text (menu title and messages) is defined in [`addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt`](../../addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt) (English, Portuguese and Spanish). The `changemission` vote itself must be enabled in the server's vote settings for the vote to actually start.
+**How to configure** — Optionally edit [`configs/campaign_vote.cfg`](../../addons/sourcemod/configs/campaign_vote.cfg) (KeyValues format) to hide campaigns from the menu (`IgnoredCampaigns`) or override a campaign's display title (`CustomTitles`); `<name>` must match the mission's raw `Name` exactly (see `sm_listcampaigns`). Player-facing UI text (menu title and messages) is defined in [`addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt`](../../addons/sourcemod/translations/l4d2_campaign_vote.phrases.txt) (English, Portuguese and Spanish). The `changemission` vote itself must be enabled in the server's vote settings for the vote to actually start.
 
 ---
 
