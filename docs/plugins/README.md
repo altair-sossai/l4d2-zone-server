@@ -59,6 +59,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 | Plugin | Original author | One-liner |
 |--------|-----------------|-----------|
 | [l4d2_mix](#l4d2_mix-adapted) | Luckylock (LuckyServ) | Captain/team picking (mix) through in-game menus |
+| [annoyance_exploit_fixes](#annoyance_exploit_fixes-adapted) | Sir (SirPlease) | Blocks callvote abuse and chat-flooding via `bugpause` |
 
 ---
 
@@ -464,3 +465,21 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 | `sm_stopmix` | `ADMFLAG_CHANGEMAP` | Stop the current mix |
 
 **How to configure** — Set the ConVars in `shared_cvars.cfg`, e.g. `confogl_addcvar l4d2_mix_start_votes 2`.
+
+---
+
+## annoyance_exploit_fixes (adapted)
+
+> **Not original work.** This plugin was created by **Sir** as part of [SirPlease/L4D2-Competitive-Rework](https://github.com/SirPlease/L4D2-Competitive-Rework). The copy in this repo has been **modified with a fix for this server** (blocking `bugpause`, see below). All credit for the original plugin goes to its author.
+
+**Source (this server's version):** [`scripting/annoyance_exploit_fixes.sp`](../../addons/sourcemod/scripting/annoyance_exploit_fixes.sp)
+
+**What it does** — A compilation of small fixes for annoying/exploitable client behavior. Originally: blocks kickvotes not aimed at a teammate, blocks self-kick, and (for CEDAPug games) blocks return-to-lobby/change-mission votes mid-match. This server's copy additionally blocks the client's native `bugpause` command outright, every time, for every client. `bugpause` fires when a player opens L4D2's built-in "Report a Bug" window — a legacy feature Valve no longer reads reports from — and the engine broadcasts a chat notification with no rate limit built in, so a player can bind a key to it and flood everyone's chat ([Valve issue #2765](https://github.com/ValveSoftware/Source-1-Games/issues/2765)). Since the feature serves no real purpose anymore, the block is unconditional.
+
+**Objective** — Close off small client-side ways to grief or annoy other players, including `bugpause` chat-flooding.
+
+**ConVars** — None.
+
+**Commands** — Hooks `callvote` and `bugpause` (no new commands registered).
+
+**How to configure** — No configuration needed; loaded server-wide via `cfg/generalfixes.cfg` (`fixes/annoyance_exploit_fixes.smx`), independent of which mod is active.
