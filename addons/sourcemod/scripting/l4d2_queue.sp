@@ -125,7 +125,9 @@ public void L4D2_OnEndVersusModeRound_Post()
         return;
 
     g_bQueueShown = true;
+    g_iWinningTeam = GetWinningTeam();
 
+    ReorganizeQueue();
     SaveQueue();
 
     CreateTimer(g_cvEndMapDelay.FloatValue, ShowQueueEndMap_Timer);
@@ -162,9 +164,9 @@ Action WinningTeam_Timer(Handle timer)
 
 Action EnableFixTeam_Timer(Handle timer)
 {
-    if (!IsNewGame() || g_iWinningTeam == -1)
+    if (!IsNewGame())
         return Plugin_Continue;
-    
+
     ReorganizeQueue();
 
     g_bFixingTeams = true;
