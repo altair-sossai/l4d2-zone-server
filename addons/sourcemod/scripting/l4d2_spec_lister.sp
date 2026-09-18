@@ -20,6 +20,7 @@ enum HearMode
 HearMode g_HearMode[MAXPLAYERS + 1];
 bool g_Broadcasting[MAXPLAYERS + 1];
 ConVar g_AllTalk;
+ConVar g_Hint;
 
 public Plugin myinfo =
 {
@@ -36,6 +37,8 @@ public void OnPluginStart()
 
 	RegConsoleCmd("sm_hear", HearCmd, "Choose which players you hear as a spectator (no arg opens the menu; optional arg: survivors/infected/spectators/all)");
 	RegAdminCmd("sm_broadcast", BroadcastCmd, ADMFLAG_CHAT, "Toggle broadcast mode: while enabled, everyone hears you");
+
+	g_Hint = CreateConVar("l4d2_spec_lister_hint", "1", "Show spectators a hint about the !hear command. 0:hide, 1:show", FCVAR_NONE, true, 0.0, true, 1.0);
 
 	HookEvent("player_team", RefreshEvent);
 
@@ -75,6 +78,9 @@ public void OnMapStart()
 
 Action ShowHearHint_Timer(Handle timer)
 {
+	if (!g_Hint.BoolValue)
+		return Plugin_Continue;
+
 	if (InSecondHalfOfRound())
 		return Plugin_Continue;
 

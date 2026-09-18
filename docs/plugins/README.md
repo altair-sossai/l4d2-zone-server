@@ -255,7 +255,11 @@ l4d2_early_victory_queue_lock
 
 **Objective** — Improve spectating and casting by letting viewers isolate one team's comms while still hearing other spectators.
 
-**ConVars** — None.
+**ConVars**
+
+| ConVar | Default | Description |
+|--------|---------|-------------|
+| `l4d2_spec_lister_hint` | `1` | Show spectators a hint about the `!hear` command. `0`:hide, `1`:show |
 
 **Commands**
 
