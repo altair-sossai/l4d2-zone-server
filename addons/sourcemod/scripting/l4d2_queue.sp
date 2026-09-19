@@ -10,7 +10,7 @@
 #define MAX_QUEUE_MESSAGE_LENGTH 120
 
 #define QUEUE_FILE "data/l4d2_queue.txt"
-#define QUEUE_MAX_AGE (30 * 60)
+#define QUEUE_MAX_AGE (60 * 60)
 
 #define SLOT_TAG "{orange}[%t] {default}%t", "Slot"
 #define QUEUE_TAG "{orange}%t {default}%s", "Queue"
@@ -125,6 +125,7 @@ public void L4D2_OnEndVersusModeRound_Post()
         return;
 
     g_bQueueShown = true;
+    g_iWinningTeam = GetWinningTeam();
 
     SaveQueue();
 
@@ -1027,11 +1028,32 @@ void LoadQueueFromFile()
     {
         TrimString(line);
 
-        if (strlen(line) == 0)
+        if (strlen(line) < 3 || line[1] != ' ')
             continue;
 
-        strcopy(player.steamId, sizeof(player.steamId), line);
-        player.expiresAt = GetClientUsingSteamId(line) != -1 ? 0 : expiresAt;
+        if (line[0] == 'W')
+        {
+            g_iWinningTeam = StringToInt(line[2]);
+            continue;
+        }
+
+        if (line[0] == 'A')
+        {
+            g_aTeamA.PushString(line[2]);
+            continue;
+        }
+
+        if (line[0] == 'B')
+        {
+            g_aTeamB.PushString(line[2]);
+            continue;
+        }
+
+        if (line[0] != 'Q')
+            continue;
+
+        strcopy(player.steamId, sizeof(player.steamId), line[2]);
+        player.expiresAt = GetClientUsingSteamId(line[2]) != -1 ? 0 : expiresAt;
 
         g_aQueue.PushArray(player);
     }
@@ -1060,13 +1082,28 @@ void SaveQueue()
         return;
 
     file.WriteLine("%d", GetTime());
+    file.WriteLine("W %d", g_iWinningTeam);
 
     Player player;
 
     for (int i = 0; i < g_aQueue.Length; i++)
     {
         g_aQueue.GetArray(i, player);
-        file.WriteLine("%s", player.steamId);
+        file.WriteLine("Q %s", player.steamId);
+    }
+
+    char steamId[64];
+
+    for (int i = 0; i < g_aTeamA.Length; i++)
+    {
+        g_aTeamA.GetString(i, steamId, sizeof(steamId));
+        file.WriteLine("A %s", steamId);
+    }
+
+    for (int i = 0; i < g_aTeamB.Length; i++)
+    {
+        g_aTeamB.GetString(i, steamId, sizeof(steamId));
+        file.WriteLine("B %s", steamId);
     }
 
     delete file;
