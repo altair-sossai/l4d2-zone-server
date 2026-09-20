@@ -104,7 +104,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 
 **Source:** [`scripting/l4d2_friendly_fire_control.sp`](../../addons/sourcemod/scripting/l4d2_friendly_fire_control.sp)
 
-**What it does** — Continuously tracks friendly-fire damage between human survivors. Each player has an accumulator that goes up when they shoot a teammate and slowly decays over time. When the accumulator crosses the limit the player is kicked and the game is paused (admin-only unpause), everyone sees *"{player} was kicked for friendly fire."* and the kicked player gets the reason *"You were kicked for friendly fire."* Occasional accidental damage decays away and never triggers a kick; only sustained/repeated team damage does.
+**What it does** — Continuously tracks friendly-fire damage between human survivors. Each player has an accumulator that goes up when they shoot a teammate and slowly decays over time. When the accumulator crosses the limit the player is kicked and the game is paused (players unpause normally with `!unpause`, same as a crash pause), everyone sees *"{player} was kicked for friendly fire."* and the kicked player gets the reason *"You were kicked for friendly fire."* Occasional accidental damage decays away and never triggers a kick; only sustained/repeated team damage does.
 
 **Objective** — Automatically deter intentional or repeated team-damage without needing an admin online, while forgiving the odd stray shot.
 
