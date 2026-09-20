@@ -146,6 +146,8 @@ void KickForFriendlyFire(int client)
     char reason[192];
     Format(reason, sizeof(reason), "%T", "KickReason", client);
     KickClient(client, "%s", reason);
+
+    ServerCommand("sm_forcepause");
 }
 
 bool IsHumanSurvivor(int client)
