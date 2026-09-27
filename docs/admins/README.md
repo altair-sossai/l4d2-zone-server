@@ -17,8 +17,36 @@ Guia rápido dos comandos de admin do servidor. Os primeiros comandos são os ma
 **Como escolher o alvo (`<alvo>`)**
 
 - **Parte do nome:** `!swap mio` funciona se só um jogador tiver "mio" no nome.
-- **`#userid`:** digite `status` no console para ver o número de cada jogador e use `!kick #12`. É o jeito mais seguro quando o nome tem caracteres estranhos ou é parecido com outro.
+- **`#userid`:** é o jeito mais seguro quando o nome tem caracteres estranhos ou é parecido com outro (veja abaixo como descobrir o número).
 - **Grupos:** `@all` (todos), `@humans` (só humanos), `@bots` (só bots), `@me` (você mesmo), `@aim` (quem está na sua mira).
+
+**Como descobrir o `#userid`**
+
+Abra o console (`~`) e digite `status`. Vai aparecer algo assim (colunas do fim da linha omitidas):
+
+```
+] status
+hostname: L4D2 Zone
+map     : c2m1_highway at: 0 x, 0 y, 0 z
+players : 4 humans, 0 bots (8 max)
+
+# userid name uniqueid connected ping loss state
+#  12 "vorkyss" STEAM_1:0:11111111 25:14 45 0 active
+#  15 "Feeh" STEAM_1:1:22222222 18:02 38 0 active
+#  21 "♏" STEAM_1:0:33333333 07:45 60 0 active
+#  23 "Finn ™" STEAM_1:1:44444444 02:10 52 0 active
+```
+
+O **primeiro número** de cada linha é o `userid`. No exemplo, o nome `♏` é difícil de digitar, então é só usar o número dele:
+
+```
+!swap #21
+!swapto 1 #21
+```
+
+Funciona em qualquer comando que pede `<alvo>` (kick, ban, mute, swap etc.).
+
+> O `userid` muda toda vez que o jogador reconecta. Se ele sair e voltar, rode `status` de novo.
 
 > 💡 Na dúvida, abra o menu com **`!admin`**. Quase tudo que está aqui (kick, ban, mute, trocar mapa, trocar de time) também dá para fazer por ele, sem digitar nada.
 
