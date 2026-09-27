@@ -14,6 +14,20 @@ Guia rápido dos comandos de admin do servidor. Os primeiros comandos são os ma
 | Chat com `/` | `/swap Miosha` | O comando fica **silencioso**, só você vê a resposta |
 | Console (`~`) | `sm_swap Miosha` | Troque o `!` por `sm_` |
 
+**O que significam `< >` e `[ ]`**
+
+Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali. **Não digite os símbolos**, troque tudo pelo valor:
+
+| No guia | Significa | Você digita |
+|---|---|---|
+| `!swapto <time> <jogador>` | `< >` = obrigatório | `!swapto 2 vorkyss` |
+| `!hp [quantidade]` | `[ ]` = opcional, pode deixar sem | `!hp` ou `!hp 50` |
+| `!ban <alvo> <minutos> [motivo]` | os dois juntos | `!ban #12 60` ou `!ban #12 60 flood no chat` |
+
+❌ Errado: `!swapto <2> <vorkyss>`
+
+✅ Certo: `!swapto 2 vorkyss`
+
 **Como escolher o alvo (`<alvo>`)**
 
 - **Parte do nome:** `!swap mio` funciona se só um jogador tiver "mio" no nome.

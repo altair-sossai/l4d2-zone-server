@@ -14,6 +14,19 @@ Everything you can type in the server's chat, grouped by what you want to do.
 | Chat with `/` | `/ready` | **Silent**, only you see the reply |
 | Console (`~`) | `sm_ready` | Replace `!` with `sm_` |
 
+**What `< >` and `[ ]` mean**
+
+In this guide, `< >` and `[ ]` only show what goes in that spot. **Don't type the symbols**, replace the whole thing with the value:
+
+| In the guide | Meaning | You type |
+|---|---|---|
+| `!mix <captain1> <captain2>` | `< >` = required | `!mix vorkyss Feeh` |
+| `!roll [number]` | `[ ]` = optional, can be left out | `!roll` or `!roll 20` |
+
+❌ Wrong: `!mix <vorkyss> <Feeh>`
+
+✅ Right: `!mix vorkyss Feeh`
+
 ---
 
 ## Ready-up (before the round starts)

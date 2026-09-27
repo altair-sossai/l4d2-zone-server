@@ -14,6 +14,19 @@ Tudo o que você pode digitar no chat do servidor, separado pelo que você quer 
 | Chat com `/` | `/ready` | Fica **silencioso**, só você vê a resposta |
 | Console (`~`) | `sm_ready` | Troque o `!` por `sm_` |
 
+**O que significam `< >` e `[ ]`**
+
+Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali. **Não digite os símbolos**, troque tudo pelo valor:
+
+| No guia | Significa | Você digita |
+|---|---|---|
+| `!mix <capitão1> <capitão2>` | `< >` = obrigatório | `!mix vorkyss Feeh` |
+| `!roll [número]` | `[ ]` = opcional, pode deixar sem | `!roll` ou `!roll 20` |
+
+❌ Errado: `!mix <vorkyss> <Feeh>`
+
+✅ Certo: `!mix vorkyss Feeh`
+
 ---
 
 ## Ready-up (antes do round começar)
