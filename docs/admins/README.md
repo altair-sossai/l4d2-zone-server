@@ -28,6 +28,12 @@ Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali
 
 ✅ Certo: `!swapto 2 vorkyss`
 
+**Nome com espaço:** coloque o nome entre aspas `" "`. Sem aspas, o jogo entende cada palavra como uma parte separada do comando.
+
+❌ Errado: `!swapto 2 (LoD) Adeilson`
+
+✅ Certo: `!swapto 2 "(LoD) Adeilson"`
+
 **Como escolher o alvo (`<alvo>`)**
 
 - **Parte do nome:** `!swap mio` funciona se só um jogador tiver "mio" no nome.

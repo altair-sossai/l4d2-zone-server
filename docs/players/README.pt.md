@@ -27,6 +27,12 @@ Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali
 
 ✅ Certo: `!mix vorkyss Feeh`
 
+**Nome com espaço:** coloque o nome entre aspas `" "`. Sem aspas, o jogo entende cada palavra como uma parte separada do comando.
+
+❌ Errado: `!mix (LoD) Adeilson Feeh`
+
+✅ Certo: `!mix "(LoD) Adeilson" Feeh`
+
 ---
 
 ## Ready-up (antes do round começar)

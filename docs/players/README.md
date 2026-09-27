@@ -27,6 +27,12 @@ In this guide, `< >` and `[ ]` only show what goes in that spot. **Don't type th
 
 ✅ Right: `!mix vorkyss Feeh`
 
+**Names with spaces:** put the name in quotes `" "`. Without quotes, the game reads each word as a separate part of the command.
+
+❌ Wrong: `!mix (LoD) Adeilson Feeh`
+
+✅ Right: `!mix "(LoD) Adeilson" Feeh`
+
 ---
 
 ## Ready-up (before the round starts)

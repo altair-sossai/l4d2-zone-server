@@ -27,6 +27,12 @@ En esta guía, `< >` y `[ ]` solo indican qué debes escribir ahí. **No escriba
 
 ✅ Correcto: `!mix vorkyss Feeh`
 
+**Nombres con espacios:** pon el nombre entre comillas `" "`. Sin comillas, el juego entiende cada palabra como una parte separada del comando.
+
+❌ Incorrecto: `!mix (LoD) Adeilson Feeh`
+
+✅ Correcto: `!mix "(LoD) Adeilson" Feeh`
+
 ---
 
 ## Ready-up (antes de que empiece la ronda)
