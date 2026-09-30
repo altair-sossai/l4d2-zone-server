@@ -52,4 +52,9 @@
         "#format"    "{1:N}"
         "zho"        "你搶占 {blue}{1}{default} 的名額次數過多。"
     }
+    "SlotInvalidLerp"
+    {
+        "#format"    "{1:.1f},{2:.1f},{3:.1f}"
+        "zho"        "你的 lerp ({olive}{1}ms{default}) 無效。請在申請名額前將其調整到 {olive}{2}ms{default} 至 {olive}{3}ms{default} 之間。"
+    }
 }

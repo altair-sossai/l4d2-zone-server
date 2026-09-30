@@ -52,4 +52,9 @@
         "#format"    "{1:N}"
         "pt"         "Você já assumiu a vaga de {blue}{1}{default} vezes demais."
     }
+    "SlotInvalidLerp"
+    {
+        "#format"    "{1:.1f},{2:.1f},{3:.1f}"
+        "pt"         "Sua lerp ({olive}{1}ms{default}) está inválida. Ajuste-a entre {olive}{2}ms{default} e {olive}{3}ms{default} antes de solicitar uma vaga."
+    }
 }

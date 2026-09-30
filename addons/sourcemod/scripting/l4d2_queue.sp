@@ -216,6 +216,12 @@ Action RequestSlotCmd(int client, int args)
         return Plugin_Handled;
     }
 
+    if (HasInvalidLerp(client))
+    {
+        CPrintToChat(client, SLOT_TAG, "SlotInvalidLerp", LM_GetCurrentLerpTime(client) * 1000.0, g_cvMinLerp.FloatValue * 1000.0, g_cvMaxLerp.FloatValue * 1000.0);
+        return Plugin_Handled;
+    }
+
     if (IsInReady() && IsNewGame())
         return RequestSlotReadyUp(client);
 

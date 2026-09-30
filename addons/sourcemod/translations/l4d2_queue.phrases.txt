@@ -52,4 +52,9 @@
         "#format"    "{1:N}"
         "en"         "You have already claimed a slot from {blue}{1}{default} too many times."
     }
+    "SlotInvalidLerp"
+    {
+        "#format"    "{1:.1f},{2:.1f},{3:.1f}"
+        "en"         "Your lerp ({olive}{1}ms{default}) is invalid. Adjust it between {olive}{2}ms{default} and {olive}{3}ms{default} before requesting a slot."
+    }
 }

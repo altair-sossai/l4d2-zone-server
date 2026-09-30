@@ -52,4 +52,9 @@
         "#format"    "{1:N}"
         "es"         "Ya has reclamado la plaza de {blue}{1}{default} demasiadas veces."
     }
+    "SlotInvalidLerp"
+    {
+        "#format"    "{1:.1f},{2:.1f},{3:.1f}"
+        "es"         "Tu lerp ({olive}{1}ms{default}) no es válida. Ajústala entre {olive}{2}ms{default} y {olive}{3}ms{default} antes de solicitar una plaza."
+    }
 }
