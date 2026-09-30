@@ -79,7 +79,11 @@ Exemplos:
 
 > **Sobre o mix:** os dois times precisam estar cheios e o mix só começa no início de um jogo novo (0 x 0). Os capitães precisam estar jogando (não em spectator). Não existe mix em 1v1. Se alguém sair durante o mix, o mix é cancelado; quem fizer isso pela segunda vez é **banido por 30 minutos**.
 
-> **Sobre a fila:** só dá para pegar vaga no começo de um jogo novo e quando não tem mix rolando. Quando abre uma vaga, o servidor avisa o próximo da fila para digitar `!vaga`.
+> **Sobre a fila (`!vaga`):**
+> - **Antes do jogo começar (0 x 0):** se você está à frente na fila de alguém que está jogando, o `!vaga` coloca você no lugar dessa pessoa, e ela vai para spectator.
+> - **Com o jogo em andamento:** só quem estava nos times do começo da partida pode usar `!vaga`, para voltar ao seu time no lugar de um substituto. Se o substituto estiver controlando o Tank, espere o Tank morrer.
+> - O `!vaga` não funciona com mix em andamento nem com o seu lerp inválido.
+> - Quando abre uma vaga, o servidor avisa o próximo da fila para digitar `!vaga`.
 
 > **Tank vivo:** survivors não conseguem ir para spectator enquanto o Tank estiver vivo. Se precisar mesmo trocar, use `!pause`.
 
@@ -177,7 +181,7 @@ Configs disponíveis: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`,
 
 - **Fogo amigo:** quem ficar dando dano no próprio time é expulso automaticamente, e o jogo é pausado.
 - **AFK:** durante o ready-up, quem ficar AFK por muito tempo vai para spectator quando tiver alguém esperando para jogar.
-- **Lerp:** se o seu lerp estiver fora do permitido, o servidor mostra os comandos para corrigir. Cole no seu console:
+- **Lerp:** se o seu lerp estiver fora do permitido, você não consegue pegar vaga com `!vaga`, e o servidor mostra os comandos para corrigir. Cole no seu console:
 
 ```
 cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100

@@ -79,7 +79,11 @@ Examples:
 
 > **About the mix:** both teams must be full and the mix can only start at the beginning of a new game (0 x 0). Captains must be playing (not spectating). There is no mix in 1v1. If someone leaves during a mix, the mix is canceled; doing it a second time gets you **banned for 30 minutes**.
 
-> **About the queue:** slots can only be claimed at the start of a new game and when no mix is running. When a slot opens up, the server tells the next player in line to type `!slot`.
+> **About the queue (`!slot`):**
+> - **Before the game starts (0 x 0):** if you are ahead of someone who is playing, `!slot` puts you in their place and they go to spectators.
+> - **During the game:** only players from the starting teams can use `!slot`, to get back into their team in place of a substitute. If the substitute is controlling the Tank, wait until the Tank dies.
+> - `!slot` does not work while a mix is running or while your lerp is invalid.
+> - When a slot opens up, the server tells the next player in line to type `!slot`.
 
 > **Tank alive:** survivors can't switch to spectators while the Tank is alive. Use `!pause` if you really need to change teams.
 
@@ -177,7 +181,7 @@ Available configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `z
 
 - **Friendly fire:** repeatedly damaging your own team gets you kicked automatically, and the game is paused.
 - **AFK:** during ready-up, players who stay AFK for too long are moved to spectators when someone else is waiting to play.
-- **Lerp:** if your lerp is outside the allowed range, the server shows the commands to fix it. Paste them into your console:
+- **Lerp:** if your lerp is outside the allowed range, you can't claim a slot with `!slot`, and the server shows the commands to fix it. Paste them into your console:
 
 ```
 cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100

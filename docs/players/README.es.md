@@ -79,7 +79,11 @@ Ejemplos:
 
 > **Sobre el mix:** los dos equipos deben estar completos y el mix solo empieza al inicio de una partida nueva (0 x 0). Los capitanes deben estar jugando (no en espectadores). No hay mix en 1v1. Si alguien sale durante el mix, el mix se cancela; quien lo haga por segunda vez es **baneado por 30 minutos**.
 
-> **Sobre la cola:** solo puedes tomar un lugar al inicio de una partida nueva y cuando no hay un mix en curso. Cuando se libera un lugar, el servidor avisa al siguiente de la cola para que escriba `!slot`.
+> **Sobre la cola (`!slot`):**
+> - **Antes de que empiece la partida (0 x 0):** si estás delante en la cola de alguien que está jugando, `!slot` te pone en el lugar de esa persona, y ella pasa a espectadores.
+> - **Con la partida en curso:** solo quienes estaban en los equipos del inicio pueden usar `!slot`, para volver a su equipo en lugar de un sustituto. Si el sustituto está controlando al Tank, espera a que el Tank muera.
+> - `!slot` no funciona con un mix en curso ni con tu lerp inválido.
+> - Cuando se libera un lugar, el servidor avisa al siguiente de la cola para que escriba `!slot`.
 
 > **Tank vivo:** los survivors no pueden pasar a espectadores mientras el Tank está vivo. Si de verdad necesitas cambiar, usa `!pause`.
 
@@ -177,7 +181,7 @@ Configs disponibles: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, 
 
 - **Fuego amigo:** quien siga haciendo daño a su propio equipo es expulsado automáticamente, y el juego se pausa.
 - **AFK:** durante el ready-up, quien esté AFK demasiado tiempo pasa a espectadores cuando hay alguien esperando para jugar.
-- **Lerp:** si tu lerp está fuera del rango permitido, el servidor te muestra los comandos para corregirlo. Pégalos en tu consola:
+- **Lerp:** si tu lerp está fuera del rango permitido, no puedes tomar un lugar con `!slot`, y el servidor te muestra los comandos para corregirlo. Pégalos en tu consola:
 
 ```
 cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100

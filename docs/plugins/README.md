@@ -74,7 +74,10 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 - `!fila` / `!queue` prints the current list, in order (`Queue:` … with each `Slot`).
 - `!vaga` / `!slot` claims an available slot. On success the claimer sees *"You have claimed a slot, {player} was moved to spectators."*, and the bumped player is told *"{player} has claimed your slot because they were ahead of you in the queue."*
 - If no slot is owed to them, they get *"Everyone on the teams is ahead of you in the queue."*
-- Slots can only be claimed at the start of a new game and while no mix is running — otherwise: *"You can only request a slot at the start of a new game and while no mix is in progress."*
+- Before the game goes live (ready-up of a new game, score 0–0), a player ahead in the queue takes the slot of the last-queued player on a team. The same player's slot can only be claimed `l4d2_queue_max_claims` times: *"You have already claimed a slot from {player} too many times."*
+- During an ongoing game, only players from the starting teams can use `!slot`, to return to their original team in place of a substitute: *"During the game only players from the starting teams can request a slot."* If the substitute is controlling the tank, the claim waits: *"{player} is controlling the tank, request your slot again when the tank dies."*
+- No slot can be claimed while a mix is running: *"You can only request a slot at the start of a new game and while no mix is in progress."*
+- A player with an invalid lerp (outside `lerpmonitor`'s `sm_min_lerp` / `sm_max_lerp`) can't claim a slot: *"Your lerp ({n}ms) is invalid. Adjust it between {min}ms and {max}ms before requesting a slot."*
 - When a slot becomes available, the next player is nudged: *"There is a spot for you in the game! Type !slot to take it."*
 - While teams are being auto-arranged, actions are held with *"The teams are being arranged automatically, please wait a moment."*
 - A disconnected player keeps their place for `l4d2_queue_disconnect_timeout` seconds before being dropped. At end of a map's second round, the queue is shown to everyone after `l4d2_queue_endmap_delay` seconds (so the MVP/stats panel is shown first).
@@ -87,6 +90,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 |--------|---------|-------------|
 | `l4d2_queue_disconnect_timeout` | `300` | Seconds a disconnected player stays in the queue before removal |
 | `l4d2_queue_endmap_delay` | `8.0` | Seconds after the map's 2nd round ends before showing the queue (waits for MVP/stats first) |
+| `l4d2_queue_max_claims` | `2` | How many times a player can claim a slot from the same player before the game goes live |
 
 **Commands**
 
@@ -94,7 +98,6 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 |---------|--------|-------------|
 | `sm_fila` / `sm_queue` | all | Print the current queue |
 | `sm_vaga` / `sm_slot` | all | Claim an available slot |
-| `sm_fixteams` | `ADMFLAG_BAN` | Force a queue/teams fix |
 
 **How to configure** — Set the ConVars in `shared_cvars.cfg`, e.g. `confogl_addcvar l4d2_queue_disconnect_timeout 300`.
 
