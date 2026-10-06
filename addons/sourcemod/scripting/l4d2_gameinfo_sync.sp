@@ -16,6 +16,7 @@
 #include <l4d2_boss_percents>
 #include <l4d2_hybrid_scoremod>
 #include <l4d2_skill_detect>
+#include <l4d2_anti_cheat>
 
 #define GAMEINFO_HTTP_CONNECT_TIMEOUT 3
 #define GAMEINFO_HTTP_TIMEOUT 5
@@ -25,7 +26,7 @@ public Plugin myinfo =
     name        = "L4D2 - Game Info Sync",
     author      = "Altair Sossai",
     description = "Syncs game info with Game Info API",
-    version     = "1.0.0",
+    version     = "1.1.0",
     url         = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -49,6 +50,7 @@ bool
     g_bPauseIsAvailable = false,
     g_bL4D2BossPercentsAvailable = false,
     g_bHybridScoremodIsAvailable = false,
+    g_bAntiCheatIsAvailable = false,
     g_bInTransition = false,
     g_bRoundOver = false,
     g_bTankIsDead = false,
@@ -63,6 +65,7 @@ int
     g_iInfectedDamage[MAXPLAYERS + 1],
     g_iTankPercent,
     g_iWitchPercent,
+    g_iAntiCheatStatus = -1,
     g_iTankController = 0;
 
 float
@@ -122,6 +125,7 @@ public void OnAllPluginsLoaded()
     g_bPauseIsAvailable = LibraryExists("pause");
     g_bL4D2BossPercentsAvailable = LibraryExists("l4d_boss_percent");
     g_bHybridScoremodIsAvailable = LibraryExists("l4d2_hybrid_scoremod") || LibraryExists("l4d2_hybrid_scoremod_zone");
+    g_bAntiCheatIsAvailable = LibraryExists("l4d2_anti_cheat");
 }
 
 public void OnLibraryRemoved(const char[] name)
@@ -137,6 +141,9 @@ public void OnLibraryRemoved(const char[] name)
 
     if (strcmp(name, "l4d2_hybrid_scoremod") == 0 || strcmp(name, "l4d2_hybrid_scoremod_zone") == 0)
         g_bHybridScoremodIsAvailable = false;
+
+    if (strcmp(name, "l4d2_anti_cheat") == 0)
+        g_bAntiCheatIsAvailable = false;
 }
 
 public void OnLibraryAdded(const char[] name)
@@ -152,6 +159,9 @@ public void OnLibraryAdded(const char[] name)
 
     if (strcmp(name, "l4d2_hybrid_scoremod") == 0 || strcmp(name, "l4d2_hybrid_scoremod_zone") == 0)
         g_bHybridScoremodIsAvailable = true;
+
+    if (strcmp(name, "l4d2_anti_cheat") == 0)
+        g_bAntiCheatIsAvailable = true;
 }
 
 public void OnClientPostAdminCheck(int client)
@@ -547,7 +557,7 @@ Action SyncData_Timer(Handle hTimer)
     SendScoreboard();
     SendPlayers();
 
-    if (!g_bInTransition && (g_iTankPercent != GetTankPercent() || g_iWitchPercent != GetWitchPercent()))
+    if (!g_bInTransition && (g_iTankPercent != GetTankPercent() || g_iWitchPercent != GetWitchPercent() || g_iAntiCheatStatus != GetAntiCheatStatus()))
         SendRound();
 
     CheckForNewExternalMessages();
@@ -619,6 +629,7 @@ void SendRound()
 
     g_iTankPercent = GetTankPercent();
     g_iWitchPercent = GetWitchPercent();
+    g_iAntiCheatStatus = GetAntiCheatStatus();
 
     command.SetBool("isInReady", GetIsInReady());
 
@@ -629,6 +640,9 @@ void SendRound()
     command.SetInt("maxChapterProgressPoints", L4D_GetVersusMaxCompletionScore());
     command.SetFloat("tankPercent", g_iTankPercent / 100.0);
     command.SetFloat("witchPercent", g_iWitchPercent / 100.0);
+
+    if (g_iAntiCheatStatus != -1)
+        command.SetInt("antiCheatStatus", g_iAntiCheatStatus);
 
     HTTPRequest request = BuildHTTPRequest("/api/game-info/round");
 
@@ -1220,6 +1234,14 @@ int GetWitchPercent()
         return GetStoredWitchPercent();
 
     return GetRoundWitchFlow();
+}
+
+int GetAntiCheatStatus()
+{
+    if (!g_bAntiCheatIsAvailable)
+        return -1;
+
+    return view_as<int>(L4D2AC_GetStatus());
 }
 
 int GetRoundTankFlow()
