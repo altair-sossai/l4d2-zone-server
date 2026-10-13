@@ -65,7 +65,7 @@ $targets = @(
     @{ src = "l4d2_campaign_vote.sp";               out = "optional\l4d2_campaign_vote.smx" },
     @{ src = "l4d2_forced_names.sp";                out = "optional\l4d2_forced_names.smx" },
     @{ src = "l4d2_lerp_advisor.sp";                out = "optional\l4d2_lerp_advisor.smx" },
-    @{ src = "l4d2_weapon_skins.sp";                out = "optional\l4d2_weapon_skins.smx" },
+    @{ src = "l4d2_weapon_skins.sp";                out = "l4d2_weapon_skins.smx" },
     @{ src = "slots_vote.sp";                       out = "optional\slots_vote.smx" }
 )
 
