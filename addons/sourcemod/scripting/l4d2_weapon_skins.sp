@@ -7,6 +7,7 @@
 
 #define CONFIG_PATH "configs/weapon_skins.cfg"
 #define MAX_WEAPON_ENTITIES 2048
+#define DROPPED_MODEL_DELAY 0.1
 
 enum struct WeaponSkin
 {
@@ -232,7 +233,38 @@ void OnWeaponEquipPost(int client, int weapon)
 
 void OnWeaponDropPost(int client, int weapon)
 {
-	RefreshWorldModel(client, weapon);
+	if (GetWeaponSkin(client, weapon) == -1)
+	{
+		return;
+	}
+
+	CreateTimer(DROPPED_MODEL_DELAY, Timer_ApplyDroppedWorldModel, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+Action Timer_ApplyDroppedWorldModel(Handle timer, int weaponRef)
+{
+	int weapon = EntRefToEntIndex(weaponRef);
+	if (weapon == INVALID_ENT_REFERENCE)
+	{
+		return Plugin_Stop;
+	}
+
+	if (GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity") != -1)
+	{
+		return Plugin_Stop;
+	}
+
+	int skinIndex = GetAssignedWeaponSkin(weapon);
+	if (skinIndex == -1)
+	{
+		return Plugin_Stop;
+	}
+
+	WeaponSkin skin;
+	g_hSkins.GetArray(skinIndex, skin);
+	ApplyWorldModel(weapon, skin);
+
+	return Plugin_Stop;
 }
 
 void RefreshWorldModel(int client, int weapon)
@@ -283,6 +315,21 @@ int GetWeaponSkin(int client, int weapon)
 	{
 		g_iWeaponRef[weapon] = weaponRef;
 		g_iWeaponSkin[weapon] = GetPlayerWeaponSkin(client, weapon);
+	}
+
+	return g_iWeaponSkin[weapon];
+}
+
+int GetAssignedWeaponSkin(int weapon)
+{
+	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES)
+	{
+		return -1;
+	}
+
+	if (g_iWeaponRef[weapon] != EntIndexToEntRef(weapon))
+	{
+		return -1;
 	}
 
 	return g_iWeaponSkin[weapon];
