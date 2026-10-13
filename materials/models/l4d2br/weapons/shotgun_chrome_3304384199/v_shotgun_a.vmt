@@ -1,0 +1,19 @@
+VertexLitGeneric
+{
+	$basetexture "models/l4d2br/weapons/shotgun_chrome_3304384199/v_shotgun_a"
+	$bumpmap "models/l4d2br/weapons/shotgun_chrome_3304384199/v_shotgun_a_b"
+
+	$envmap "env_cubemap"
+	$envmapfresnel 1
+	$envmapfresnelminmaxexp "[.8 1 .8]"
+
+	$phong 1
+	$phongexponenttexture "models/l4d2br/weapons/shotgun_chrome_3304384199/v_shotgun_a_exp"
+	$phongfresnelranges "[0.4 0.6 0.7]"
+	$phongalbedotint 1
+	$phongboost 10
+	$basemapalphaphongmask 1
+
+	$selfillum 1
+	$selfillummask "models/l4d2br/weapons/shotgun_chrome_3304384199/v_shotgun_a_a"
+}

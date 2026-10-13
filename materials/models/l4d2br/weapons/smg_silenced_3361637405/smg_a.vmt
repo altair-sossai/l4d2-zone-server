@@ -1,0 +1,21 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/smg_silenced_3361637405/smg_a"
+$bumpmap "effects/flat_normal"
+$phongboost 2
+$phongexponenttexture "models/l4d2br/weapons/smg_silenced_3361637405/mac10rngexp"
+$phongalbedotint 1
+$phongfresnelranges "[10 20 .3]"
+$BASEMAPLUMINANCEPHONGMASK 1
+
+$ambientocclusion 1
+
+$phong 0
+"GPU>=2?$phong" 1
+$normalmapalphaenvmapmask 1
+$envmap env_cubemap
+$envmapfresnel 1
+$envmapFresnelMinMaxExp "[0 0 .4]"
+$envmaptint "[0.14 0.14 0.14]"
+$diffuseexp 1.2
+}

@@ -1,0 +1,12 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/smg_silenced_1920647346/smg_a"
+$bumpmap "models/l4d2br/weapons/smg_silenced_1920647346/smg_a_bump"
+
+$normalmapalphaenvmapmask "1"
+$phong 1
+$phongboost 0.75
+$phongexponent 20
+$phongfresnelranges "[3 4 6]"
+$selfillum 1
+}

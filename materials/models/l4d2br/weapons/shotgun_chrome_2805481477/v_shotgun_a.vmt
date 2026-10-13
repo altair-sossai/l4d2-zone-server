@@ -1,0 +1,15 @@
+VertexLitGeneric
+{
+$baseTexture                      "models/l4d2br/weapons/shotgun_chrome_2805481477/v_shotgun_a"
+$bumpmap                          "models/l4d2br/weapons/shotgun_chrome_2805481477/shcr_normal"
+$phongexponenttexture             "models/l4d2br/weapons/shotgun_chrome_2805481477/v_shotgun_a_exp"
+$phong 1
+$phongboost "60"
+$phongfresnelranges "[1.0 1.3 1.1]"
+$phongalbedotint 1
+$envmap env_cubemap
+$normalmapalphaenvmapmask 1
+$envmapfresnel 1
+$envmaptint "[1.5 1.5 1.5]"
+$selfillum 1
+}

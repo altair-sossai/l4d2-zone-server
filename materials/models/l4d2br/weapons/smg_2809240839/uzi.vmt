@@ -1,0 +1,30 @@
+VertexLitGeneric	
+{
+	$basetexture	"models/l4d2br/weapons/smg_2809240839/uzi"	//	基础材质贴图
+	$bumpmap	"models/l4d2br/weapons/smg_2809240839/uzi_n"	//法线贴图
+	
+	$phong	"1"	//冯氏着色开启，使用法线的alpha贴图作为遮罩
+	$phongboost	"2"	//数值越大反光越强烈 0.75~10
+	$phongfresnelranges	"[0.5 0.5 0.5]"	//冯-菲涅尔参数，phong必须有它否则失效，第一项背对反光亮度，第三项面对反光亮度，第二项是中和。
+	
+	$phongalbedotint	"1"	//以basetexture作为反光色调参考，但优先级比phongtint低
+	$phongalbedoboost	"10"	//增强反射颜色的亮度
+	$phongexponent	"65"	//冯氏光照的密度（高光点的面积大小），数值越大，高光点越小
+	//$phongexponenttexture	"models\v_models\weapons\shotgun\v_shotgun_a_exp"	//高光贴图，控制反射的密度 但制作复杂，白色的地方即高光点
+
+	
+	$envmap	"env_cubemap"	//环境贴图参数，一般用env_cubemap代替地址，使用游戏里最近的环境贴图作为镜面反射
+	$normalmapalphaenvmapmask	"1"	//使用法线贴图的alpha图层作为环境反射的遮罩，一般需要开启，不然武器表面成镜子了
+	$envmaptint	"[.07 .07 .07]"	//若无光源但有环境，依然会有环境反射，可以调节颜色，一般默认白光即可
+	$envmapfresnel	"1"	//在phongfresnelranges启用时生效，调节环境反射菲涅尔效果
+	
+	$rimlight	"1"	//模型的轮廓光，在phong开启时生效
+	$rimlightexponent	"255"	//轮廓光密度
+	$rimlightboost	"255"	//轮廓光亮度
+	
+	$halflambert	"1"	//半兰伯特参数，增加亮度效果，但不明显
+
+	$selfillum 1
+	$selfillummask "models/l4d2br/weapons/smg_2809240839/uzi_m"
+	$selfillumtint "[1 1 1]"
+}

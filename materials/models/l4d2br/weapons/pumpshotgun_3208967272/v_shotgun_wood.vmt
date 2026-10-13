@@ -1,0 +1,6 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/pumpshotgun_3208967272/v_shotgun_wood"
+"$selfillum"  1
+$selfillumtint"[0.3 0.3 0.3]"
+}

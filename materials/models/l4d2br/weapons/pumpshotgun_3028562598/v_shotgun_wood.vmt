@@ -1,0 +1,20 @@
+VertexLitGeneric
+{
+	$basetexture "models/l4d2br/weapons/pumpshotgun_3028562598/v_shotgun_wood"
+	$bumpmap "models/l4d2br/weapons/pumpshotgun_3028562598/v_shotgun_wood_b"
+
+	$envmap "env_cubemap"
+	$envmapfresnel 1
+	$envmapfresnelminmaxexp "[.1 .6 .4]"
+
+	$phong 1
+	$phongexponenttexture "models/l4d2br/weapons/pumpshotgun_3028562598/v_shotgun_wood_exp"
+	$phongfresnelranges "[0.2 0.4 1]"
+	$phongalbedotint 1
+	$phongboost 10
+	$basemapalphaphongmask 1
+
+	$selfillum 1
+	$selfillummask "models/l4d2br/weapons/pumpshotgun_3028562598/v_shotgun_wood_a"
+
+}

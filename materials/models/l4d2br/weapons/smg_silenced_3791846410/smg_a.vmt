@@ -1,0 +1,18 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/smg_silenced_3791846410/smg_a"
+	"$bumpmap" 						"models/l4d2br/weapons/smg_silenced_3791846410/smg_a_normal"
+	"$lightwarptexture" "models/l4d2br/weapons/smg_silenced_3791846410/lightwarp_hsr"
+
+	"$phongexponenttexture"	"dev/reflectivity_90b"
+
+	"$phong" 							"1"
+	"$phongboost" 					"1"	
+	"$phongexponent" 				"15"
+	"$phongfresnelranges"		"[6 4 1]"
+	"$phongalbedotint" 				"1"
+	
+	$diffuseexp							"15"
+ 
+	$nodecal 								"1"   
+}

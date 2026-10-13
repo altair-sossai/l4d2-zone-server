@@ -1,0 +1,20 @@
+VertexLitGeneric
+{
+	$basetexture "models/l4d2br/weapons/smg_3335472907/uzi"
+	$bumpmap "effects/flat_normal"
+
+	$phong 1
+	$basemapluminancephongmask 1
+	$phongfresnelranges "[10 10 30]"
+	$halflambert 1
+	$phongexponent 10
+	$phongboost 4.5
+	$phongalbedoboost 2
+
+	$selfillum 1
+
+	$color2 "[1.50 1.50 1.50]"
+
+	$ambientocclusion 1
+	gpu>=2?$phong 1
+}

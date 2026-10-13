@@ -1,0 +1,12 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/smg_silenced_1891172953/smg_a"
+$phong 1
+$phongboost 2
+$phongexponent 3
+$phongfresnelranges "[.1 .4 2]"
+$basemapalphaphongmask 1
+$envmap env_cubemap
+$envmapfresnel 1
+$envmapFresnelMinMaxExp "[0 5 .4]"
+}

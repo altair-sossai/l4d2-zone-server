@@ -1,0 +1,8 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/shotgun_chrome_2607196353/v_shotgun_a"
+$phong 1
+
+"$selfillum" 1
+
+}

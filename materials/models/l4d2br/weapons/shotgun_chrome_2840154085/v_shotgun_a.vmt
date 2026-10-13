@@ -1,0 +1,29 @@
+VertexLitGeneric	
+{
+	$basetexture	"models/l4d2br/weapons/shotgun_chrome_2840154085/v_shotgun"	
+	$bumpmap	"models/l4d2br/weapons/shotgun_chrome_2840154085/v_shotgun_n"	
+	
+	$phong	"1"	
+	$phongboost	"1.3"	
+	$phongfresnelranges	"[.05 .5 1]"	
+	
+	$phongalbedotint	"1"	
+	$phongalbedoboost	"2"	
+	$phongexponent	"32"	
+	$phongexponenttexture	"models/l4d2br/weapons/shotgun_chrome_2840154085/v_shotgun_a_exp"	
+
+	
+	$envmap	"env_cubemap"	
+	$normalmapalphaenvmapmask	"1"	
+	$envmaptint	"[.08 .08 .08]"	//若无光源但有环境，依然会有环境反射，可以调节颜色，一般默认白光即可
+	$envmapfresnel	"1"	//在phongfresnelranges启用时生效，调节环境反射菲涅尔效果
+	
+	$rimlight	"1"	//模型的轮廓光，在phong开启时生效
+	$rimlightexponent	"255"	//轮廓光密度
+	$rimlightboost	"255"	//轮廓光亮度
+	
+	$halflambert	"1"	//半兰伯特参数，增加亮度效果，但不明显
+
+	$selfillum 1
+	//$selfillumtint "[.8 .8 .8]"
+}

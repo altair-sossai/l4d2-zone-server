@@ -1,0 +1,14 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/pumpshotgun_3279582587/v_shotgun_wood"
+$phong 0
+$phongboost 0
+
+$phongfresnelranges "[5 5 20]"
+$phongexponenttexture "models\v_models\Weapons\shotgun/V_shotgun_wood_exp"
+$basemapalphaphongmask 0
+$envmapfresnel 0
+$envmapFresnelMinMaxExp "[.4 1 .4]"
+$halflambert 0
+$phongalbedotint 0
+}

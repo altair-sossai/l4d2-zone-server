@@ -1,0 +1,21 @@
+VertexLitGeneric
+{
+	$basetexture "models/l4d2br/weapons/smg_silenced_3769476345/smg_a"
+	$bumpmap "models/l4d2br/weapons/smg_silenced_3769476345/smg_a_normal"
+
+	$envmap "env_cubemap"
+	$normalmapalphaenvmapmask 1
+	$envmaptint "[0.06 0.06 0.06]"
+	$envmapfresnelminmaxexp "[0 5 .4]"
+
+	$phong 1
+	$phongfresnelranges "[0.1 0.4 2]"
+	$phongdisablehalflambert 1
+	$phongalbedotint 1
+	$phongexponent 75
+	$phongboost 16
+
+	$rimlight 1
+	$rimlightexponent 50
+	$rimlightboost 0.2
+}

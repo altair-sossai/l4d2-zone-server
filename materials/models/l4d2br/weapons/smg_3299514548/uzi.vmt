@@ -1,0 +1,21 @@
+VertexLitGeneric
+{
+	$basetexture "models/l4d2br/weapons/smg_3299514548/uzi"
+	$bumpmap "models/l4d2br/weapons/smg_3299514548/uzi_b_m"
+
+	$lightwarptexture "models/l4d2br/weapons/smg_3299514548/piw_uzi"
+
+	$nocull 1
+
+	$phong 1
+	$phongfresnelranges "[10 10 30]"
+	$halflambert 1
+	$phongalbedotint 1
+	$phongexponent 20
+	$phongboost 4
+	$phongalbedoboost 5
+	$basemapalphaphongmask 1
+
+	$selfillum 1
+	$selfillummask "models/l4d2br/weapons/smg_3299514548/uzi_a_m"
+}
