@@ -58,6 +58,8 @@ public void OnPluginStart()
 	g_hPlayerSkins = new StringMap();
 
 	RegAdminCmd("sm_weaponskin", Command_WeaponSkin, ADMFLAG_ROOT, "sm_weaponskin [skin] - Lists the loaded skins or tests one on yourself until the map changes");
+	RegAdminCmd("sm_weaponskin_next", Command_WeaponSkinNext, ADMFLAG_ROOT, "sm_weaponskin_next <weapon> - Tests the next skin of the weapon on yourself");
+	RegAdminCmd("sm_weaponskin_prev", Command_WeaponSkinPrev, ADMFLAG_ROOT, "sm_weaponskin_prev <weapon> - Tests the previous skin of the weapon on yourself");
 
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -106,14 +108,111 @@ Action Command_WeaponSkin(int client, int args)
 		return Plugin_Handled;
 	}
 
+	SetPlayerSkin(client, skinIndex, skin);
+
+	ReplyToCommand(client, "[WeaponSkins] Skin \"%s\" set for %s until the map changes.", name, skin.weapon);
+	return Plugin_Handled;
+}
+
+Action Command_WeaponSkinNext(int client, int args)
+{
+	return CycleWeaponSkin(client, args, 1);
+}
+
+Action Command_WeaponSkinPrev(int client, int args)
+{
+	return CycleWeaponSkin(client, args, -1);
+}
+
+Action CycleWeaponSkin(int client, int args, int direction)
+{
+	if (client == 0)
+	{
+		ReplyToCommand(client, "[WeaponSkins] This command can only be used in game.");
+		return Plugin_Handled;
+	}
+
+	if (args < 1)
+	{
+		ReplyToCommand(client, "[WeaponSkins] Usage: sm_weaponskin_next <weapon> or sm_weaponskin_prev <weapon>, e.g. weapon_smg");
+		return Plugin_Handled;
+	}
+
+	char weapon[64];
+	GetCmdArg(1, weapon, sizeof(weapon));
+
+	char key[96];
+	FormatEx(key, sizeof(key), "%d:%s", GetSteamAccountID(client), weapon);
+
+	int current = -1;
+	g_hPlayerSkins.GetValue(key, current);
+
+	int position;
+	int total;
+	int skinIndex = FindSiblingSkin(weapon, current, direction, position, total);
+	if (skinIndex == -1)
+	{
+		ReplyToCommand(client, "[WeaponSkins] There are no loaded skins for %s.", weapon);
+		return Plugin_Handled;
+	}
+
+	WeaponSkin skin;
+	g_hSkins.GetArray(skinIndex, skin);
+
+	SetPlayerSkin(client, skinIndex, skin);
+
+	PrintToChat(client, "[WeaponSkins] %s: %s (%d/%d)", weapon, skin.name, position, total);
+	return Plugin_Handled;
+}
+
+int FindSiblingSkin(const char[] weapon, int current, int direction, int &position, int &total)
+{
+	ArrayList siblings = new ArrayList();
+
+	WeaponSkin skin;
+	for (int i = 0; i < g_hSkins.Length; i++)
+	{
+		g_hSkins.GetArray(i, skin);
+
+		if (skin.ready && StrEqual(skin.weapon, weapon))
+		{
+			siblings.Push(i);
+		}
+	}
+
+	total = siblings.Length;
+	if (total == 0)
+	{
+		delete siblings;
+		return -1;
+	}
+
+	int currentPosition = siblings.FindValue(current);
+	int nextPosition;
+
+	if (currentPosition == -1)
+	{
+		nextPosition = direction > 0 ? 0 : total - 1;
+	}
+	else
+	{
+		nextPosition = (currentPosition + direction + total) % total;
+	}
+
+	int skinIndex = siblings.Get(nextPosition);
+	position = nextPosition + 1;
+
+	delete siblings;
+	return skinIndex;
+}
+
+void SetPlayerSkin(int client, int skinIndex, WeaponSkin skin)
+{
 	char key[96];
 	FormatEx(key, sizeof(key), "%d:%s", GetSteamAccountID(client), skin.weapon);
 	g_hPlayerSkins.SetValue(key, skinIndex);
 
 	ApplySkinToActiveWeapon(client, skinIndex, skin);
-
-	ReplyToCommand(client, "[WeaponSkins] Skin \"%s\" set for %s until the map changes.", name, skin.weapon);
-	return Plugin_Handled;
 }
 
 void ListSkins(int client)
