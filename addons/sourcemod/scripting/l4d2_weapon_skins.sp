@@ -8,16 +8,19 @@
 #define CONFIG_PATH "configs/weapon_skins.cfg"
 #define MAX_WEAPON_ENTITIES 2048
 #define DROPPED_MODEL_DELAY 0.1
+#define OBS_MODE_IN_EYE 4
 
 enum struct WeaponSkin
 {
 	char weapon[64];
 	char viewModel[PLATFORM_MAX_PATH];
 	char worldModel[PLATFORM_MAX_PATH];
+	char defaultViewModel[PLATFORM_MAX_PATH];
 	char defaultWorldModel[PLATFORM_MAX_PATH];
 	char materials[PLATFORM_MAX_PATH];
 	int viewModelIndex;
 	int worldModelIndex;
+	int defaultViewModelIndex;
 	int defaultWorldModelIndex;
 }
 
@@ -38,6 +41,11 @@ int g_iActiveSkin[MAXPLAYERS + 1] = { -1, ... };
 
 int g_iWeaponRef[MAX_WEAPON_ENTITIES] = { INVALID_ENT_REFERENCE, ... };
 int g_iWeaponSkin[MAX_WEAPON_ENTITIES] = { -1, ... };
+
+int g_iAllowDownload[MAXPLAYERS + 1] = { -1, ... };
+int g_iDownloadFilter[MAXPLAYERS + 1] = { -1, ... };
+
+bool g_bWorldModelsEnabled = true;
 
 public void OnPluginStart()
 {
@@ -66,12 +74,113 @@ public void OnClientPutInServer(int client)
 	SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
 	SDKHook(client, SDKHook_WeaponDropPost, OnWeaponDropPost);
 	SDKHook(client, SDKHook_PostThinkPost, OnPostThinkPost);
+
+	if (IsFakeClient(client))
+	{
+		return;
+	}
+
+	g_iAllowDownload[client] = -1;
+	g_iDownloadFilter[client] = -1;
+
+	int userId = GetClientUserId(client);
+	QueryClientConVar(client, "cl_allowdownload", OnAllowDownloadQueried, userId);
+	QueryClientConVar(client, "cl_downloadfilter", OnDownloadFilterQueried, userId);
+
+	RefreshWorldModelsState();
 }
 
 public void OnClientDisconnect(int client)
 {
 	g_iActiveWeaponRef[client] = INVALID_ENT_REFERENCE;
 	g_iActiveSkin[client] = -1;
+}
+
+public void OnClientDisconnect_Post(int client)
+{
+	g_iAllowDownload[client] = -1;
+	g_iDownloadFilter[client] = -1;
+
+	RefreshWorldModelsState();
+}
+
+void OnAllowDownloadQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any userId)
+{
+	if (GetClientOfUserId(userId) != client)
+	{
+		return;
+	}
+
+	g_iAllowDownload[client] = result == ConVarQuery_Okay && StringToInt(cvarValue) == 1 ? 1 : 0;
+
+	RefreshWorldModelsState();
+}
+
+void OnDownloadFilterQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any userId)
+{
+	if (GetClientOfUserId(userId) != client)
+	{
+		return;
+	}
+
+	bool downloadsModels = StrEqual(cvarValue, "all", false) || StrEqual(cvarValue, "nosounds", false);
+	g_iDownloadFilter[client] = result == ConVarQuery_Okay && downloadsModels ? 1 : 0;
+
+	RefreshWorldModelsState();
+}
+
+bool CanClientSeeSkins(int client)
+{
+	if (IsFakeClient(client))
+	{
+		return true;
+	}
+
+	return g_iAllowDownload[client] == 1 && g_iDownloadFilter[client] == 1;
+}
+
+bool HasClientWithoutSkins()
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && !CanClientSeeSkins(client))
+		{
+			return true;
+		}
+	}
+
+	return false;
+}
+
+void RefreshWorldModelsState()
+{
+	bool enabled = !HasClientWithoutSkins();
+	if (enabled == g_bWorldModelsEnabled)
+	{
+		return;
+	}
+
+	g_bWorldModelsEnabled = enabled;
+
+	WeaponSkin skin;
+	for (int weapon = MaxClients + 1; weapon < MAX_WEAPON_ENTITIES; weapon++)
+	{
+		int skinIndex = GetAssignedWeaponSkin(weapon);
+		if (skinIndex == -1)
+		{
+			continue;
+		}
+
+		g_hSkins.GetArray(skinIndex, skin);
+
+		if (enabled)
+		{
+			ApplyWorldModel(weapon, skin);
+			continue;
+		}
+
+		RestoreWorldModel(weapon, skin);
+	}
 }
 
 void LoadSkins()
@@ -116,6 +225,7 @@ void LoadSkinDefinitions(KeyValues kv, StringMap skinsByName)
 		kv.GetString("weapon", skin.weapon, sizeof(skin.weapon));
 		kv.GetString("view_model", skin.viewModel, sizeof(skin.viewModel));
 		kv.GetString("world_model", skin.worldModel, sizeof(skin.worldModel));
+		kv.GetString("default_view_model", skin.defaultViewModel, sizeof(skin.defaultViewModel));
 		kv.GetString("default_world_model", skin.defaultWorldModel, sizeof(skin.defaultWorldModel));
 		kv.GetString("materials", skin.materials, sizeof(skin.materials));
 
@@ -133,7 +243,7 @@ void LoadSkinDefinitions(KeyValues kv, StringMap skinsByName)
 
 bool PrepareSkin(const char[] name, WeaponSkin skin)
 {
-	if (skin.weapon[0] == '\0' || skin.viewModel[0] == '\0' || skin.worldModel[0] == '\0' || skin.defaultWorldModel[0] == '\0')
+	if (skin.weapon[0] == '\0' || skin.viewModel[0] == '\0' || skin.worldModel[0] == '\0' || skin.defaultViewModel[0] == '\0' || skin.defaultWorldModel[0] == '\0')
 	{
 		LogError("Skin \"%s\" is missing required keys", name);
 		return false;
@@ -155,6 +265,7 @@ bool PrepareSkin(const char[] name, WeaponSkin skin)
 
 	skin.viewModelIndex = PrecacheModel(skin.viewModel, true);
 	skin.worldModelIndex = PrecacheModel(skin.worldModel, true);
+	skin.defaultViewModelIndex = PrecacheModel(skin.defaultViewModel, true);
 	skin.defaultWorldModelIndex = PrecacheModel(skin.defaultWorldModel, true);
 
 	return true;
@@ -300,7 +411,47 @@ void OnPostThinkPost(int client)
 	g_hSkins.GetArray(g_iActiveSkin[client], skin);
 
 	ApplyWorldModel(weapon, skin);
-	ApplyViewModel(client, skin);
+
+	if (CanShowViewModel(client))
+	{
+		ApplyViewModel(client, skin);
+		return;
+	}
+
+	RestoreViewModel(client, skin);
+}
+
+bool CanShowViewModel(int client)
+{
+	if (!CanClientSeeSkins(client))
+	{
+		return false;
+	}
+
+	if (g_bWorldModelsEnabled)
+	{
+		return true;
+	}
+
+	for (int observer = 1; observer <= MaxClients; observer++)
+	{
+		if (observer == client || !IsClientInGame(observer) || CanClientSeeSkins(observer))
+		{
+			continue;
+		}
+
+		if (GetEntPropEnt(observer, Prop_Send, "m_hObserverTarget") != client)
+		{
+			continue;
+		}
+
+		if (GetEntProp(observer, Prop_Send, "m_iObserverMode") == OBS_MODE_IN_EYE)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 int GetWeaponSkin(int client, int weapon)
@@ -322,7 +473,7 @@ int GetWeaponSkin(int client, int weapon)
 
 int GetAssignedWeaponSkin(int weapon)
 {
-	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES)
+	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES || !IsValidEntity(weapon))
 	{
 		return -1;
 	}
@@ -374,8 +525,49 @@ void ApplyViewModel(int client, WeaponSkin skin)
 	SetEntProp(viewModel, Prop_Send, "m_nModelIndex", skin.viewModelIndex);
 }
 
+void RestoreViewModel(int client, WeaponSkin skin)
+{
+	int viewModel = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
+	if (viewModel <= MaxClients || !IsValidEntity(viewModel))
+	{
+		return;
+	}
+
+	if (GetEntProp(viewModel, Prop_Send, "m_nModelIndex") != skin.viewModelIndex)
+	{
+		return;
+	}
+
+	SetEntProp(viewModel, Prop_Send, "m_nModelIndex", skin.defaultViewModelIndex);
+}
+
+void RestoreWorldModel(int weapon, WeaponSkin skin)
+{
+	if (GetEntProp(weapon, Prop_Send, "m_nModelIndex") == skin.worldModelIndex)
+	{
+		SetEntityModel(weapon, skin.defaultWorldModel);
+	}
+
+	if (!HasEntProp(weapon, Prop_Send, "m_iWorldModelIndex"))
+	{
+		return;
+	}
+
+	if (GetEntProp(weapon, Prop_Send, "m_iWorldModelIndex") != skin.worldModelIndex)
+	{
+		return;
+	}
+
+	SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", skin.defaultWorldModelIndex);
+}
+
 void ApplyWorldModel(int weapon, WeaponSkin skin)
 {
+	if (!g_bWorldModelsEnabled)
+	{
+		return;
+	}
+
 	if (GetEntProp(weapon, Prop_Send, "m_nModelIndex") == skin.defaultWorldModelIndex)
 	{
 		SetEntityModel(weapon, skin.worldModel);
