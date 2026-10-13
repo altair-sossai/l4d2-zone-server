@@ -133,7 +133,75 @@ public void OnPluginStart()
 		}
 	}
 
+	char classname[64];
+	for (int entity = MaxClients + 1; entity < GetMaxEntities(); entity++)
+	{
+		if (IsValidEntity(entity) && GetEntityClassname(entity, classname, sizeof(classname)))
+		{
+			OnEntityCreated(entity, classname);
+		}
+	}
+
 	RefreshWorldModelsState();
+}
+
+public void OnEntityCreated(int entity, const char[] classname)
+{
+	if (!IsWeaponSpawnClass(classname))
+	{
+		return;
+	}
+
+	SDKHook(entity, SDKHook_Use, OnWeaponSpawnUse);
+	SDKHook(entity, SDKHook_UsePost, OnWeaponSpawnUsePost);
+}
+
+bool IsWeaponSpawnClass(const char[] classname)
+{
+	if (strncmp(classname, "weapon_", 7) != 0)
+	{
+		return false;
+	}
+
+	int length = strlen(classname);
+	return length > 6 && StrEqual(classname[length - 6], "_spawn");
+}
+
+Action OnWeaponSpawnUse(int entity, int activator, int caller, UseType type, float value)
+{
+	if (activator < 1 || activator > MaxClients || !IsClientInGame(activator))
+	{
+		return Plugin_Continue;
+	}
+
+	int weapon = GetPlayerWeaponSlot(activator, PRIMARY_SLOT);
+	int skinIndex = GetWeaponSkin(activator, weapon);
+	if (skinIndex == -1)
+	{
+		return Plugin_Continue;
+	}
+
+	WeaponSkin skin;
+	g_hSkins.GetArray(skinIndex, skin);
+	RestoreWorldModel(weapon, skin);
+
+	return Plugin_Continue;
+}
+
+void OnWeaponSpawnUsePost(int entity, int activator, int caller, UseType type, float value)
+{
+	if (activator < 1 || activator > MaxClients || !IsClientInGame(activator))
+	{
+		return;
+	}
+
+	int weapon = GetPlayerWeaponSlot(activator, PRIMARY_SLOT);
+	if (weapon == -1)
+	{
+		return;
+	}
+
+	RefreshWorldModel(activator, weapon);
 }
 
 public void OnAllPluginsLoaded()
