@@ -20,6 +20,7 @@ stages:
               tar -czf bash.tar.gz -C $(Build.Repository.LocalPath)/bash .
               tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
               tar -czf materials.tar.gz -C $(Build.Repository.LocalPath)/materials .
+              tar -czf models.tar.gz -C $(Build.Repository.LocalPath)/models .
             displayName: "📦 Compress folders into .tar.gz files"
 
           - task: SSH@0
@@ -67,6 +68,8 @@ stages:
                 tar -xzf /home/devops/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
                 mkdir -p /home/steam/l4d2/left4dead2/materials
                 tar -xzf /home/devops/materials.tar.gz -C /home/steam/l4d2/left4dead2/materials
+                mkdir -p /home/steam/l4d2/left4dead2/models
+                tar -xzf /home/devops/models.tar.gz -C /home/steam/l4d2/left4dead2/models
                 dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
                 chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
                 rm /home/devops/*.tar.gz
