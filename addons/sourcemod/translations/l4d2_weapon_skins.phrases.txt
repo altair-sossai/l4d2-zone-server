@@ -1,0 +1,106 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "en"    "[{green}Skins{default}]"
+    }
+    "AdminEnabled"
+    {
+        "#format"   "{1:s}"
+        "en"    "{olive}{1}{default} turned the weapon skins {green}on{default}."
+    }
+    "AdminDisabled"
+    {
+        "#format"   "{1:s}"
+        "en"    "{olive}{1}{default} turned the weapon skins {green}off{default}."
+    }
+    "StatusOn"
+    {
+        "en"    "The weapon skins are {green}on{default}."
+    }
+    "StatusOff"
+    {
+        "en"    "The weapon skins are {green}off{default}."
+    }
+    "NoAccess"
+    {
+        "en"    "Only admins can turn the {olive}weapon skins{default} on or off."
+    }
+    "Usage"
+    {
+        "en"    "Usage: {olive}!weaponskins{default} [on|off]"
+    }
+    "HelpTitle"
+    {
+        "en"    "Weapon skins: customize your SMG, MAC-10 and shotguns according to your patent level."
+    }
+    "HelpLevel"
+    {
+        "#format"   "{1:d}"
+        "en"    "Your level: {green}{1}{default}. You can use every skin up to your level."
+    }
+    "HelpChoose"
+    {
+        "en"    "{olive}!skin <id>{default} - use a skin"
+    }
+    "HelpCycle"
+    {
+        "en"    "{olive}!skin_next{default} / {olive}!skin_prev{default} - cycle through the skins of the weapon in your hand"
+    }
+    "HelpDefault"
+    {
+        "en"    "{olive}!skin_default{default} - back to the default skin"
+    }
+    "HelpReady"
+    {
+        "en"    "Skins can only be changed during the {olive}ready-up{default}."
+    }
+    "HelpSite"
+    {
+        "#format"   "{1:s}"
+        "en"    "See every skin and its level at {green}{1}{default}"
+    }
+    "NoSkinsForWeapon"
+    {
+        "#format"   "{1:s}"
+        "en"    "There are no skins for the {olive}{1}{default} at your level yet."
+    }
+    "NoWeapon"
+    {
+        "en"    "Hold the weapon or say which one, e.g. {olive}!skin_next smg{default} (smg, mac10, pump, chrome)."
+    }
+    "OnlyDuringReadyUp"
+    {
+        "en"    "You can only change skins during the {olive}ready-up{default}."
+    }
+    "SkinCycle"
+    {
+        "#format"   "{1:s},{2:s},{3:d},{4:d}"
+        "en"    "{olive}{1}{default}: {green}{2}{default} ({3}/{4})"
+    }
+    "SkinDefault"
+    {
+        "#format"   "{1:s}"
+        "en"    "{olive}{1}{default}: back to the default skin."
+    }
+    "SkinLocked"
+    {
+        "#format"   "{1:s},{2:d},{3:d}"
+        "en"    "You can't use {olive}{1}{default}: it requires level {green}{2}{default} and you are level {green}{3}{default}."
+    }
+    "SkinReset"
+    {
+        "#format"   "{1:s},{2:s}"
+        "en"    "Your {olive}{1}{default} skin {olive}{2}{default} was taken off because your level is no longer enough. Back to the default skin."
+    }
+    "SkinSelected"
+    {
+        "#format"   "{1:s},{2:s}"
+        "en"    "{olive}{1}{default}: skin {green}{2}{default} selected."
+    }
+    "SkinUnknown"
+    {
+        "#format"   "{1:s},{2:s}"
+        "en"    "The skin {olive}{1}{default} does not exist. See the list at {green}{2}{default}"
+    }
+}

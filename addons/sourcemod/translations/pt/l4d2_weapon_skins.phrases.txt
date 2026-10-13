@@ -1,0 +1,106 @@
+"Phrases"
+{
+    "Tag"
+    {
+        "pt"    "[{green}Skins{default}]"
+    }
+    "AdminEnabled"
+    {
+        "#format"   "{1:s}"
+        "pt"    "{olive}{1}{default} {green}ligou{default} as skins de armas."
+    }
+    "AdminDisabled"
+    {
+        "#format"   "{1:s}"
+        "pt"    "{olive}{1}{default} {green}desligou{default} as skins de armas."
+    }
+    "StatusOn"
+    {
+        "pt"    "As skins de armas estão {green}ligadas{default}."
+    }
+    "StatusOff"
+    {
+        "pt"    "As skins de armas estão {green}desligadas{default}."
+    }
+    "NoAccess"
+    {
+        "pt"    "Apenas administradores podem ligar ou desligar as {olive}skins de armas{default}."
+    }
+    "Usage"
+    {
+        "pt"    "Uso: {olive}!weaponskins{default} [on|off]"
+    }
+    "HelpTitle"
+    {
+        "pt"    "Skins de armas: personalize sua SMG, MAC-10 e escopetas de acordo com o nível da sua patente."
+    }
+    "HelpLevel"
+    {
+        "#format"   "{1:d}"
+        "pt"    "Seu nível: {green}{1}{default}. Você pode usar todas as skins até o seu nível."
+    }
+    "HelpChoose"
+    {
+        "pt"    "{olive}!skin <id>{default} - usar uma skin"
+    }
+    "HelpCycle"
+    {
+        "pt"    "{olive}!skin_next{default} / {olive}!skin_prev{default} - alternar entre as skins da arma na sua mão"
+    }
+    "HelpDefault"
+    {
+        "pt"    "{olive}!skin_default{default} - voltar para a skin padrão"
+    }
+    "HelpReady"
+    {
+        "pt"    "As skins só podem ser trocadas durante o {olive}ready-up{default}."
+    }
+    "HelpSite"
+    {
+        "#format"   "{1:s}"
+        "pt"    "Veja todas as skins e o nível de cada uma em {green}{1}{default}"
+    }
+    "NoSkinsForWeapon"
+    {
+        "#format"   "{1:s}"
+        "pt"    "Ainda não há skins da {olive}{1}{default} liberadas para o seu nível."
+    }
+    "NoWeapon"
+    {
+        "pt"    "Segure a arma ou diga qual é, por exemplo {olive}!skin_next smg{default} (smg, mac10, pump, chrome)."
+    }
+    "OnlyDuringReadyUp"
+    {
+        "pt"    "Você só pode trocar de skin durante o {olive}ready-up{default}."
+    }
+    "SkinCycle"
+    {
+        "#format"   "{1:s},{2:s},{3:d},{4:d}"
+        "pt"    "{olive}{1}{default}: {green}{2}{default} ({3}/{4})"
+    }
+    "SkinDefault"
+    {
+        "#format"   "{1:s}"
+        "pt"    "{olive}{1}{default}: de volta à skin padrão."
+    }
+    "SkinLocked"
+    {
+        "#format"   "{1:s},{2:d},{3:d}"
+        "pt"    "Você não pode usar {olive}{1}{default}: ela exige nível {green}{2}{default} e você é nível {green}{3}{default}."
+    }
+    "SkinReset"
+    {
+        "#format"   "{1:s},{2:s}"
+        "pt"    "Sua skin {olive}{2}{default} da {olive}{1}{default} foi retirada porque o seu nível não é mais suficiente. De volta à skin padrão."
+    }
+    "SkinSelected"
+    {
+        "#format"   "{1:s},{2:s}"
+        "pt"    "{olive}{1}{default}: skin {green}{2}{default} selecionada."
+    }
+    "SkinUnknown"
+    {
+        "#format"   "{1:s},{2:s}"
+        "pt"    "A skin {olive}{1}{default} não existe. Veja a lista em {green}{2}{default}"
+    }
+}
