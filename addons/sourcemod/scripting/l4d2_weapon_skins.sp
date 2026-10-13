@@ -105,6 +105,7 @@ public void OnPluginStart()
 
 	RegConsoleCmd("sm_weaponskins", Command_WeaponSkins, "Shows whether the weapon skins are on; admins turn them on or off with sm_weaponskins on|off");
 	RegConsoleCmd("sm_skin", Command_Skin, "sm_skin [skin] - Shows the help or selects a weapon skin");
+	RegConsoleCmd("sm_skins", Command_Skin, "sm_skins [skin] - Shows the help or selects a weapon skin");
 	RegConsoleCmd("sm_skin_next", Command_SkinNext, "sm_skin_next [weapon] - Selects the next skin you can use");
 	RegConsoleCmd("sm_skin_prev", Command_SkinPrev, "sm_skin_prev [weapon] - Selects the previous skin you can use");
 	RegConsoleCmd("sm_skin_default", Command_SkinDefault, "sm_skin_default [weapon] - Goes back to the default skin");

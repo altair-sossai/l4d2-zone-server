@@ -136,8 +136,8 @@ Configs disponíveis: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`,
 
 | Comando | O que faz |
 |---|---|
-| `!skin` | Mostra a ajuda das skins e o link da página de skins |
-| `!skin <id>` | Usa uma skin. Ex.: `!skin hellsing-gold` |
+| `!skin` / `!skins` | Mostra a ajuda das skins e o link da página de skins |
+| `!skin <id>` / `!skins <id>` | Usa uma skin. Ex.: `!skin hellsing-gold` |
 | `!skin_next [arma]` / `!skin_prev [arma]` | Passa pelas skins que você pode usar. Depois da última, volta para a skin padrão |
 | `!skin_default [arma]` | Volta para a skin padrão |
 | `!weaponskins` | Mostra se as skins estão ligadas |

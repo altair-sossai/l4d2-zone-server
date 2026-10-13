@@ -467,8 +467,8 @@ This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are
 
 | Command | Access | Description |
 |---------|--------|-------------|
-| `sm_skin` | all | Without arguments, shows the help and the skins page link |
-| `sm_skin <id>` | all | Selects a skin by id (e.g. `hellsing-gold`) |
+| `sm_skin` / `sm_skins` | all | Without arguments, shows the help and the skins page link |
+| `sm_skin <id>` / `sm_skins <id>` | all | Selects a skin by id (e.g. `hellsing-gold`) |
 | `sm_skin_next [weapon]` / `sm_skin_prev [weapon]` | all | Cycles through the skins the player can use, wrapping through the default skin |
 | `sm_skin_default [weapon]` | all | Goes back to the default skin |
 | `sm_weaponskins` | all | Shows whether the skins are on |
