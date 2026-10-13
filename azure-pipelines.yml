@@ -101,3 +101,17 @@ stages:
                   --source "$(Build.Repository.LocalPath)/fastdl" \
                   --pattern "*" \
                   --overwrite
+                az storage blob upload-batch \
+                  --account-name l4d2playstats \
+                  --destination fastdl \
+                  --destination-path models \
+                  --source "$(Build.Repository.LocalPath)/models" \
+                  --pattern "*" \
+                  --overwrite
+                az storage blob upload-batch \
+                  --account-name l4d2playstats \
+                  --destination fastdl \
+                  --destination-path materials \
+                  --source "$(Build.Repository.LocalPath)/materials" \
+                  --pattern "*" \
+                  --overwrite

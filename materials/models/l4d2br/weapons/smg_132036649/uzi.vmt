@@ -1,0 +1,19 @@
+VertexLitGeneric
+{
+$baseTexture                     "models/l4d2br/weapons/smg_132036649/uzi"
+$bumpmap                          "models/l4d2br/weapons/smg_132036649/uzii_normal"
+$phongexponenttexture  "models/l4d2br/weapons/smg_132036649/uzi_exp"
+//$phongexponent 15
+$phong 1
+$phongboost "175.0"
+$phongfresnelranges "[1.0 1.3 1.1]"
+//$basemapalphaphongmask 1
+$phongalbedotint 1
+//$phongtint "[2.5 1.5 .5)"
+$envmap env_cubemap
+//$basemapalphaenvmapmask 1
+$normalmapalphaenvmapmask 1
+$envmapfresnel 1
+//$envmaptint "[.03 .04 .06]"
+$envmaptint "[2.5 1.5 .5]"
+}

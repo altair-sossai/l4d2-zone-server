@@ -1,0 +1,457 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/smg_silenced_3359446069/smg_a"
+$bumpmap "effects/flat_normal"
+$phongboost 2
+$phongexponenttexture "models/l4d2br/weapons/smg_silenced_3359446069/mac10rngexp"
+$phongalbedotint 1
+$phongfresnelranges "[10 20 .3]"
+$BASEMAPLUMINANCEPHONGMASK 1
+
+$ambientocclusion 1
+
+$phong 0
+"GPU>=2?$phong" 1
+$normalmapalphaenvmapmask 1
+$envmap env_cubemap
+$envmapfresnel 1
+$envmapFresnelMinMaxExp "[0 0 .4]"
+$envmaptint "[0.14 0.14 0.14]"
+$diffuseexp 1.2
+
+//////////////////////////////////////////////////////////////////////////////////////////////////
+// RNG Pure 2020 (inline) - by Ellie
+//////////////////////////////////////////////////////////////////////////////////////////////////
+
+	$oneSkinPerMap			"0"	// Set to 1 to limit the skin at 1 per map
+
+	$proxThreshold			"500"	// Add +100 if you can see the skin change
+	$toleranceThreshold		"10"	
+
+	$invisibleIsAlsoASkin		"0"	// 1 if any skin in the MOD has invisible skin
+	$invisibleIsAlsoASkinHere	"0"	// 1 for invisible to be a skin for this VMT
+
+	 $boomerEffects			"0"	// Set to 1 and unquote for Boomer effects
+	 // $detail 			"models/survivors/survivor_it"
+	 // $detailscale 		3
+	 // $detailblendfactor 		".001" 
+	 // $detailblendmode 		"0"
+
+	$meleeBloodEffects		"0"	// Set to 1 and unquote for Melee blood
+	// $detail 			"models/infected/hunter/hunter_01_detail"
+	// $detailscale 		"1.75"
+	// $detailblendfactor 		.001 
+	// $detailblendmode 		"0"
+
+///////////////////////////////////////////////////////////////////////////////
+
+	$randSYS		"0.0"	
+	$randSYSTemp		"0.0"
+	$randSYSOverflow	"0.0"
+	
+	$prepareStore		"1000.0"
+	$randSYSStored		"1000.0"
+	$randSYSInject		"0.0"
+
+	$randOffset		"1000.0"
+	$roundOffset		".05"
+
+	$time			"0"
+	$hasBeenFar		"0"
+	$isEntity		"0"
+
+	$rerollRaw		"0"
+	$rerollRawStored	"0"
+	$rerollRNG		"0"
+
+	$checkMax		"0.0"
+	$maxFrame		"0.0"
+	$maxFramePlusOne	"1.0"
+	$maxFramePlusInvisible	"1.0"
+
+	$countingFinished	"0.0"
+	$injectFrame		"0.0"
+	$RNGInjectFrame		"0.0"
+
+	$prox			"0"
+	$proxCheck		"0"
+	$triggerPureRNG		"0"
+
+	$clampLimit		"0.0"
+
+	$tempDIV		"0.0"
+	$tempMULT		"0.0"
+	$tempFRAC		"0.0"
+	$tempOFFSET		"0.0"
+
+	$boomerAmount		"0.0"
+	$bloodAmount		"0.0"
+
+	$mo			"-1"
+	$zero			"0.0"
+	$one			"1.0"
+	$two			"2.0"
+	$three			"3"
+	$twentyfour		"24"
+	$oh			"100"
+	$fh			"500"
+	$ot			"1000"
+
+Proxies
+{
+
+	Add
+	{
+		srcVar1 	"$maxFrame"
+		srcVar2 	"$one"
+		resultVar 	"$maxFramePlusOne"    
+	}
+
+	Add
+	{
+		srcVar1 	"$invisibleIsAlsoASkin"
+		srcVar2 	"$maxFramePlusOne"
+		resultVar 	"$maxFramePlusInvisible"    
+	}
+
+	AnimatedTexture				
+	{
+		animatedtexturevar 		"$basetexture" 
+		animatedtextureframenumvar	"$checkMax"	
+		animatedtextureframerate	"25"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$maxFrame"
+		greaterVar 	"$checkMax"
+		srcVar1 	"$checkMax"
+		srcVar2 	"$maxFrame"
+		resultVar 	"$maxFrame"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$one"
+		greaterVar 	"$countingFinished"
+		srcVar1 	"$checkMax"
+		srcVar2 	"$zero"
+		resultVar 	"$countingFinished"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$zero"
+		greaterVar 	"$countingFinished"
+		srcVar1 	"$maxFrame"
+		srcVar2 	"$zero"
+		resultVar 	"$countingFinished"    
+	}
+
+	ConVar			
+	{
+		convar		"cl_buy_favorite_nowarn"
+		resultVar	"$rerollRaw"
+	}
+
+	Int
+	{
+		srcVar1 	"$rerollRaw"
+		resultVar 	"$rerollRaw"    
+	}
+
+	Subtract
+	{
+		srcVar1 	"$rerollRaw"
+		srcVar2 	"$rerollRawStored"
+		resultVar 	"$rerollRNG"    
+	}
+
+	Abs
+	{
+		srcVar1		"$rerollRNG"
+		resultVar	"$rerollRNG"	
+	}
+
+	Equals
+	{
+		srcVar1 	"$rerollRaw"
+		resultVar 	"$rerollRawStored"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$randOffset"
+		greaterVar 	"$ot"
+		srcVar1 	"$rerollRNG"
+		srcVar2 	"$zero"
+		resultVar 	"$randOffset"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$randSYSStored"
+		greaterVar 	"$ot"
+		srcVar1 	"$rerollRNG"
+		srcVar2 	"$zero"
+		resultVar 	"$randSYSStored"    
+	}
+
+	CurrentTime
+	{
+		resultVar	"$time"
+	}
+
+	Divide
+	{
+		srcVar1 	"$time"
+		srcVar2 	"$maxFramePlusInvisible"
+		resultVar 	"$tempDIV"    
+	}
+
+	Frac
+	{
+		srcVar1 	"$tempDIV"
+		resultVar 	"$tempDIV"    
+	}
+
+	Multiply
+	{
+		srcVar1 	"$tempDIV"
+		srcVar2 	"$maxFramePlusInvisible"
+		resultVar 	"$tempDIV"    
+	}
+
+	Add
+	{
+		srcVar1 	"$tempDIV"
+		srcVar2 	"$roundOffset"
+		resultVar 	"$tempDIV"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$randOffset"
+		greaterVar 	"$tempDIV"
+		srcVar1 	"$randOffset"
+		srcVar2 	"$fh"
+		resultVar 	"$randOffset"    
+	}
+
+	EntityRandom
+	{
+          	 scale		"$maxFramePlusInvisible"         
+          	 resultVar 	"$randSYSTemp"  
+	}
+
+	Add
+	{
+		srcVar1		"$randSYSTemp"
+		srcVar2 	"$randOffset"
+		resultVar	"$randSYSTemp"	
+	}
+
+	Subtract
+	{
+		srcVar1		"$randSYSTemp"
+		srcVar2 	"$maxFramePlusInvisible"
+		resultVar	"$randSYSOverflow"	
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$randSYSTemp"
+		greaterVar 	"$randSYSOverflow"
+		srcVar1 	"$randSYSTemp"
+		srcVar2 	"$maxFramePlusInvisible"
+		resultVar 	"$randSYS"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$prepareStore"
+		greaterVar 	"$randSYS"
+		srcVar1 	"$countingFinished"
+		srcVar2 	"$zero"
+		resultVar 	"$prepareStore"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$randSYSStored"
+		greaterVar 	"$prepareStore"
+		srcVar1 	"$randSYSStored"
+		srcVar2 	"$fh"
+		resultVar 	"$randSYSStored"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$randSYS"
+		greaterVar 	"$randSYSStored"
+		srcVar1 	"$oneSkinPerMap"
+		srcVar2 	"$zero"
+		resultVar 	"$randSYSInject"    
+	}
+
+	Multiply			
+	{
+		srcVar1 	"$countingFinished"
+		srcVar2 	"$randSYSInject"
+		resultVar 	"$injectFrame"    
+	}
+
+	EntityRandom
+	{
+          	 scale		"1"         
+          	 resultVar 	"$isEntity"  
+	}
+
+	PlayerProximity
+	{
+		scale		"1"
+		resultVar 	"$prox"    
+	}
+
+	Subtract
+	{
+		srcVar1 	"$prox"
+		srcVar2 	"$proxThreshold"
+		resultVar 	"$proxCheck"    
+	}
+
+	Abs		
+	{
+		srcVar1 	"$proxCheck"
+		resultVar 	"$proxCheck"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$one"
+		greaterVar 	"$zero"
+		srcVar1 	"$proxCheck"
+		srcVar2 	"$toleranceThreshold"
+		resultVar 	"$triggerPureRNG"
+	}
+
+	Add		
+	{
+		srcVar1 	"$triggerPureRNG"
+		srcVar2 	"$rerollRNG"
+		resultVar 	"$triggerPureRNG"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$zero"
+		greaterVar 	"$isEntity"
+		srcVar1 	"$triggerPureRNG"
+		srcVar2 	"$zero"
+		resultVar 	"$isEntity"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$hasBeenFar"
+		greaterVar 	"$one"
+		srcVar1 	"$RNGinjectFrame"
+		srcVar2 	"$zero"
+		resultVar 	"$hasBeenFar"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$one"
+		greaterVar 	"$isEntity"
+		srcVar1 	"$hasBeenFar"
+		srcVar2 	"$zero"
+		resultVar 	"$isEntity"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$RNGinjectFrame"
+		greaterVar 	"$injectFrame"
+		srcVar1 	"$isEntity"
+		srcVar2 	"$zero"
+		resultVar 	"$injectFrame"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$RNGinjectFrame"
+		greaterVar 	"$injectFrame"
+		srcVar1 	"$isEntity"
+		srcVar2 	"$zero"
+		resultVar 	"$injectFrame"    
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$maxFrame"
+		greaterVar 	"$maxFramePlusOne"
+		srcVar1 	"$invisibleIsAlsoASkinHere"
+		srcVar2 	"$zero"
+		resultVar 	"$clampLimit"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$injectFrame"
+		greaterVar 	"$clampLimit"
+		srcVar1 	"$injectFrame"
+		srcVar2 	"$clampLimit"
+		resultVar 	"$RNGinjectFrame"
+	}
+
+	Equals
+	{
+		srcVar1 	"$RNGinjectFrame"
+		resultVar 	"$frame"
+	}
+
+	Int
+	{
+		srcVar1 	"$frame"
+		resultVar 	"$frame"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$one"
+		greaterVar 	"$zero"
+		srcVar1 	"$frame"
+		srcVar2 	"$maxframe"
+		resultVar 	"$alpha"
+	}
+
+	IT
+	{
+		resultVar	"$boomerAmount"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$detailblendfactor"
+		greaterVar 	"$boomerAmount"
+		srcVar1 	"$boomerEffects"
+		srcVar2 	"$zero" 
+		resultVar 	"$detailblendfactor"
+	}
+
+	BloodyHands
+	{
+		resultVar	"$bloodAmount"
+	}
+
+	LessOrEqual
+	{
+		LessEqualVar 	"$detailblendfactor"
+		greaterVar 	"$bloodAmount"
+		srcVar1 	"$meleeBloodEffects"
+		srcVar2 	"$zero" 
+		resultVar 	"$detailblendfactor"
+	}
+
+}

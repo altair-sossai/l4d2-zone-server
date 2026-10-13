@@ -12,16 +12,19 @@
 
 enum struct WeaponSkin
 {
+	char name[64];
 	char weapon[64];
 	char viewModel[PLATFORM_MAX_PATH];
 	char worldModel[PLATFORM_MAX_PATH];
 	char defaultViewModel[PLATFORM_MAX_PATH];
 	char defaultWorldModel[PLATFORM_MAX_PATH];
+	char models[PLATFORM_MAX_PATH];
 	char materials[PLATFORM_MAX_PATH];
 	int viewModelIndex;
 	int worldModelIndex;
 	int defaultViewModelIndex;
 	int defaultWorldModelIndex;
+	bool ready;
 }
 
 public Plugin myinfo =
@@ -34,6 +37,7 @@ public Plugin myinfo =
 };
 
 ArrayList g_hSkins;
+StringMap g_hSkinsByName;
 StringMap g_hPlayerSkins;
 
 int g_iActiveWeaponRef[MAXPLAYERS + 1] = { INVALID_ENT_REFERENCE, ... };
@@ -50,7 +54,10 @@ bool g_bWorldModelsEnabled = true;
 public void OnPluginStart()
 {
 	g_hSkins = new ArrayList(sizeof(WeaponSkin));
+	g_hSkinsByName = new StringMap();
 	g_hPlayerSkins = new StringMap();
+
+	RegAdminCmd("sm_weaponskin", Command_WeaponSkin, ADMFLAG_ROOT, "sm_weaponskin [skin] - Lists the loaded skins or tests one on yourself until the map changes");
 
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -64,6 +71,92 @@ public void OnPluginStart()
 public void OnMapStart()
 {
 	LoadSkins();
+}
+
+Action Command_WeaponSkin(int client, int args)
+{
+	if (args < 1)
+	{
+		ListSkins(client);
+		return Plugin_Handled;
+	}
+
+	if (client == 0)
+	{
+		ReplyToCommand(client, "[WeaponSkins] This command can only be used in game.");
+		return Plugin_Handled;
+	}
+
+	char name[64];
+	GetCmdArg(1, name, sizeof(name));
+
+	int skinIndex;
+	if (!g_hSkinsByName.GetValue(name, skinIndex))
+	{
+		ReplyToCommand(client, "[WeaponSkins] Unknown skin \"%s\".", name);
+		return Plugin_Handled;
+	}
+
+	WeaponSkin skin;
+	g_hSkins.GetArray(skinIndex, skin);
+
+	if (!skin.ready)
+	{
+		ReplyToCommand(client, "[WeaponSkins] Skin \"%s\" is not loaded. Check the error log.", name);
+		return Plugin_Handled;
+	}
+
+	char key[96];
+	FormatEx(key, sizeof(key), "%d:%s", GetSteamAccountID(client), skin.weapon);
+	g_hPlayerSkins.SetValue(key, skinIndex);
+
+	ApplySkinToActiveWeapon(client, skinIndex, skin);
+
+	ReplyToCommand(client, "[WeaponSkins] Skin \"%s\" set for %s until the map changes.", name, skin.weapon);
+	return Plugin_Handled;
+}
+
+void ListSkins(int client)
+{
+	WeaponSkin skin;
+	for (int i = 0; i < g_hSkins.Length; i++)
+	{
+		g_hSkins.GetArray(i, skin);
+		ReplyToCommand(client, "[WeaponSkins] %s (%s)%s", skin.name, skin.weapon, skin.ready ? "" : " - not loaded");
+	}
+}
+
+void ApplySkinToActiveWeapon(int client, int skinIndex, WeaponSkin skin)
+{
+	int weapon = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
+	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES || !IsValidEntity(weapon))
+	{
+		return;
+	}
+
+	char classname[64];
+	GetEntityClassname(weapon, classname, sizeof(classname));
+
+	if (!StrEqual(classname, skin.weapon))
+	{
+		return;
+	}
+
+	int previousSkin = GetAssignedWeaponSkin(weapon);
+	if (previousSkin != -1 && previousSkin != skinIndex)
+	{
+		WeaponSkin previous;
+		g_hSkins.GetArray(previousSkin, previous);
+		RestoreWorldModel(weapon, previous);
+		RestoreViewModel(client, previous);
+	}
+
+	g_iWeaponRef[weapon] = EntIndexToEntRef(weapon);
+	g_iWeaponSkin[weapon] = skinIndex;
+	g_iActiveWeaponRef[client] = g_iWeaponRef[weapon];
+	g_iActiveSkin[client] = skinIndex;
+
+	ApplyWorldModel(weapon, skin);
 }
 
 public void OnClientPutInServer(int client)
@@ -186,6 +279,7 @@ void RefreshWorldModelsState()
 void LoadSkins()
 {
 	g_hSkins.Clear();
+	g_hSkinsByName.Clear();
 	g_hPlayerSkins.Clear();
 
 	char path[PLATFORM_MAX_PATH];
@@ -199,16 +293,25 @@ void LoadSkins()
 		return;
 	}
 
-	StringMap skinsByName = new StringMap();
+	LoadSkinDefinitions(kv);
+	PrepareSkins();
+	LoadPlayerSkins(kv);
 
-	LoadSkinDefinitions(kv, skinsByName);
-	LoadPlayerSkins(kv, skinsByName);
-
-	delete skinsByName;
 	delete kv;
 }
 
-void LoadSkinDefinitions(KeyValues kv, StringMap skinsByName)
+void PrepareSkins()
+{
+	WeaponSkin skin;
+	for (int i = 0; i < g_hSkins.Length; i++)
+	{
+		g_hSkins.GetArray(i, skin);
+		skin.ready = PrepareSkin(skin);
+		g_hSkins.SetArray(i, skin);
+	}
+}
+
+void LoadSkinDefinitions(KeyValues kv)
 {
 	if (!kv.JumpToKey("Skins") || !kv.GotoFirstSubKey())
 	{
@@ -218,50 +321,39 @@ void LoadSkinDefinitions(KeyValues kv, StringMap skinsByName)
 
 	do
 	{
-		char name[64];
-		kv.GetSectionName(name, sizeof(name));
-
 		WeaponSkin skin;
+		kv.GetSectionName(skin.name, sizeof(skin.name));
 		kv.GetString("weapon", skin.weapon, sizeof(skin.weapon));
 		kv.GetString("view_model", skin.viewModel, sizeof(skin.viewModel));
 		kv.GetString("world_model", skin.worldModel, sizeof(skin.worldModel));
 		kv.GetString("default_view_model", skin.defaultViewModel, sizeof(skin.defaultViewModel));
 		kv.GetString("default_world_model", skin.defaultWorldModel, sizeof(skin.defaultWorldModel));
+		kv.GetString("models", skin.models, sizeof(skin.models));
 		kv.GetString("materials", skin.materials, sizeof(skin.materials));
 
-		if (!PrepareSkin(name, skin))
+		if (skin.weapon[0] == '\0' || skin.viewModel[0] == '\0' || skin.worldModel[0] == '\0' || skin.defaultViewModel[0] == '\0' || skin.defaultWorldModel[0] == '\0' || skin.models[0] == '\0' || skin.materials[0] == '\0')
 		{
+			LogError("Skin \"%s\" is missing required keys", skin.name);
 			continue;
 		}
 
-		skinsByName.SetValue(name, g_hSkins.PushArray(skin));
+		g_hSkinsByName.SetValue(skin.name, g_hSkins.PushArray(skin));
 	}
 	while (kv.GotoNextKey());
 
 	kv.Rewind();
 }
 
-bool PrepareSkin(const char[] name, WeaponSkin skin)
+bool PrepareSkin(WeaponSkin skin)
 {
-	if (skin.weapon[0] == '\0' || skin.viewModel[0] == '\0' || skin.worldModel[0] == '\0' || skin.defaultViewModel[0] == '\0' || skin.defaultWorldModel[0] == '\0')
-	{
-		LogError("Skin \"%s\" is missing required keys", name);
-		return false;
-	}
-
 	if (!FileExists(skin.viewModel) || !FileExists(skin.worldModel))
 	{
-		LogError("Skin \"%s\" models were not found on the server", name);
+		LogError("Skin \"%s\" models were not found on the server", skin.name);
 		return false;
 	}
 
-	AddModelToDownloadsTable(skin.viewModel);
-	AddModelToDownloadsTable(skin.worldModel);
-
-	if (skin.materials[0] != '\0')
-	{
-		AddDirectoryToDownloadsTable(skin.materials);
-	}
+	AddDirectoryToDownloadsTable(skin.models);
+	AddDirectoryToDownloadsTable(skin.materials);
 
 	skin.viewModelIndex = PrecacheModel(skin.viewModel, true);
 	skin.worldModelIndex = PrecacheModel(skin.worldModel, true);
@@ -271,7 +363,7 @@ bool PrepareSkin(const char[] name, WeaponSkin skin)
 	return true;
 }
 
-void LoadPlayerSkins(KeyValues kv, StringMap skinsByName)
+void LoadPlayerSkins(KeyValues kv)
 {
 	if (!kv.JumpToKey("Players") || !kv.GotoFirstSubKey())
 	{
@@ -291,14 +383,14 @@ void LoadPlayerSkins(KeyValues kv, StringMap skinsByName)
 			continue;
 		}
 
-		LoadPlayerWeapons(kv, skinsByName, accountId);
+		LoadPlayerWeapons(kv, accountId);
 	}
 	while (kv.GotoNextKey());
 
 	kv.Rewind();
 }
 
-void LoadPlayerWeapons(KeyValues kv, StringMap skinsByName, int accountId)
+void LoadPlayerWeapons(KeyValues kv, int accountId)
 {
 	if (!kv.GotoFirstSubKey(false))
 	{
@@ -313,7 +405,7 @@ void LoadPlayerWeapons(KeyValues kv, StringMap skinsByName, int accountId)
 		kv.GetString(NULL_STRING, skinName, sizeof(skinName));
 
 		int skinIndex;
-		if (!skinsByName.GetValue(skinName, skinIndex))
+		if (!g_hSkinsByName.GetValue(skinName, skinIndex))
 		{
 			LogError("Unknown skin \"%s\"", skinName);
 			continue;
@@ -506,6 +598,14 @@ int GetPlayerWeaponSkin(int client, int weapon)
 		return -1;
 	}
 
+	WeaponSkin skin;
+	g_hSkins.GetArray(skinIndex, skin);
+
+	if (!skin.ready)
+	{
+		return -1;
+	}
+
 	return skinIndex;
 }
 
@@ -586,32 +686,12 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 	SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", skin.worldModelIndex);
 }
 
-void AddModelToDownloadsTable(const char[] model)
-{
-	char base[PLATFORM_MAX_PATH];
-	strcopy(base, sizeof(base), model);
-	ReplaceString(base, sizeof(base), ".mdl", "", false);
-
-	static const char extensions[][] = { ".mdl", ".vvd", ".dx90.vtx", ".phy" };
-
-	char file[PLATFORM_MAX_PATH];
-	for (int i = 0; i < sizeof(extensions); i++)
-	{
-		FormatEx(file, sizeof(file), "%s%s", base, extensions[i]);
-
-		if (FileExists(file))
-		{
-			AddFileToDownloadsTable(file);
-		}
-	}
-}
-
 void AddDirectoryToDownloadsTable(const char[] directory)
 {
 	DirectoryListing listing = OpenDirectory(directory);
 	if (listing == null)
 	{
-		LogError("Could not open materials folder %s", directory);
+		LogError("Could not open folder %s", directory);
 		return;
 	}
 

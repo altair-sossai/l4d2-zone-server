@@ -1,0 +1,27 @@
+VertexLitGeneric	//
+{
+	$basetexture	"models/l4d2br/weapons/pumpshotgun_2810642280/v_shotgun_wood"	//
+	$bumpmap	"models/l4d2br/weapons/pumpshotgun_2810642280/v_shotgun_wood_n"	//
+	
+	$phong	"1"	//
+	$phongboost	"4"	//
+	$phongfresnelranges	"[0.21 0.6 1]"	//
+	
+	$phongalbedotint	"1"	//
+	$phongalbedoboost	"7"	//
+	$phongexponent	"65"	//
+	$phongexponenttexture	"models/l4d2br/weapons/pumpshotgun_2810642280/v_shotgun_wood_exp"	//
+
+	$envmap	"env_cubemap"	//
+	$normalmapalphaenvmapmask	"1"	//
+	$envmaptint	"[.05 .05 .05]"	//
+	$envmapfresnel	"1"	//
+	
+	$rimlight	"1"	//
+	$rimlightexponent	"255"	//
+	$rimlightboost	"255"	//
+	
+	$halflambert	"1"	//
+
+	$selfillum 1
+}

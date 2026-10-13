@@ -1,0 +1,24 @@
+VertexLitGeneric
+{
+$baseTexture "models/l4d2br/weapons/smg_silenced_2926162402/smg_a"
+$bumpmap    "models/l4d2br/weapons/smg_silenced_2926162402/smg_n"
+$lightwarptexture "models/l4d2br/weapons/smg_silenced_2926162402/lightwarp"
+
+$phong 1
+$phongboost 2
+$phongexponent 10
+$phongfresnelranges "[5 7 4]"
+$basemapalphaphongmask 1
+
+$envmap env_cubemap
+$envmapfresnel 1
+$envmapFresnelMinMaxExp "[1 1 .1]"
+$envmaptint "[1.5 1.5 1.5]"
+
+$rimlight 1
+$rimmask 1
+$rimlightboost 1
+$rimlightexponent 25
+
+$selfillum 1
+}
