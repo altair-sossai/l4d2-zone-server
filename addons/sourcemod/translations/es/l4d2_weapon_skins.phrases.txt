@@ -53,7 +53,7 @@
     }
     "HelpReady"
     {
-        "es"    "Las skins solo pueden ser cambiadas por {olive}sobrevivientes{default}, en el {olive}primer mapa{default} (marcador 0 a 0) y durante el {olive}ready-up{default}."
+        "es"    "Las skins solo pueden ser cambiadas por {olive}sobrevivientes{default} y solo durante el {olive}ready-up{default}."
     }
     "HelpSite"
     {
@@ -102,10 +102,6 @@
     {
         "#format"   "{1:s},{2:s}"
         "es"    "La skin {olive}{1}{default} no existe. Mira la lista en {green}{2}{default}"
-    }
-    "OnlyFirstMap"
-    {
-        "es"    "Las skins solo se pueden cambiar en el {olive}primer mapa{default}, mientras el marcador está {green}0 a 0{default}."
     }
     "OnlySurvivors"
     {

@@ -53,7 +53,7 @@
     }
     "HelpReady"
     {
-        "en"    "Skins can only be changed by {olive}survivors{default}, on the {olive}first map{default} (score 0 to 0) and during the {olive}ready-up{default}."
+        "en"    "Skins can only be changed by {olive}survivors{default} and only during the {olive}ready-up{default}."
     }
     "HelpSite"
     {
@@ -102,10 +102,6 @@
     {
         "#format"   "{1:s},{2:s}"
         "en"    "The skin {olive}{1}{default} does not exist. See the list at {green}{2}{default}"
-    }
-    "OnlyFirstMap"
-    {
-        "en"    "Skins can only be changed on the {olive}first map{default}, while the score is {green}0 to 0{default}."
     }
     "OnlySurvivors"
     {

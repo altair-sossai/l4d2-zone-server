@@ -6,7 +6,6 @@
 #include <sdkhooks>
 #include <colors>
 #include <ripext>
-#include <left4dhooks>
 
 #undef REQUIRE_PLUGIN
 #include <readyup>
@@ -173,7 +172,7 @@ void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 
 public void OnRoundIsLive()
 {
-	if (!g_bChoicesChanged || !IsNewGame())
+	if (!g_bChoicesChanged)
 	{
 		return;
 	}
@@ -534,12 +533,6 @@ bool CanChangeNow(int client)
 		return false;
 	}
 
-	if (!IsNewGame())
-	{
-		CPrintToChat(client, "%T %T", "Tag", client, "OnlyFirstMap", client);
-		return false;
-	}
-
 	if (g_bReadyUpAvailable && !IsInReady())
 	{
 		CPrintToChat(client, "%T %T", "Tag", client, "OnlyDuringReadyUp", client);
@@ -547,11 +540,6 @@ bool CanChangeNow(int client)
 	}
 
 	return true;
-}
-
-bool IsNewGame()
-{
-	return L4D2Direct_GetVSCampaignScore(0) == 0 && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
 
 ArrayList GetAvailableSkins(int client, const char[] weapon)

@@ -448,7 +448,7 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 
 Skins are unlocked by patent level. The skin levels come from `GET {weapon_skins_api_url}/api/skins` and the player levels from `GET {weapon_skins_api_url}/api/players/levels`, refreshed on map start and round start. A skin is usable when its level is less than or equal to the player's level. Unranked players are level 1.
 
-Rules for changing skins: only **survivors**, only on the **first map** with the score at **0 x 0**, and only during the **ready-up** (when `readyup` is loaded). The choices are saved to `addons/sourcemod/data/weapon_skins_players.txt` once, when the round goes live on the first map, and only if something changed. If a player's level drops (for example, after a ranking reset), the skins above the new level are removed and the player is told.
+Rules for changing skins: only **survivors**, and only during the **ready-up** (when `readyup` is loaded), on any map. The choices are saved to `addons/sourcemod/data/weapon_skins_players.txt` when the round goes live, only if something changed. If a player's level drops (for example, after a ranking reset), the skins above the new level are removed and the player is told.
 
 If any connected player has `cl_allowdownload 0` or a `cl_downloadfilter` other than `all`/`nosounds`, the world models go back to the default for everyone, so no one sees an ERROR model. The viewmodel skin still shows for players who downloaded the files.
 
