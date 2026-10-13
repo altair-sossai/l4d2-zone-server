@@ -5,7 +5,7 @@
 # Runs the whole thing every time (this is meant to be run once when creating
 # the server; any later change goes through the Azure DevOps pipeline):
 #   - installs dependencies, SteamCMD and downloads/updates L4D2
-#   - deploys the files from the main repo and from the "check" repo
+#   - deploys the files from the main repo, the "check" repo and the "assets" repo
 #   - sets up a crontab entry to run bootstrap.sh on server boot
 #
 # Usage:
@@ -14,7 +14,8 @@
 # Overriding parameters on the command line:
 #   ansible-playbook setup-server.yml \
 #     -e "ansible_host=1.2.3.4 ansible_user=devops ansible_password=xxx" \
-#     -e "check_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server-check"
+#     -e "check_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server-check" \
+#     -e "assets_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server-assets"
 #
 # NOTE: not tested against a real server yet — review before production use.
 # ============================================================================
@@ -24,11 +25,12 @@
   become: true
 
   vars:
-    # LOCAL paths (on the machine running Ansible) of the two repositories.
-    # By default the "check" repo is assumed to be a sibling of the main repo.
+    # LOCAL paths (on the machine running Ansible) of the three repositories.
+    # By default the "check" and "assets" repos are assumed to be siblings of the main repo.
     # On Windows via WSL use e.g. /mnt/d/Pessoal/L4D2/l4d2-zone-server-check
     repo_path: "{{ playbook_dir }}/.."
     check_path: "{{ playbook_dir }}/../../l4d2-zone-server-check"
+    assets_path: "{{ playbook_dir }}/../../l4d2-zone-server-assets"
 
   tasks:
     # ------------------------------------------------------------ PROVISIONING
@@ -97,8 +99,6 @@
         that: repo_check.stat.exists
         fail_msg: "Invalid repo_path ({{ repo_path }}). Pass -e repo_path=/path/to/l4d2-zone-server"
 
-    # assets/ and fastdl/ are intentionally left out — in the pipeline they go
-    # to Azure Blob Storage, not to the server.
     - name: Copy main-repo folders
       copy:
         src: "{{ repo_path }}/{{ item }}/"
@@ -108,7 +108,6 @@
         - cfg
         - bash
         - scripts
-        - materials
 
     - name: Copy loose main-repo files (host/motd)
       copy:
@@ -147,6 +146,28 @@
       copy:
         src: "{{ check_path }}/whitelist.cfg"
         dest: /home/steam/l4d2/left4dead2/whitelist.cfg
+
+    - name: Check that the assets repo exists locally
+      delegate_to: localhost
+      become: false
+      stat:
+        path: "{{ assets_path }}/materials"
+      register: assets_check
+
+    - name: Fail if the assets repo path is wrong
+      assert:
+        that: assets_check.stat.exists
+        fail_msg: "Invalid assets_path ({{ assets_path }}). Pass -e assets_path=/path/to/l4d2-zone-server-assets"
+
+    # assets/ and fastdl/ are intentionally left out — in the pipeline they go
+    # to Azure Blob Storage, not to the server.
+    - name: Copy models and materials from the assets repo
+      copy:
+        src: "{{ assets_path }}/{{ item }}/"
+        dest: "/home/steam/l4d2/left4dead2/{{ item }}/"
+      loop:
+        - models
+        - materials
 
     # ------------------------------------------------------------------ CRONTAB
     - name: Run bootstrap.sh on server boot (5s delay)

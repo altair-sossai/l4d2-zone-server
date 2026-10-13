@@ -19,8 +19,6 @@ stages:
               tar -czf cfg.tar.gz -C $(Build.Repository.LocalPath)/cfg .
               tar -czf bash.tar.gz -C $(Build.Repository.LocalPath)/bash .
               tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
-              tar -czf materials.tar.gz -C $(Build.Repository.LocalPath)/materials .
-              tar -czf models.tar.gz -C $(Build.Repository.LocalPath)/models .
             displayName: "📦 Compress folders into .tar.gz files"
 
           - task: SSH@0
@@ -66,52 +64,6 @@ stages:
                 tar -xzf /home/devops/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
                 tar -xzf /home/devops/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
                 tar -xzf /home/devops/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
-                mkdir -p /home/steam/l4d2/left4dead2/materials
-                tar -xzf /home/devops/materials.tar.gz -C /home/steam/l4d2/left4dead2/materials
-                mkdir -p /home/steam/l4d2/left4dead2/models
-                tar -xzf /home/devops/models.tar.gz -C /home/steam/l4d2/left4dead2/models
                 dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
                 chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
                 rm /home/devops/*.tar.gz
-
-          - task: AzureCLI@2
-            displayName: "☁️ Upload game assets to Azure Blob Storage"
-            inputs:
-              azureSubscription: "PessoalSubscription"
-              scriptType: "bash"
-              scriptLocation: "inlineScript"
-              inlineScript: |
-                az storage blob upload-batch \
-                  --account-name l4d2playstats \
-                  --destination assets \
-                  --source "$(Build.Repository.LocalPath)/assets" \
-                  --pattern "*" \
-                  --overwrite
-
-          - task: AzureCLI@2
-            displayName: "⚡ Upload FastDL files to Azure Blob Storage"
-            inputs:
-              azureSubscription: "PessoalSubscription"
-              scriptType: "bash"
-              scriptLocation: "inlineScript"
-              inlineScript: |
-                az storage blob upload-batch \
-                  --account-name l4d2playstats \
-                  --destination fastdl \
-                  --source "$(Build.Repository.LocalPath)/fastdl" \
-                  --pattern "*" \
-                  --overwrite
-                az storage blob upload-batch \
-                  --account-name l4d2playstats \
-                  --destination fastdl \
-                  --destination-path models \
-                  --source "$(Build.Repository.LocalPath)/models" \
-                  --pattern "*" \
-                  --overwrite
-                az storage blob upload-batch \
-                  --account-name l4d2playstats \
-                  --destination fastdl \
-                  --destination-path materials \
-                  --source "$(Build.Repository.LocalPath)/materials" \
-                  --pattern "*" \
-                  --overwrite

@@ -23,14 +23,15 @@ Every run does all of the following, in order:
 
 | Source (local)                             | Destination (server)                        |
 |--------------------------------------------|---------------------------------------------|
-| `addons/ cfg/ bash/ scripts/ materials/`   | `/home/steam/l4d2/left4dead2/<same folder>` |
+| `addons/ cfg/ bash/ scripts/`              | `/home/steam/l4d2/left4dead2/<same folder>` |
+| `models/ materials/` (assets repo)         | `/home/steam/l4d2/left4dead2/<same folder>` |
 | `host.txt`, `motd.txt`                     | `/home/steam/l4d2/left4dead2/`              |
 | `bash/*.sh`                                | `dos2unix` + `chmod +x` applied             |
 | `sound/` (check repo)                      | `/home/steam/l4d2/left4dead2/sound/`        |
 | `whitelist.cfg` (check repo)               | `/home/steam/l4d2/left4dead2/`              |
 
-> `assets/` and `fastdl/` are **not** copied: in the pipelines they are uploaded
-> to Azure Blob Storage, not to the server.
+> `assets/` and `fastdl/` (assets repo) are **not** copied: in the pipelines they
+> are uploaded to Azure Blob Storage, not to the server.
 
 **3. Crontab** — adds a root `@reboot` entry that runs the server bootstrap on
 every boot, after a 5-second delay:
@@ -93,16 +94,18 @@ The repositories live here on this PC:
 |-----------------------------|-------------------------------------------|---------------------------------------------------|
 | `l4d2-zone-server` (main)   | `D:\Pessoal\L4D2\l4d2-zone-server`        | `/mnt/d/Pessoal/L4D2/l4d2-zone-server`            |
 | `l4d2-zone-server-check`    | `D:\Pessoal\L4D2\l4d2-zone-server-check`  | `/mnt/d/Pessoal/L4D2/l4d2-zone-server-check`      |
+| `l4d2-zone-server-assets`   | `D:\Pessoal\L4D2\l4d2-zone-server-assets` | `/mnt/d/Pessoal/L4D2/l4d2-zone-server-assets`     |
 
-Since the two repos are sibling folders, the default `repo_path` / `check_path`
-already resolve correctly when you run the playbook from
+Since the three repos are sibling folders, the default `repo_path` / `check_path` /
+`assets_path` already resolve correctly when you run the playbook from
 `/mnt/d/Pessoal/L4D2/l4d2-zone-server/ansible`. If you ever run it from a
 different location, pass them explicitly:
 
 ```bash
 ansible-playbook setup-server.yml \
   -e "repo_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server" \
-  -e "check_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server-check"
+  -e "check_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server-check" \
+  -e "assets_path=/mnt/d/Pessoal/L4D2/l4d2-zone-server-assets"
 ```
 
 ### Available parameters
@@ -115,3 +118,4 @@ ansible-playbook setup-server.yml \
 | `ansible_become_password` | (inventory)                              | `sudo` password                             |
 | `repo_path`               | `..` (the main repo itself)              | local path to `l4d2-zone-server`            |
 | `check_path`              | `../../l4d2-zone-server-check`           | local path to `l4d2-zone-server-check`      |
+| `assets_path`             | `../../l4d2-zone-server-assets`          | local path to `l4d2-zone-server-assets`     |
