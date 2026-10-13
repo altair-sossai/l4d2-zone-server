@@ -250,6 +250,27 @@ Exemplos:
 | `!slots <número>` | Muda a quantidade de vagas do servidor **na hora**, sem votação. Ex.: `!slots 10` |
 | `!killlobbyres` | Remove a reserva de lobby do servidor (libera a entrada de quem não veio pelo lobby) |
 
+## Skins de armas
+
+| Comando | O que faz |
+|---|---|
+| `!weaponskins` | Mostra se as skins estão ligadas |
+| `!weaponskins on` / `!weaponskins off` | Liga ou desliga as skins para todos. **Continua valendo depois da troca de mapa**, até outro admin mudar |
+| `!skin_test <id> [arma]` | Testa qualquer skin em você até o mapa trocar, sem precisar de nível nem de ready-up |
+| `!skin_test default [arma]` | Tira a skin de teste |
+
+`[arma]`: `smg`, `mac`, `pump` ou `chrome`. Sem ela, usa a arma da sua mão.
+
+Exemplos:
+
+```
+!weaponskins off              -> desliga as skins para todos
+!skin_test hellsing-gold      -> testa a skin hellsing-gold
+!skin_test default smg        -> tira a skin de teste da SMG
+```
+
+> Os comandos de skin dos jogadores (`!skin`, `!skin_next`, `!skin_prev`, `!skin_default`) estão no [Guia de Comandos para Jogadores](../players/README.pt.md#skins-de-armas). `!weaponskins on/off` e `!skin_test` só funcionam para admins com acesso **root**.
+
 ---
 
 ## Comandos avançados

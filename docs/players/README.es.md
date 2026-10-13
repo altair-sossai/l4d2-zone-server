@@ -132,6 +132,37 @@ Configs disponibles: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, 
 
 ---
 
+## Skins de armas
+
+| Comando | Qué hace |
+|---|---|
+| `!skin` | Muestra la ayuda de las skins y el enlace de la página de skins |
+| `!skin <id>` | Usa una skin. Ej.: `!skin hellsing-gold` |
+| `!skin_next [arma]` / `!skin_prev [arma]` | Recorre las skins que puedes usar. Después de la última, vuelve a la skin predeterminada |
+| `!skin_default [arma]` | Vuelve a la skin predeterminada |
+| `!weaponskins` | Muestra si las skins están activadas |
+
+`[arma]` es opcional. Sin ella, el comando usa el arma que tienes en la mano (o tu arma principal). Valores: `smg`, `mac`, `pump`, `chrome`.
+
+Ejemplos:
+
+```
+!skin hellsing-gold     -> usa la skin hellsing-gold
+!skin_next              -> siguiente skin del arma en tu mano
+!skin_next pump         -> siguiente skin de la pump
+!skin_default chrome    -> la chrome vuelve a la skin predeterminada
+```
+
+> **Sobre las skins:**
+> - Hay skins para la SMG, MAC-10 (SMG con silenciador), pump y chrome. Mira todas las skins, el id y el nivel de cada una en [l4d2.com.br/skins](https://l4d2.com.br/skins). Inicia sesión en el sitio para ver cuáles puedes usar.
+> - Las skins se desbloquean según el nivel de tu patente: puedes usar todas las skins hasta tu nivel.
+> - Solo puedes cambiar de skin como **survivor**, en el **primer mapa** (marcador 0 x 0) y durante el **ready-up**.
+> - Tu elección queda guardada y se carga la próxima vez que juegues. Si tu nivel baja (por ejemplo, después de un reinicio del ranking), las skins por encima de tu nuevo nivel vuelven a la predeterminada.
+> - La skin acompaña al arma: si la sueltas, quien la recoja la usa con tu skin.
+> - Para ver las skins, permite las descargas en la consola: `cl_allowdownload 1; cl_downloadfilter all`. Si alguien en el servidor tiene las descargas desactivadas, las skins en tercera persona vuelven a la predeterminada para todos; en primera persona siguen apareciendo.
+
+---
+
 ## Espectadores
 
 | Comando | Qué hace |

@@ -8,7 +8,7 @@ This document describes the plugins maintained in this repository:
 For the remaining third-party plugins that ship unmodified with the base [ZoneMod / L4D2 Competitive Rework](https://github.com/SirPlease/L4D2-Competitive-Rework), refer to their original authors.
 
 - **Sources:** [`addons/sourcemod/scripting/`](../../addons/sourcemod/scripting/) (`.sp`)
-- **Compiled:** [`addons/sourcemod/plugins/optional/`](../../addons/sourcemod/plugins/optional/) (`.smx`) — except `l4d2_gameinfo_sync`, which lives in `plugins/` (auto-load)
+- **Compiled:** [`addons/sourcemod/plugins/optional/`](../../addons/sourcemod/plugins/optional/) (`.smx`) — except `l4d2_gameinfo_sync` and `l4d2_weapon_skins`, which live in `plugins/` (auto-load)
 - **Compile script:** [`ps/compile-custom-plugins.ps1`](../../ps/compile-custom-plugins.ps1)
 
 ---
@@ -53,6 +53,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 | [l4d2_gameinfo_sync](#l4d2_gameinfo_sync) | Syncs live game info & chat to the Game Info API |
 | [l4d2_campaign_vote](#l4d2_campaign_vote) | Lets any player vote to change to any installed campaign |
 | [l4d2_lerp_advisor](#l4d2_lerp_advisor) | Tells players with an invalid lerp which network commands to run |
+| [l4d2_weapon_skins](#l4d2_weapon_skins) | Weapon skins per player, unlocked by patent level |
 
 **Adapted plugins (third-party)**
 
@@ -436,6 +437,47 @@ The lerp value and the valid range are taken **entirely from `lerpmonitor`** —
 The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 100; cl_updaterate 100`) are hardcoded in the plugin, so they are shown to the player intact (a CVar value set through `confogl_addcvar` would be truncated at the first `;`).
 
 **How to configure** — Set `l4d2_lerp_advisor_enabled` in `shared_cvars.cfg`. Requires `lerpmonitor` to be loaded (it provides the lerp value and the `sm_min_lerp` / `sm_max_lerp` range). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt`](../../addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt) (English, Portuguese and Spanish).
+
+---
+
+## l4d2_weapon_skins
+
+**Source:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp)
+
+**What it does** — Lets each player pick a skin for the SMG, MAC-10 (silenced SMG), pump shotgun and chrome shotgun. The skins are texture-only workshop addons, delivered through FastDL, so players don't need to install any `.vpk`. Each weapon has one combined view/world model with one skin family per skin. The plugin swaps the weapon (and the player's viewmodel) to the combined model and sets `m_nSkin` to the skin's family. The skin follows the weapon: if it is dropped, whoever picks it up uses it with the same skin.
+
+Skins are unlocked by patent level. The skin levels come from `GET {weapon_skins_api_url}/api/skins` and the player levels from `GET {weapon_skins_api_url}/api/players/levels`, refreshed on map start and round start. A skin is usable when its level is less than or equal to the player's level. Unranked players are level 1.
+
+Rules for changing skins: only **survivors**, only on the **first map** with the score at **0 x 0**, and only during the **ready-up** (when `readyup` is loaded). The choices are saved to `addons/sourcemod/data/weapon_skins_players.txt` once, when the round goes live on the first map, and only if something changed. If a player's level drops (for example, after a ranking reset), the skins above the new level are removed and the player is told.
+
+If any connected player has `cl_allowdownload 0` or a `cl_downloadfilter` other than `all`/`nosounds`, the world models go back to the default for everyone, so no one sees an ERROR model. The viewmodel skin still shows for players who downloaded the files.
+
+This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are downloaded when players connect. Downloading new skin files during a changelevel shows ERROR models until the game restarts.
+
+**Objective** — Reward ranking progress with cosmetic weapon skins, without forcing players to install anything.
+
+**ConVars**
+
+| ConVar | Default | Description |
+|--------|---------|-------------|
+| `weapon_skins_enabled` | `0` | Enable the weapon skins |
+| `weapon_skins_api_url` | `""` | PlayStats web URL, used to read the skin and player levels and to build the `/skins` link (`PROTECTED`) |
+
+**Commands**
+
+| Command | Access | Description |
+|---------|--------|-------------|
+| `sm_skin` | all | Without arguments, shows the help and the skins page link |
+| `sm_skin <id>` | all | Selects a skin by id (e.g. `hellsing-gold`) |
+| `sm_skin_next [weapon]` / `sm_skin_prev [weapon]` | all | Cycles through the skins the player can use, wrapping through the default skin |
+| `sm_skin_default [weapon]` | all | Goes back to the default skin |
+| `sm_weaponskins` | all | Shows whether the skins are on |
+| `sm_weaponskins on\|off` | root | Turns the skins on or off. Overrides `weapon_skins_enabled` and stays in effect across map changes |
+| `sm_skin_test <id\|default> [weapon]` | root | Tests any skin on yourself until the map changes, ignoring level and ready-up |
+
+`[weapon]` accepts `smg`/`uzi`, `mac`/`mac10`/`silenced`, `pump`/`pumpshotgun` and `chrome`/`shotgun_chrome`. Without it, the weapon in the player's hand is used, then the primary weapon.
+
+**How to configure** — Set `weapon_skins_enabled` and `weapon_skins_api_url` in `shared_cvars.cfg`. Weapons and skins are defined in [`configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg): the `Weapons` section has the combined and default models of each weapon, and the `Skins` section maps each skin id to its weapon, skin family (`skin`) and materials folder. Family indexes follow the order of the skins in the cfg, so the combined models must be rebuilt when skins are added or removed. Models and materials live in the [`l4d2-zone-server-assets`](https://github.com/altair-sossai/l4d2-zone-server-assets) repo, whose pipeline deploys them to the server and the FastDL blob. Skin titles, descriptions, levels and thumbnails live in the PlayStats site (`/skins` page). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt`](../../addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt) (English, Portuguese and Spanish).
 
 ---
 

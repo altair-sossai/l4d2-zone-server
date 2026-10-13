@@ -132,6 +132,37 @@ Available configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `z
 
 ---
 
+## Weapon skins
+
+| Command | What it does |
+|---|---|
+| `!skin` | Shows the skins help and the link to the skins page |
+| `!skin <id>` | Uses a skin. Ex.: `!skin hellsing-gold` |
+| `!skin_next [weapon]` / `!skin_prev [weapon]` | Cycles through the skins you can use. After the last one, it goes back to the default skin |
+| `!skin_default [weapon]` | Goes back to the default skin |
+| `!weaponskins` | Shows whether the skins are on |
+
+`[weapon]` is optional. Without it, the command uses the weapon in your hand (or your primary weapon). Values: `smg`, `mac`, `pump`, `chrome`.
+
+Examples:
+
+```
+!skin hellsing-gold     -> uses the hellsing-gold skin
+!skin_next              -> next skin for the weapon in your hand
+!skin_next pump         -> next skin for the pump shotgun
+!skin_default chrome    -> chrome shotgun back to the default skin
+```
+
+> **About skins:**
+> - There are skins for the SMG, MAC-10 (silenced SMG), pump shotgun and chrome shotgun. See every skin, its id and level at [l4d2.com.br/skins](https://l4d2.com.br/skins). Log in on the site to see which ones you can use.
+> - Skins are unlocked by your patent level: you can use every skin up to your level.
+> - You can only change skins as a **survivor**, on the **first map** (score 0 x 0) and during the **ready-up**.
+> - Your choice is saved and loaded the next time you play. If your level drops (for example, after a ranking reset), skins above your new level go back to the default skin.
+> - The skin stays with the weapon: if you drop it, whoever picks it up uses it with your skin.
+> - To see the skins, allow downloads in your console: `cl_allowdownload 1; cl_downloadfilter all`. If someone on the server has downloads turned off, the skins in third person go back to the default for everyone; in first person they still show.
+
+---
+
 ## Spectators
 
 | Command | What it does |

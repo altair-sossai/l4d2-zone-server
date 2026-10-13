@@ -132,6 +132,37 @@ Configs disponíveis: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`,
 
 ---
 
+## Skins de armas
+
+| Comando | O que faz |
+|---|---|
+| `!skin` | Mostra a ajuda das skins e o link da página de skins |
+| `!skin <id>` | Usa uma skin. Ex.: `!skin hellsing-gold` |
+| `!skin_next [arma]` / `!skin_prev [arma]` | Passa pelas skins que você pode usar. Depois da última, volta para a skin padrão |
+| `!skin_default [arma]` | Volta para a skin padrão |
+| `!weaponskins` | Mostra se as skins estão ligadas |
+
+`[arma]` é opcional. Sem ela, o comando usa a arma que está na sua mão (ou a sua arma principal). Valores: `smg`, `mac`, `pump`, `chrome`.
+
+Exemplos:
+
+```
+!skin hellsing-gold     -> usa a skin hellsing-gold
+!skin_next              -> próxima skin da arma na sua mão
+!skin_next pump         -> próxima skin da pump
+!skin_default chrome    -> volta a chrome para a skin padrão
+```
+
+> **Sobre as skins:**
+> - Existem skins para a SMG, MAC-10 (SMG com silenciador), pump e chrome. Veja todas as skins, o id e o nível de cada uma em [l4d2.com.br/skins](https://l4d2.com.br/skins). Faça login no site para ver quais você pode usar.
+> - As skins são liberadas pelo nível da sua patente: você pode usar todas as skins até o seu nível.
+> - Só dá para trocar de skin como **survivor**, no **primeiro mapa** (placar 0 x 0) e durante o **ready-up**.
+> - Sua escolha fica salva e é carregada na próxima vez que você jogar. Se o seu nível cair (por exemplo, depois de um reset do ranking), as skins acima do novo nível voltam para a skin padrão.
+> - A skin acompanha a arma: se você largar a arma, quem pegar usa com a sua skin.
+> - Para ver as skins, libere os downloads no console: `cl_allowdownload 1; cl_downloadfilter all`. Se alguém no servidor estiver com os downloads desligados, as skins em terceira pessoa voltam para o padrão para todos; em primeira pessoa elas continuam aparecendo.
+
+---
+
 ## Spectators
 
 | Comando | O que faz |
