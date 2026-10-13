@@ -21,16 +21,29 @@
 #define PRIMARY_SLOT 0
 #define TEAM_SURVIVOR 2
 
-enum struct WeaponSkin
+enum struct WeaponModels
 {
-	char name[64];
 	char weapon[64];
 	char viewModel[PLATFORM_MAX_PATH];
 	char worldModel[PLATFORM_MAX_PATH];
 	char defaultViewModel[PLATFORM_MAX_PATH];
 	char defaultWorldModel[PLATFORM_MAX_PATH];
 	char models[PLATFORM_MAX_PATH];
+	int viewModelIndex;
+	int worldModelIndex;
+	int defaultViewModelIndex;
+	int defaultWorldModelIndex;
+	bool ready;
+}
+
+enum struct WeaponSkin
+{
+	char name[64];
+	char weapon[64];
+	char worldModel[PLATFORM_MAX_PATH];
+	char defaultWorldModel[PLATFORM_MAX_PATH];
 	char materials[PLATFORM_MAX_PATH];
+	int family;
 	int viewModelIndex;
 	int worldModelIndex;
 	int defaultViewModelIndex;
@@ -53,10 +66,13 @@ ConVar
 
 int g_iOverride = -1;
 
-ArrayList g_hSkins;
+ArrayList
+	g_hSkins,
+	g_hWeaponModels;
 
 StringMap
 	g_hSkinsByName,
+	g_hWeaponModelsByClass,
 	g_hSkinLevels,
 	g_hPlayerLevels,
 	g_hPlayerChoices,
@@ -74,6 +90,7 @@ int g_iActiveSkin[MAXPLAYERS + 1] = { -1, ... };
 
 int g_iWeaponRef[MAX_WEAPON_ENTITIES] = { INVALID_ENT_REFERENCE, ... };
 int g_iWeaponSkin[MAX_WEAPON_ENTITIES] = { -1, ... };
+int g_iWeaponOriginalSkin[MAX_WEAPON_ENTITIES] = { 0, ... };
 
 int g_iAllowDownload[MAXPLAYERS + 1] = { -1, ... };
 int g_iDownloadFilter[MAXPLAYERS + 1] = { -1, ... };
@@ -98,7 +115,9 @@ public void OnPluginStart()
 	AutoExecConfig(false);
 
 	g_hSkins = new ArrayList(sizeof(WeaponSkin));
+	g_hWeaponModels = new ArrayList(sizeof(WeaponModels));
 	g_hSkinsByName = new StringMap();
+	g_hWeaponModelsByClass = new StringMap();
 	g_hSkinLevels = new StringMap();
 	g_hPlayerLevels = new StringMap();
 	g_hPlayerChoices = new StringMap();
@@ -1054,7 +1073,7 @@ void ApplyChoiceToPrimaryWeapon(int client, const char[] weaponClass)
 		RestoreViewModel(client, previous);
 	}
 
-	g_iWeaponRef[weapon] = EntIndexToEntRef(weapon);
+	TrackWeapon(weapon);
 	g_iWeaponSkin[weapon] = skinIndex;
 
 	if (GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon") == weapon)
@@ -1194,6 +1213,8 @@ void LoadSkins()
 {
 	g_hSkins.Clear();
 	g_hSkinsByName.Clear();
+	g_hWeaponModels.Clear();
+	g_hWeaponModelsByClass.Clear();
 
 	char path[PLATFORM_MAX_PATH];
 	BuildPath(Path_SM, path, sizeof(path), CONFIG_PATH);
@@ -1206,21 +1227,60 @@ void LoadSkins()
 		return;
 	}
 
+	LoadWeaponModels(kv);
 	LoadSkinDefinitions(kv);
-	PrepareSkins();
 
 	delete kv;
 }
 
-void PrepareSkins()
+void LoadWeaponModels(KeyValues kv)
 {
-	WeaponSkin skin;
-	for (int i = 0; i < g_hSkins.Length; i++)
+	if (!kv.JumpToKey("Weapons") || !kv.GotoFirstSubKey())
 	{
-		g_hSkins.GetArray(i, skin);
-		skin.ready = PrepareSkin(skin);
-		g_hSkins.SetArray(i, skin);
+		kv.Rewind();
+		return;
 	}
+
+	do
+	{
+		WeaponModels models;
+		kv.GetSectionName(models.weapon, sizeof(models.weapon));
+		kv.GetString("view_model", models.viewModel, sizeof(models.viewModel));
+		kv.GetString("world_model", models.worldModel, sizeof(models.worldModel));
+		kv.GetString("default_view_model", models.defaultViewModel, sizeof(models.defaultViewModel));
+		kv.GetString("default_world_model", models.defaultWorldModel, sizeof(models.defaultWorldModel));
+		kv.GetString("models", models.models, sizeof(models.models));
+
+		models.ready = PrepareWeaponModels(models);
+		g_hWeaponModelsByClass.SetValue(models.weapon, g_hWeaponModels.PushArray(models));
+	}
+	while (kv.GotoNextKey());
+
+	kv.Rewind();
+}
+
+bool PrepareWeaponModels(WeaponModels models)
+{
+	if (models.viewModel[0] == '\0' || models.worldModel[0] == '\0' || models.defaultViewModel[0] == '\0' || models.defaultWorldModel[0] == '\0' || models.models[0] == '\0')
+	{
+		LogError("Weapon \"%s\" is missing required keys", models.weapon);
+		return false;
+	}
+
+	if (!FileExists(models.viewModel) || !FileExists(models.worldModel))
+	{
+		LogError("Weapon \"%s\" models were not found on the server", models.weapon);
+		return false;
+	}
+
+	AddDirectoryToDownloadsTable(models.models);
+
+	models.viewModelIndex = PrecacheModel(models.viewModel, true);
+	models.worldModelIndex = PrecacheModel(models.worldModel, true);
+	models.defaultViewModelIndex = PrecacheModel(models.defaultViewModel, true);
+	models.defaultWorldModelIndex = PrecacheModel(models.defaultWorldModel, true);
+
+	return true;
 }
 
 void LoadSkinDefinitions(KeyValues kv)
@@ -1236,19 +1296,16 @@ void LoadSkinDefinitions(KeyValues kv)
 		WeaponSkin skin;
 		kv.GetSectionName(skin.name, sizeof(skin.name));
 		kv.GetString("weapon", skin.weapon, sizeof(skin.weapon));
-		kv.GetString("view_model", skin.viewModel, sizeof(skin.viewModel));
-		kv.GetString("world_model", skin.worldModel, sizeof(skin.worldModel));
-		kv.GetString("default_view_model", skin.defaultViewModel, sizeof(skin.defaultViewModel));
-		kv.GetString("default_world_model", skin.defaultWorldModel, sizeof(skin.defaultWorldModel));
-		kv.GetString("models", skin.models, sizeof(skin.models));
 		kv.GetString("materials", skin.materials, sizeof(skin.materials));
+		skin.family = kv.GetNum("skin", -1);
 
-		if (skin.weapon[0] == '\0' || skin.viewModel[0] == '\0' || skin.worldModel[0] == '\0' || skin.defaultViewModel[0] == '\0' || skin.defaultWorldModel[0] == '\0' || skin.models[0] == '\0' || skin.materials[0] == '\0')
+		if (skin.weapon[0] == '\0' || skin.materials[0] == '\0' || skin.family < 0)
 		{
 			LogError("Skin \"%s\" is missing required keys", skin.name);
 			continue;
 		}
 
+		skin.ready = PrepareSkin(skin);
 		g_hSkinsByName.SetValue(skin.name, g_hSkins.PushArray(skin));
 	}
 	while (kv.GotoNextKey());
@@ -1258,19 +1315,35 @@ void LoadSkinDefinitions(KeyValues kv)
 
 bool PrepareSkin(WeaponSkin skin)
 {
-	if (!FileExists(skin.viewModel) || !FileExists(skin.worldModel))
+	int modelsIndex;
+	if (!g_hWeaponModelsByClass.GetValue(skin.weapon, modelsIndex))
 	{
-		LogError("Skin \"%s\" models were not found on the server", skin.name);
+		LogError("Skin \"%s\" uses %s, which has no models configured", skin.name, skin.weapon);
 		return false;
 	}
 
-	AddDirectoryToDownloadsTable(skin.models);
+	WeaponModels models;
+	g_hWeaponModels.GetArray(modelsIndex, models);
+
+	if (!models.ready)
+	{
+		return false;
+	}
+
+	if (!DirExists(skin.materials))
+	{
+		LogError("Skin \"%s\" materials were not found on the server", skin.name);
+		return false;
+	}
+
 	AddDirectoryToDownloadsTable(skin.materials);
 
-	skin.viewModelIndex = PrecacheModel(skin.viewModel, true);
-	skin.worldModelIndex = PrecacheModel(skin.worldModel, true);
-	skin.defaultViewModelIndex = PrecacheModel(skin.defaultViewModel, true);
-	skin.defaultWorldModelIndex = PrecacheModel(skin.defaultWorldModel, true);
+	strcopy(skin.worldModel, sizeof(skin.worldModel), models.worldModel);
+	strcopy(skin.defaultWorldModel, sizeof(skin.defaultWorldModel), models.defaultWorldModel);
+	skin.viewModelIndex = models.viewModelIndex;
+	skin.worldModelIndex = models.worldModelIndex;
+	skin.defaultViewModelIndex = models.defaultViewModelIndex;
+	skin.defaultWorldModelIndex = models.defaultWorldModelIndex;
 
 	return true;
 }
@@ -1399,14 +1472,41 @@ int GetWeaponSkin(int client, int weapon)
 		return -1;
 	}
 
-	int weaponRef = EntIndexToEntRef(weapon);
-	if (g_iWeaponRef[weapon] != weaponRef)
+	if (g_iWeaponRef[weapon] != EntIndexToEntRef(weapon))
 	{
-		g_iWeaponRef[weapon] = weaponRef;
+		TrackWeapon(weapon);
 		g_iWeaponSkin[weapon] = GetPlayerWeaponSkin(client, weapon);
 	}
 
 	return g_iWeaponSkin[weapon];
+}
+
+void TrackWeapon(int weapon)
+{
+	int weaponRef = EntIndexToEntRef(weapon);
+	if (g_iWeaponRef[weapon] == weaponRef)
+	{
+		return;
+	}
+
+	g_iWeaponRef[weapon] = weaponRef;
+	g_iWeaponSkin[weapon] = -1;
+	g_iWeaponOriginalSkin[weapon] = GetEntProp(weapon, Prop_Send, "m_nSkin");
+}
+
+int GetOriginalSkin(int weapon)
+{
+	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES || !IsValidEntity(weapon))
+	{
+		return 0;
+	}
+
+	if (g_iWeaponRef[weapon] != EntIndexToEntRef(weapon))
+	{
+		return GetEntProp(weapon, Prop_Send, "m_nSkin");
+	}
+
+	return g_iWeaponOriginalSkin[weapon];
 }
 
 int GetAssignedWeaponSkin(int weapon)
@@ -1480,12 +1580,15 @@ void ApplyViewModel(int client, WeaponSkin skin)
 		return;
 	}
 
-	if (GetEntProp(viewModel, Prop_Send, "m_nModelIndex") == skin.viewModelIndex)
+	if (GetEntProp(viewModel, Prop_Send, "m_nModelIndex") != skin.viewModelIndex)
 	{
-		return;
+		SetEntProp(viewModel, Prop_Send, "m_nModelIndex", skin.viewModelIndex);
 	}
 
-	SetEntProp(viewModel, Prop_Send, "m_nModelIndex", skin.viewModelIndex);
+	if (GetEntProp(viewModel, Prop_Send, "m_nSkin") != skin.family)
+	{
+		SetEntProp(viewModel, Prop_Send, "m_nSkin", skin.family);
+	}
 }
 
 void RestoreViewModel(int client, WeaponSkin skin)
@@ -1502,26 +1605,29 @@ void RestoreViewModel(int client, WeaponSkin skin)
 	}
 
 	SetEntProp(viewModel, Prop_Send, "m_nModelIndex", skin.defaultViewModelIndex);
+	SetEntProp(viewModel, Prop_Send, "m_nSkin", GetOriginalSkin(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon")));
 }
 
 void RestoreWorldModel(int weapon, WeaponSkin skin)
 {
+	bool restored = false;
+
 	if (GetEntProp(weapon, Prop_Send, "m_nModelIndex") == skin.worldModelIndex)
 	{
 		SetEntityModel(weapon, skin.defaultWorldModel);
+		restored = true;
 	}
 
-	if (!HasEntProp(weapon, Prop_Send, "m_iWorldModelIndex"))
+	if (HasEntProp(weapon, Prop_Send, "m_iWorldModelIndex") && GetEntProp(weapon, Prop_Send, "m_iWorldModelIndex") == skin.worldModelIndex)
 	{
-		return;
+		SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", skin.defaultWorldModelIndex);
+		restored = true;
 	}
 
-	if (GetEntProp(weapon, Prop_Send, "m_iWorldModelIndex") != skin.worldModelIndex)
+	if (restored)
 	{
-		return;
+		SetEntProp(weapon, Prop_Send, "m_nSkin", GetOriginalSkin(weapon));
 	}
-
-	SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", skin.defaultWorldModelIndex);
 }
 
 void ApplyWorldModel(int weapon, WeaponSkin skin)
@@ -1536,17 +1642,15 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 		SetEntityModel(weapon, skin.worldModel);
 	}
 
-	if (!HasEntProp(weapon, Prop_Send, "m_iWorldModelIndex"))
+	if (HasEntProp(weapon, Prop_Send, "m_iWorldModelIndex") && GetEntProp(weapon, Prop_Send, "m_iWorldModelIndex") != skin.worldModelIndex)
 	{
-		return;
+		SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", skin.worldModelIndex);
 	}
 
-	if (GetEntProp(weapon, Prop_Send, "m_iWorldModelIndex") == skin.worldModelIndex)
+	if (GetEntProp(weapon, Prop_Send, "m_nSkin") != skin.family)
 	{
-		return;
+		SetEntProp(weapon, Prop_Send, "m_nSkin", skin.family);
 	}
-
-	SetEntProp(weapon, Prop_Send, "m_iWorldModelIndex", skin.worldModelIndex);
 }
 
 void AddDirectoryToDownloadsTable(const char[] directory)
