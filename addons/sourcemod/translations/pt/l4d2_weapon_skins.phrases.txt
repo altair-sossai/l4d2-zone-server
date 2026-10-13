@@ -53,7 +53,7 @@
     }
     "HelpReady"
     {
-        "pt"    "As skins só podem ser trocadas durante o {olive}ready-up{default}."
+        "pt"    "As skins só podem ser trocadas por {olive}sobreviventes{default}, no {olive}primeiro mapa{default} (placar 0 a 0) e durante o {olive}ready-up{default}."
     }
     "HelpSite"
     {
@@ -102,5 +102,13 @@
     {
         "#format"   "{1:s},{2:s}"
         "pt"    "A skin {olive}{1}{default} não existe. Veja a lista em {green}{2}{default}"
+    }
+    "OnlyFirstMap"
+    {
+        "pt"    "As skins só podem ser trocadas no {olive}primeiro mapa{default}, enquanto o placar está {green}0 a 0{default}."
+    }
+    "OnlySurvivors"
+    {
+        "pt"    "Somente jogadores do time dos {olive}sobreviventes{default} podem trocar de skin."
     }
 }

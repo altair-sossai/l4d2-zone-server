@@ -6,6 +6,7 @@
 #include <sdkhooks>
 #include <colors>
 #include <ripext>
+#include <left4dhooks>
 
 #undef REQUIRE_PLUGIN
 #include <readyup>
@@ -18,6 +19,7 @@
 #define OBS_MODE_IN_EYE 4
 #define DEFAULT_PLAYER_LEVEL 1
 #define PRIMARY_SLOT 0
+#define TEAM_SURVIVOR 2
 
 enum struct WeaponSkin
 {
@@ -64,7 +66,8 @@ bool
 	g_bSkinLevelsLoaded = false,
 	g_bPlayerLevelsLoaded = false,
 	g_bReadyUpAvailable = false,
-	g_bWorldModelsEnabled = false;
+	g_bWorldModelsEnabled = false,
+	g_bChoicesChanged = false;
 
 int g_iActiveWeaponRef[MAXPLAYERS + 1] = { INVALID_ENT_REFERENCE, ... };
 int g_iActiveSkin[MAXPLAYERS + 1] = { -1, ... };
@@ -146,6 +149,17 @@ public void OnMapStart()
 void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
 {
 	RefreshLevels();
+}
+
+public void OnRoundIsLive()
+{
+	if (!g_bChoicesChanged || !IsNewGame())
+	{
+		return;
+	}
+
+	SaveChoices();
+	g_bChoicesChanged = false;
 }
 
 void OnEnabledChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -494,13 +508,30 @@ void SelectDefault(int client, int args, int weaponArg)
 
 bool CanChangeNow(int client)
 {
-	if (!g_bReadyUpAvailable || IsInReady())
+	if (GetClientTeam(client) != TEAM_SURVIVOR)
 	{
-		return true;
+		CPrintToChat(client, "%T %T", "Tag", client, "OnlySurvivors", client);
+		return false;
 	}
 
-	CPrintToChat(client, "%T %T", "Tag", client, "OnlyDuringReadyUp", client);
-	return false;
+	if (!IsNewGame())
+	{
+		CPrintToChat(client, "%T %T", "Tag", client, "OnlyFirstMap", client);
+		return false;
+	}
+
+	if (g_bReadyUpAvailable && !IsInReady())
+	{
+		CPrintToChat(client, "%T %T", "Tag", client, "OnlyDuringReadyUp", client);
+		return false;
+	}
+
+	return true;
+}
+
+bool IsNewGame()
+{
+	return L4D2Direct_GetVSCampaignScore(0) == 0 && L4D2Direct_GetVSCampaignScore(1) == 0;
 }
 
 ArrayList GetAvailableSkins(int client, const char[] weapon)
@@ -744,10 +775,16 @@ void SetChoice(int client, const char[] weapon, const char[] name)
 
 	char key[128];
 	FormatEx(key, sizeof(key), "%s:%s", steamId, weapon);
-	g_hPlayerChoices.SetString(key, name);
 	g_hTestChoices.Remove(key);
 
-	SaveChoices();
+	char current[64];
+	if (g_hPlayerChoices.GetString(key, current, sizeof(current)) && StrEqual(current, name))
+	{
+		return;
+	}
+
+	g_hPlayerChoices.SetString(key, name);
+	g_bChoicesChanged = true;
 }
 
 void ClearChoice(int client, const char[] weapon)
@@ -760,10 +797,12 @@ void ClearChoice(int client, const char[] weapon)
 
 	char key[128];
 	FormatEx(key, sizeof(key), "%s:%s", steamId, weapon);
-	g_hPlayerChoices.Remove(key);
 	g_hTestChoices.Remove(key);
 
-	SaveChoices();
+	if (g_hPlayerChoices.Remove(key))
+	{
+		g_bChoicesChanged = true;
+	}
 }
 
 void LoadChoices()
@@ -925,8 +964,6 @@ void ValidateChoices()
 		return;
 	}
 
-	bool changed = false;
-
 	StringMapSnapshot snapshot = g_hPlayerChoices.Snapshot();
 	for (int i = 0; i < snapshot.Length; i++)
 	{
@@ -949,16 +986,11 @@ void ValidateChoices()
 		}
 
 		g_hPlayerChoices.Remove(key);
-		changed = true;
+		g_bChoicesChanged = true;
 
 		NotifyChoiceRemoved(parts[0], parts[1], name);
 	}
 	delete snapshot;
-
-	if (changed)
-	{
-		SaveChoices();
-	}
 }
 
 void NotifyChoiceRemoved(const char[] steamId, const char[] weapon, const char[] name)
