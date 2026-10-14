@@ -15,7 +15,6 @@
 #define CHOICES_PATH "data/weapon_skins_players.txt"
 #define MAX_WEAPON_ENTITIES 2048
 #define DROPPED_MODEL_DELAY 0.1
-#define OBS_MODE_IN_EYE 4
 #define DEFAULT_PLAYER_LEVEL 1
 #define PRIMARY_SLOT 0
 #define TEAM_SURVIVOR 2
@@ -80,8 +79,6 @@ StringMap
 	g_hTestChoices;
 
 bool
-	g_bSkinLevelsLoaded = false,
-	g_bPlayerLevelsLoaded = false,
 	g_bReadyUpAvailable = false,
 	g_bWorldModelsEnabled = false,
 	g_bChoicesChanged = false;
@@ -92,9 +89,6 @@ int g_iActiveSkin[MAXPLAYERS + 1] = { -1, ... };
 int g_iWeaponRef[MAX_WEAPON_ENTITIES] = { INVALID_ENT_REFERENCE, ... };
 int g_iWeaponSkin[MAX_WEAPON_ENTITIES] = { -1, ... };
 int g_iWeaponOriginalSkin[MAX_WEAPON_ENTITIES] = { 0, ... };
-
-int g_iAllowDownload[MAXPLAYERS + 1] = { -1, ... };
-int g_iDownloadFilter[MAXPLAYERS + 1] = { -1, ... };
 
 public void OnPluginStart()
 {
@@ -1004,13 +998,13 @@ void OnSkinLevelsResponse(HTTPResponse response, any value)
 		return;
 	}
 
-	JSONArray skins = view_as<JSONArray>(response.Data);
-	ReadSkinsData(skins);
+	if (!ReadSkinsData(view_as<JSONArray>(response.Data)))
+	{
+		LogError("Ignored an invalid skin list from the API");
+		return;
+	}
+
 	PrepareNewDownloads();
-
-	g_bSkinLevelsLoaded = true;
-
-	ValidateChoices();
 }
 
 void OnPlayerLevelsResponse(HTTPResponse response, any value)
@@ -1021,93 +1015,35 @@ void OnPlayerLevelsResponse(HTTPResponse response, any value)
 		return;
 	}
 
-	g_hPlayerLevels.Clear();
-
 	JSONArray players = view_as<JSONArray>(response.Data);
+	if (players.Length == 0)
+	{
+		LogError("Ignored an empty player level list from the API");
+		return;
+	}
+
+	StringMap levels = new StringMap();
 	for (int i = 0; i < players.Length; i++)
 	{
 		JSONObject player = view_as<JSONObject>(players.Get(i));
 
+		if (!player.HasKey("communityId") || !player.HasKey("level"))
+		{
+			delete player;
+			delete levels;
+			LogError("Ignored an invalid player level list from the API");
+			return;
+		}
+
 		char communityId[32];
 		player.GetString("communityId", communityId, sizeof(communityId));
-		g_hPlayerLevels.SetValue(communityId, player.GetInt("level"));
+		levels.SetValue(communityId, player.GetInt("level"));
 
 		delete player;
 	}
 
-	g_bPlayerLevelsLoaded = true;
-
-	ValidateChoices();
-}
-
-void ValidateChoices()
-{
-	if (!g_bSkinLevelsLoaded || !g_bPlayerLevelsLoaded)
-	{
-		return;
-	}
-
-	StringMapSnapshot snapshot = g_hPlayerChoices.Snapshot();
-	for (int i = 0; i < snapshot.Length; i++)
-	{
-		char key[128];
-		snapshot.GetKey(i, key, sizeof(key));
-
-		char parts[2][64];
-		if (ExplodeString(key, ":", parts, sizeof(parts), sizeof(parts[])) != 2)
-		{
-			continue;
-		}
-
-		char name[64];
-		g_hPlayerChoices.GetString(key, name, sizeof(name));
-
-		int requiredLevel;
-		if (g_hSkinLevels.GetValue(name, requiredLevel) && GetLevelOf(parts[0]) >= requiredLevel)
-		{
-			continue;
-		}
-
-		g_hPlayerChoices.Remove(key);
-		g_bChoicesChanged = true;
-
-		NotifyChoiceRemoved(parts[0], parts[1], name);
-	}
-	delete snapshot;
-}
-
-void NotifyChoiceRemoved(const char[] steamId, const char[] weapon, const char[] name)
-{
-	int client = FindClientBySteamId(steamId);
-	if (client == 0)
-	{
-		return;
-	}
-
-	ApplyChoiceToPrimaryWeapon(client, weapon);
-
-	char weaponName[32];
-	GetWeaponDisplayName(weapon, weaponName, sizeof(weaponName));
-	CPrintToChat(client, "%T %T", "Tag", client, "SkinReset", client, weaponName, name);
-}
-
-int FindClientBySteamId(const char[] steamId)
-{
-	char clientSteamId[32];
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (!IsClientInGame(client) || !GetSteamId(client, clientSteamId, sizeof(clientSteamId)))
-		{
-			continue;
-		}
-
-		if (StrEqual(clientSteamId, steamId))
-		{
-			return client;
-		}
-	}
-
-	return 0;
+	delete g_hPlayerLevels;
+	g_hPlayerLevels = levels;
 }
 
 void ApplyChoiceToPrimaryWeapon(int client, const char[] weaponClass)
@@ -1170,14 +1106,9 @@ public void OnClientPutInServer(int client)
 		return;
 	}
 
-	g_iAllowDownload[client] = -1;
-	g_iDownloadFilter[client] = -1;
-
 	int userId = GetClientUserId(client);
 	QueryClientConVar(client, "cl_allowdownload", OnAllowDownloadQueried, userId);
 	QueryClientConVar(client, "cl_downloadfilter", OnDownloadFilterQueried, userId);
-
-	RefreshWorldModelsState();
 }
 
 public void OnClientDisconnect(int client)
@@ -1186,47 +1117,30 @@ public void OnClientDisconnect(int client)
 	g_iActiveSkin[client] = -1;
 }
 
-public void OnClientDisconnect_Post(int client)
-{
-	g_iAllowDownload[client] = -1;
-	g_iDownloadFilter[client] = -1;
-
-	RefreshWorldModelsState();
-}
-
 void OnAllowDownloadQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any userId)
 {
-	if (GetClientOfUserId(userId) != client)
+	if (GetClientOfUserId(userId) != client || result != ConVarQuery_Okay)
 	{
 		return;
 	}
 
-	g_iAllowDownload[client] = result == ConVarQuery_Okay && StringToInt(cvarValue) == 1 ? 1 : 0;
-
-	if (result == ConVarQuery_Okay && g_iAllowDownload[client] == 0)
+	if (StringToInt(cvarValue) != 1)
 	{
 		KickWithoutDownloads(client);
 	}
-
-	RefreshWorldModelsState();
 }
 
 void OnDownloadFilterQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any userId)
 {
-	if (GetClientOfUserId(userId) != client)
+	if (GetClientOfUserId(userId) != client || result != ConVarQuery_Okay)
 	{
 		return;
 	}
 
-	bool downloadsModels = StrEqual(cvarValue, "all", false) || StrEqual(cvarValue, "nosounds", false);
-	g_iDownloadFilter[client] = result == ConVarQuery_Okay && downloadsModels ? 1 : 0;
-
-	if (result == ConVarQuery_Okay && g_iDownloadFilter[client] == 0)
+	if (!StrEqual(cvarValue, "all", false) && !StrEqual(cvarValue, "nosounds", false))
 	{
 		KickWithoutDownloads(client);
 	}
-
-	RefreshWorldModelsState();
 }
 
 void KickWithoutDownloads(int client)
@@ -1239,32 +1153,9 @@ void KickWithoutDownloads(int client)
 	KickClient(client, "%T", "KickNoDownloads", client);
 }
 
-bool CanClientSeeSkins(int client)
-{
-	if (IsFakeClient(client))
-	{
-		return true;
-	}
-
-	return g_iAllowDownload[client] == 1 && g_iDownloadFilter[client] == 1;
-}
-
-bool HasClientWithoutSkins()
-{
-	for (int client = 1; client <= MaxClients; client++)
-	{
-		if (IsClientInGame(client) && !CanClientSeeSkins(client))
-		{
-			return true;
-		}
-	}
-
-	return false;
-}
-
 void RefreshWorldModelsState()
 {
-	bool enabled = IsEnabled() && !HasClientWithoutSkins();
+	bool enabled = IsEnabled();
 	if (enabled == g_bWorldModelsEnabled)
 	{
 		return;
@@ -1342,28 +1233,48 @@ void PrepareNewDownloads()
 	}
 }
 
-void ReadSkinsData(JSONArray skins)
+bool ReadSkinsData(JSONArray skins)
 {
-	g_hSkinLevels.Clear();
-	g_hUpcomingSkins.Clear();
+	if (skins.Length == 0)
+	{
+		return false;
+	}
+
+	StringMap levels = new StringMap();
+	StringMap upcoming = new StringMap();
 
 	for (int i = 0; i < skins.Length; i++)
 	{
 		JSONObject skin = view_as<JSONObject>(skins.Get(i));
 
+		if (!skin.HasKey("id") || !skin.HasKey("level") || !skin.HasKey("released") || !skin.HasKey("releaseDate"))
+		{
+			delete skin;
+			delete levels;
+			delete upcoming;
+			return false;
+		}
+
 		char id[64];
 		skin.GetString("id", id, sizeof(id));
-		g_hSkinLevels.SetValue(id, skin.GetInt("level"));
+		levels.SetValue(id, skin.GetInt("level"));
 
 		if (!skin.GetBool("released"))
 		{
 			char releaseDate[16];
 			skin.GetString("releaseDate", releaseDate, sizeof(releaseDate));
-			g_hUpcomingSkins.SetString(id, releaseDate);
+			upcoming.SetString(id, releaseDate);
 		}
 
 		delete skin;
 	}
+
+	delete g_hSkinLevels;
+	delete g_hUpcomingSkins;
+	g_hSkinLevels = levels;
+	g_hUpcomingSkins = upcoming;
+
+	return true;
 }
 
 bool IsReleased(const char[] name)
@@ -1561,46 +1472,13 @@ void OnPostThinkPost(int client)
 
 	ApplyWorldModel(weapon, skin);
 
-	if (CanShowViewModel(client))
+	if (IsEnabled())
 	{
 		ApplyViewModel(client, skin);
 		return;
 	}
 
 	RestoreViewModel(client, skin);
-}
-
-bool CanShowViewModel(int client)
-{
-	if (!IsEnabled() || !CanClientSeeSkins(client))
-	{
-		return false;
-	}
-
-	if (g_bWorldModelsEnabled)
-	{
-		return true;
-	}
-
-	for (int observer = 1; observer <= MaxClients; observer++)
-	{
-		if (observer == client || !IsClientInGame(observer) || CanClientSeeSkins(observer))
-		{
-			continue;
-		}
-
-		if (GetEntPropEnt(observer, Prop_Send, "m_hObserverTarget") != client)
-		{
-			continue;
-		}
-
-		if (GetEntProp(observer, Prop_Send, "m_iObserverMode") == OBS_MODE_IN_EYE)
-		{
-			return false;
-		}
-	}
-
-	return true;
 }
 
 int GetWeaponSkin(int client, int weapon)

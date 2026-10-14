@@ -88,11 +88,6 @@
         "#format"   "{1:s},{2:d},{3:d}"
         "es"    "No puedes usar {olive}{1}{default}: requiere nivel {green}{2}{default} y tú eres nivel {green}{3}{default}."
     }
-    "SkinReset"
-    {
-        "#format"   "{1:s},{2:s}"
-        "es"    "Tu skin {olive}{2}{default} de la {olive}{1}{default} fue retirada porque tu nivel ya no es suficiente. De vuelta a la skin predeterminada."
-    }
     "SkinSelected"
     {
         "#format"   "{1:s},{2:s}"
