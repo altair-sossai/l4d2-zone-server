@@ -16,6 +16,7 @@
 #define MAX_WEAPON_ENTITIES 2048
 #define DROPPED_MODEL_DELAY 0.1
 #define DEFAULT_PLAYER_LEVEL 1
+#define OBS_MODE_IN_EYE 4
 #define PRIMARY_SLOT 0
 #define TEAM_SURVIVOR 2
 
@@ -89,6 +90,9 @@ int g_iActiveSkin[MAXPLAYERS + 1] = { -1, ... };
 int g_iWeaponRef[MAX_WEAPON_ENTITIES] = { INVALID_ENT_REFERENCE, ... };
 int g_iWeaponSkin[MAX_WEAPON_ENTITIES] = { -1, ... };
 int g_iWeaponOriginalSkin[MAX_WEAPON_ENTITIES] = { 0, ... };
+
+int g_iAllowDownload[MAXPLAYERS + 1] = { -1, ... };
+int g_iDownloadFilter[MAXPLAYERS + 1] = { -1, ... };
 
 public void OnPluginStart()
 {
@@ -1106,15 +1110,46 @@ public void OnClientPutInServer(int client)
 		return;
 	}
 
-	int userId = GetClientUserId(client);
-	QueryClientConVar(client, "cl_allowdownload", OnAllowDownloadQueried, userId);
-	QueryClientConVar(client, "cl_downloadfilter", OnDownloadFilterQueried, userId);
+	if (g_iAllowDownload[client] == -1 || g_iDownloadFilter[client] == -1)
+	{
+		QueryDownloadSettings(client);
+	}
+
+	RefreshWorldModelsState();
+}
+
+public void OnClientConnected(int client)
+{
+	g_iAllowDownload[client] = -1;
+	g_iDownloadFilter[client] = -1;
+
+	if (IsFakeClient(client))
+	{
+		return;
+	}
+
+	QueryDownloadSettings(client);
 }
 
 public void OnClientDisconnect(int client)
 {
 	g_iActiveWeaponRef[client] = INVALID_ENT_REFERENCE;
 	g_iActiveSkin[client] = -1;
+}
+
+public void OnClientDisconnect_Post(int client)
+{
+	g_iAllowDownload[client] = -1;
+	g_iDownloadFilter[client] = -1;
+
+	RefreshWorldModelsState();
+}
+
+void QueryDownloadSettings(int client)
+{
+	int userId = GetClientUserId(client);
+	QueryClientConVar(client, "cl_allowdownload", OnAllowDownloadQueried, userId);
+	QueryClientConVar(client, "cl_downloadfilter", OnDownloadFilterQueried, userId);
 }
 
 void OnAllowDownloadQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any userId)
@@ -1124,10 +1159,14 @@ void OnAllowDownloadQueried(QueryCookie cookie, int client, ConVarQueryResult re
 		return;
 	}
 
-	if (StringToInt(cvarValue) != 1)
+	g_iAllowDownload[client] = StringToInt(cvarValue) == 1 ? 1 : 0;
+
+	if (g_iAllowDownload[client] == 0)
 	{
 		KickWithoutDownloads(client);
 	}
+
+	RefreshWorldModelsState();
 }
 
 void OnDownloadFilterQueried(QueryCookie cookie, int client, ConVarQueryResult result, const char[] cvarName, const char[] cvarValue, any userId)
@@ -1137,10 +1176,37 @@ void OnDownloadFilterQueried(QueryCookie cookie, int client, ConVarQueryResult r
 		return;
 	}
 
-	if (!StrEqual(cvarValue, "all", false) && !StrEqual(cvarValue, "nosounds", false))
+	g_iDownloadFilter[client] = StrEqual(cvarValue, "all", false) || StrEqual(cvarValue, "nosounds", false) ? 1 : 0;
+
+	if (g_iDownloadFilter[client] == 0)
 	{
 		KickWithoutDownloads(client);
 	}
+
+	RefreshWorldModelsState();
+}
+
+bool CanClientSeeSkins(int client)
+{
+	if (IsFakeClient(client))
+	{
+		return true;
+	}
+
+	return g_iAllowDownload[client] == 1 && g_iDownloadFilter[client] == 1;
+}
+
+bool HasClientWithoutSkins()
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && !IsClientInKickQueue(client) && !CanClientSeeSkins(client))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void KickWithoutDownloads(int client)
@@ -1155,7 +1221,7 @@ void KickWithoutDownloads(int client)
 
 void RefreshWorldModelsState()
 {
-	bool enabled = IsEnabled();
+	bool enabled = IsEnabled() && !HasClientWithoutSkins();
 	if (enabled == g_bWorldModelsEnabled)
 	{
 		return;
@@ -1472,13 +1538,46 @@ void OnPostThinkPost(int client)
 
 	ApplyWorldModel(weapon, skin);
 
-	if (IsEnabled())
+	if (CanShowViewModel(client))
 	{
 		ApplyViewModel(client, skin);
 		return;
 	}
 
 	RestoreViewModel(client, skin);
+}
+
+bool CanShowViewModel(int client)
+{
+	if (!IsEnabled() || !CanClientSeeSkins(client))
+	{
+		return false;
+	}
+
+	if (g_bWorldModelsEnabled)
+	{
+		return true;
+	}
+
+	for (int observer = 1; observer <= MaxClients; observer++)
+	{
+		if (observer == client || !IsClientInGame(observer) || CanClientSeeSkins(observer))
+		{
+			continue;
+		}
+
+		if (GetEntPropEnt(observer, Prop_Send, "m_hObserverTarget") != client)
+		{
+			continue;
+		}
+
+		if (GetEntProp(observer, Prop_Send, "m_iObserverMode") == OBS_MODE_IN_EYE)
+		{
+			return false;
+		}
+	}
+
+	return true;
 }
 
 int GetWeaponSkin(int client, int weapon)
