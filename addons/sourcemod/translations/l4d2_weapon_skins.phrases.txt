@@ -104,7 +104,7 @@
     }
     "KickNoDownloads"
     {
-        "en"    "This server uses weapon skins and requires downloads. Turn them on in Options > Multiplayer > Custom Server Content > Allow All, or in the console: cl_allowdownload 1; cl_downloadfilter all. Then reconnect."
+        "en"    "This server requires downloads turned on. Turn them on in Options > Multiplayer > Custom Server Content > Allow All. Then reconnect."
     }
     "SkinComingSoon"
     {
