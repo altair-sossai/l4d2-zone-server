@@ -159,7 +159,7 @@ Exemplos:
 > - Só dá para trocar de skin como **survivor** e durante o **ready-up**, em qualquer mapa.
 > - Sua escolha fica salva e é carregada na próxima vez que você jogar. Se o seu nível cair (por exemplo, depois de um reset do ranking), as skins acima do novo nível voltam para a skin padrão.
 > - A skin acompanha a arma: se você largar a arma, quem pegar usa com a sua skin.
-> - Para ver as skins, libere os downloads no console: `cl_allowdownload 1; cl_downloadfilter all`. Se alguém no servidor estiver com os downloads desligados, as skins em terceira pessoa voltam para o padrão para todos; em primeira pessoa elas continuam aparecendo.
+> - Os downloads precisam estar ligados para jogar no servidor: **Opções > Multijogador > Conteúdo personalizado do servidor > Permitir tudo**, ou no console: `cl_allowdownload 1; cl_downloadfilter all`. Quem estiver com os downloads desligados é expulso com uma mensagem explicando como ligar.
 
 ---
 

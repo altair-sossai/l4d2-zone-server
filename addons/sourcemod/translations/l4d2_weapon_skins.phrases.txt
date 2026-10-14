@@ -107,4 +107,8 @@
     {
         "en"    "Only players on the {olive}survivor{default} team can change skins."
     }
+    "KickNoDownloads"
+    {
+        "en"    "Downloads are disabled in your game, so you cannot see the weapon skins. Enable them in Options > Multiplayer > Custom Server Content > Allow All (or type in the console: cl_allowdownload 1; cl_downloadfilter all) and reconnect."
+    }
 }

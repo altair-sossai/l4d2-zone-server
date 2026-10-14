@@ -107,4 +107,8 @@
     {
         "es"    "Solo los jugadores del equipo de los {olive}sobrevivientes{default} pueden cambiar de skin."
     }
+    "KickNoDownloads"
+    {
+        "es"    "Las descargas están desactivadas en tu juego y no puedes ver las skins de armas. Actívalas en Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo (o escribe en la consola: cl_allowdownload 1; cl_downloadfilter all) y vuelve a conectarte."
+    }
 }

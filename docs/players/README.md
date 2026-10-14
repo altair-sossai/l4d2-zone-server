@@ -159,7 +159,7 @@ Examples:
 > - You can only change skins as a **survivor** and during the **ready-up**, on any map.
 > - Your choice is saved and loaded the next time you play. If your level drops (for example, after a ranking reset), skins above your new level go back to the default skin.
 > - The skin stays with the weapon: if you drop it, whoever picks it up uses it with your skin.
-> - To see the skins, allow downloads in your console: `cl_allowdownload 1; cl_downloadfilter all`. If someone on the server has downloads turned off, the skins in third person go back to the default for everyone; in first person they still show.
+> - Downloads must be on to play on the server: **Options > Multiplayer > Custom Server Content > Allow All**, or in the console: `cl_allowdownload 1; cl_downloadfilter all`. Players with downloads off are kicked with a message explaining how to turn them on.
 
 ---
 

@@ -450,7 +450,7 @@ Skins are unlocked by patent level. The skin levels come from `GET {weapon_skins
 
 Rules for changing skins: only **survivors**, and only during the **ready-up** (when `readyup` is loaded), on any map. The choices are saved to `addons/sourcemod/data/weapon_skins_players.txt` when the round goes live, only if something changed. If a player's level drops (for example, after a ranking reset), the skins above the new level are removed and the player is told.
 
-If any connected player has `cl_allowdownload 0` or a `cl_downloadfilter` other than `all`/`nosounds`, the world models go back to the default for everyone, so no one sees an ERROR model. The viewmodel skin still shows for players who downloaded the files.
+When `weapon_skins_kick_no_downloads` is on, players without downloads are kicked with a message that explains how to turn them on (Options > Multiplayer > Custom Server Content > Allow All). Otherwise, if any connected player has `cl_allowdownload 0` or a `cl_downloadfilter` other than `all`/`nosounds`, the world models go back to the default for everyone, so no one sees an ERROR model. The viewmodel skin still shows for players who downloaded the files.
 
 This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are downloaded when players connect. Downloading new skin files during a changelevel shows ERROR models until the game restarts.
 
@@ -462,6 +462,7 @@ This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are
 |--------|---------|-------------|
 | `weapon_skins_enabled` | `0` | Enable the weapon skins |
 | `weapon_skins_api_url` | `""` | PlayStats web URL, used to read the skin and player levels and to build the `/skins` link (`PROTECTED`) |
+| `weapon_skins_kick_no_downloads` | `0` | Kick players whose game does not download the server files (`cl_allowdownload 0`, or `cl_downloadfilter` other than `all`/`nosounds`). The kick message explains how to turn downloads on |
 
 **Commands**
 

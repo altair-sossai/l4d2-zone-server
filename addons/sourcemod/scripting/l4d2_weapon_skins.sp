@@ -61,7 +61,8 @@ public Plugin myinfo =
 
 ConVar
 	g_hEnabled,
-	g_hApiUrl;
+	g_hApiUrl,
+	g_hKickNoDownloads;
 
 int g_iOverride = -1;
 
@@ -100,6 +101,7 @@ public void OnPluginStart()
 
 	g_hEnabled = CreateConVar("weapon_skins_enabled", "0", "Enable the weapon skins", _, true, 0.0, true, 1.0);
 	g_hApiUrl = CreateConVar("weapon_skins_api_url", "", "Play Stats web URL, used to read the skin and player levels", FCVAR_PROTECTED);
+	g_hKickNoDownloads = CreateConVar("weapon_skins_kick_no_downloads", "0", "Kick players whose game does not download the server files, so everyone can see the skins", _, true, 0.0, true, 1.0);
 	g_hEnabled.AddChangeHook(OnEnabledChanged);
 
 	RegConsoleCmd("sm_weaponskins", Command_WeaponSkins, "Shows whether the weapon skins are on; admins turn them on or off with sm_weaponskins on|off");
@@ -1196,6 +1198,11 @@ void OnAllowDownloadQueried(QueryCookie cookie, int client, ConVarQueryResult re
 
 	g_iAllowDownload[client] = result == ConVarQuery_Okay && StringToInt(cvarValue) == 1 ? 1 : 0;
 
+	if (result == ConVarQuery_Okay && g_iAllowDownload[client] == 0)
+	{
+		KickWithoutDownloads(client);
+	}
+
 	RefreshWorldModelsState();
 }
 
@@ -1209,7 +1216,22 @@ void OnDownloadFilterQueried(QueryCookie cookie, int client, ConVarQueryResult r
 	bool downloadsModels = StrEqual(cvarValue, "all", false) || StrEqual(cvarValue, "nosounds", false);
 	g_iDownloadFilter[client] = result == ConVarQuery_Okay && downloadsModels ? 1 : 0;
 
+	if (result == ConVarQuery_Okay && g_iDownloadFilter[client] == 0)
+	{
+		KickWithoutDownloads(client);
+	}
+
 	RefreshWorldModelsState();
+}
+
+void KickWithoutDownloads(int client)
+{
+	if (!g_hKickNoDownloads.BoolValue || !IsEnabled() || IsClientInKickQueue(client))
+	{
+		return;
+	}
+
+	KickClient(client, "%T", "KickNoDownloads", client);
 }
 
 bool CanClientSeeSkins(int client)
