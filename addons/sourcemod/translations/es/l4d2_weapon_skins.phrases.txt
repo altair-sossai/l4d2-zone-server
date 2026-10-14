@@ -104,7 +104,7 @@
     }
     "KickNoDownloads"
     {
-        "es"    "Activa las descargas para jugar: Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo. Consola: cl_allowdownload 1"
+        "es"    "Este servidor usa skins de armas y requiere descargas activadas. Actívalas en Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo, o en la consola: cl_allowdownload 1; cl_downloadfilter all. Luego reconéctate."
     }
     "SkinComingSoon"
     {

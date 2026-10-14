@@ -13,6 +13,7 @@
 
 #define CONFIG_PATH "configs/weapon_skins.cfg"
 #define CHOICES_PATH "data/weapon_skins_players.txt"
+#define SKINS_CACHE_PATH "data/weapon_skins_cache.json"
 #define MAX_WEAPON_ENTITIES 2048
 #define DROPPED_MODEL_DELAY 0.1
 #define DEFAULT_PLAYER_LEVEL 1
@@ -1012,13 +1013,14 @@ void OnSkinLevelsResponse(HTTPResponse response, any value)
 		return;
 	}
 
-	if (!ReadSkinsData(view_as<JSONArray>(response.Data)))
+	JSONArray skins = view_as<JSONArray>(response.Data);
+	if (!ReadSkinsData(skins))
 	{
 		LogError("Ignored an invalid skin list from the API");
 		return;
 	}
 
-	PrepareNewDownloads();
+	SaveSkinsCache(skins);
 }
 
 void OnPlayerLevelsResponse(HTTPResponse response, any value)
@@ -1278,34 +1280,50 @@ void LoadSkins()
 		return;
 	}
 
+	if (g_hSkinLevels.Size == 0)
+	{
+		LoadSkinsCache();
+	}
+
 	LoadWeaponModels(kv);
 	LoadSkinDefinitions(kv);
 
 	delete kv;
 }
 
-void PrepareNewDownloads()
+void LoadSkinsCache()
 {
-	for (int client = 1; client <= MaxClients; client++)
+	char path[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, path, sizeof(path), SKINS_CACHE_PATH);
+
+	if (!FileExists(path))
 	{
-		if (IsClientConnected(client) && !IsFakeClient(client))
-		{
-			return;
-		}
+		return;
 	}
 
-	WeaponSkin skin;
-	for (int i = 0; i < g_hSkins.Length; i++)
+	JSONArray skins = JSONArray.FromFile(path);
+	if (skins == null)
 	{
-		g_hSkins.GetArray(i, skin);
+		LogError("Could not read %s", path);
+		return;
+	}
 
-		if (skin.ready || !g_hSkinLevels.ContainsKey(skin.name))
-		{
-			continue;
-		}
+	if (!ReadSkinsData(skins))
+	{
+		LogError("Ignored an invalid skin list in %s", path);
+	}
 
-		skin.ready = PrepareSkin(skin);
-		g_hSkins.SetArray(i, skin);
+	delete skins;
+}
+
+void SaveSkinsCache(JSONArray skins)
+{
+	char path[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, path, sizeof(path), SKINS_CACHE_PATH);
+
+	if (!skins.ToFile(path))
+	{
+		LogError("Could not write %s", path);
 	}
 }
 
