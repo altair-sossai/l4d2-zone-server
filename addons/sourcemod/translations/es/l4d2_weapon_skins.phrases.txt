@@ -109,6 +109,11 @@
     }
     "KickNoDownloads"
     {
-        "es"    "Las descargas están desactivadas en tu juego y no puedes ver las skins de armas. Actívalas en Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo (o escribe en la consola: cl_allowdownload 1; cl_downloadfilter all) y vuelve a conectarte."
+        "es"    "Activa las descargas para jugar: Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo. Consola: cl_allowdownload 1"
+    }
+    "SkinComingSoon"
+    {
+        "#format"   "{1:s},{2:s}"
+        "es"    "La skin {olive}{1}{default} todavía no está disponible. Se lanzará el {green}{2}{default}."
     }
 }

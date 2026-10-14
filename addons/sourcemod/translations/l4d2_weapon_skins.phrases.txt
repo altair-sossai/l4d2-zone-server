@@ -109,6 +109,11 @@
     }
     "KickNoDownloads"
     {
-        "en"    "Downloads are disabled in your game, so you cannot see the weapon skins. Enable them in Options > Multiplayer > Custom Server Content > Allow All (or type in the console: cl_allowdownload 1; cl_downloadfilter all) and reconnect."
+        "en"    "Turn on downloads to play: Options > Multiplayer > Custom Server Content > Allow All. Console: cl_allowdownload 1"
+    }
+    "SkinComingSoon"
+    {
+        "#format"   "{1:s},{2:s}"
+        "en"    "The skin {olive}{1}{default} is not available yet. It will be released on {green}{2}{default}."
     }
 }

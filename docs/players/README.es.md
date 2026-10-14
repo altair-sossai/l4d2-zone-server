@@ -156,6 +156,7 @@ Ejemplos:
 > **Sobre las skins:**
 > - Hay skins para la SMG, MAC-10 (SMG con silenciador), pump y chrome. Mira todas las skins, el id y el nivel de cada una en [l4d2.com.br/skins](https://l4d2.com.br/skins). Inicia sesión en el sitio para ver cuáles puedes usar.
 > - Las skins se desbloquean según el nivel de tu patente: puedes usar todas las skins hasta tu nivel.
+> - Se lanzan nuevas skins cada dos semanas. Una skin que todavía no se lanzó no puede usarla nadie; el sitio muestra la fecha de lanzamiento. Sus archivos empiezan a descargarse una semana antes.
 > - Solo puedes cambiar de skin como **survivor** y durante el **ready-up**, en cualquier mapa.
 > - Tu elección queda guardada y se carga la próxima vez que juegues. Si tu nivel baja (por ejemplo, después de un reinicio del ranking), las skins por encima de tu nuevo nivel vuelven a la predeterminada.
 > - La skin acompaña al arma: si la sueltas, quien la recoja la usa con tu skin.

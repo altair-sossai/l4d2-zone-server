@@ -156,6 +156,7 @@ Examples:
 > **About skins:**
 > - There are skins for the SMG, MAC-10 (silenced SMG), pump shotgun and chrome shotgun. See every skin, its id and level at [l4d2.com.br/skins](https://l4d2.com.br/skins). Log in on the site to see which ones you can use.
 > - Skins are unlocked by your patent level: you can use every skin up to your level.
+> - New skins are released every two weeks. A skin that is not released yet cannot be used by anyone; the site shows its release date. Its files start downloading one week before the release.
 > - You can only change skins as a **survivor** and during the **ready-up**, on any map.
 > - Your choice is saved and loaded the next time you play. If your level drops (for example, after a ranking reset), skins above your new level go back to the default skin.
 > - The skin stays with the weapon: if you drop it, whoever picks it up uses it with your skin.

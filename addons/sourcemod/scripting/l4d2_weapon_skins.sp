@@ -74,6 +74,7 @@ StringMap
 	g_hSkinsByName,
 	g_hWeaponModelsByClass,
 	g_hSkinLevels,
+	g_hUpcomingSkins,
 	g_hPlayerLevels,
 	g_hPlayerChoices,
 	g_hTestChoices;
@@ -121,6 +122,7 @@ public void OnPluginStart()
 	g_hSkinsByName = new StringMap();
 	g_hWeaponModelsByClass = new StringMap();
 	g_hSkinLevels = new StringMap();
+	g_hUpcomingSkins = new StringMap();
 	g_hPlayerLevels = new StringMap();
 	g_hPlayerChoices = new StringMap();
 	g_hTestChoices = new StringMap();
@@ -357,6 +359,13 @@ Action Command_Skin(int client, int args)
 		return Plugin_Handled;
 	}
 
+	char releaseDate[16];
+	if (g_hUpcomingSkins.GetString(name, releaseDate, sizeof(releaseDate)))
+	{
+		CPrintToChat(client, "%T %T", "Tag", client, "SkinComingSoon", client, name, releaseDate);
+		return Plugin_Handled;
+	}
+
 	int skinIndex = FindAvailableSkin(name);
 	if (skinIndex == -1)
 	{
@@ -467,6 +476,12 @@ Action Command_SkinTest(int client, int args)
 
 	WeaponSkin skin;
 	g_hSkins.GetArray(skinIndex, skin);
+
+	if (!skin.ready)
+	{
+		ReplyToCommand(client, "[WeaponSkins] %s is not being downloaded yet, so it cannot be tested.", skin.name);
+		return Plugin_Handled;
+	}
 
 	FormatEx(key, sizeof(key), "%s:%s", steamId, skin.weapon);
 	g_hTestChoices.SetString(key, skin.name);
@@ -622,7 +637,7 @@ ArrayList GetAvailableSkins(int client, const char[] weapon)
 	{
 		g_hSkins.GetArray(i, skin);
 
-		if (!skin.ready || !StrEqual(skin.weapon, weapon))
+		if (!skin.ready || !StrEqual(skin.weapon, weapon) || !IsReleased(skin.name))
 		{
 			continue;
 		}
@@ -989,19 +1004,9 @@ void OnSkinLevelsResponse(HTTPResponse response, any value)
 		return;
 	}
 
-	g_hSkinLevels.Clear();
-
 	JSONArray skins = view_as<JSONArray>(response.Data);
-	for (int i = 0; i < skins.Length; i++)
-	{
-		JSONObject skin = view_as<JSONObject>(skins.Get(i));
-
-		char id[64];
-		skin.GetString("id", id, sizeof(id));
-		g_hSkinLevels.SetValue(id, skin.GetInt("level"));
-
-		delete skin;
-	}
+	ReadSkinsData(skins);
+	PrepareNewDownloads();
 
 	g_bSkinLevelsLoaded = true;
 
@@ -1312,6 +1317,60 @@ void LoadSkins()
 	delete kv;
 }
 
+void PrepareNewDownloads()
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientConnected(client) && !IsFakeClient(client))
+		{
+			return;
+		}
+	}
+
+	WeaponSkin skin;
+	for (int i = 0; i < g_hSkins.Length; i++)
+	{
+		g_hSkins.GetArray(i, skin);
+
+		if (skin.ready || !g_hSkinLevels.ContainsKey(skin.name))
+		{
+			continue;
+		}
+
+		skin.ready = PrepareSkin(skin);
+		g_hSkins.SetArray(i, skin);
+	}
+}
+
+void ReadSkinsData(JSONArray skins)
+{
+	g_hSkinLevels.Clear();
+	g_hUpcomingSkins.Clear();
+
+	for (int i = 0; i < skins.Length; i++)
+	{
+		JSONObject skin = view_as<JSONObject>(skins.Get(i));
+
+		char id[64];
+		skin.GetString("id", id, sizeof(id));
+		g_hSkinLevels.SetValue(id, skin.GetInt("level"));
+
+		if (!skin.GetBool("released"))
+		{
+			char releaseDate[16];
+			skin.GetString("releaseDate", releaseDate, sizeof(releaseDate));
+			g_hUpcomingSkins.SetString(id, releaseDate);
+		}
+
+		delete skin;
+	}
+}
+
+bool IsReleased(const char[] name)
+{
+	return !g_hUpcomingSkins.ContainsKey(name);
+}
+
 void LoadWeaponModels(KeyValues kv)
 {
 	if (!kv.JumpToKey("Weapons") || !kv.GotoFirstSubKey())
@@ -1404,7 +1463,7 @@ bool PrepareSkin(WeaponSkin skin)
 	WeaponModels models;
 	g_hWeaponModels.GetArray(modelsIndex, models);
 
-	if (!models.ready)
+	if (!models.ready || !g_hSkinLevels.ContainsKey(skin.name))
 	{
 		return false;
 	}
@@ -1629,7 +1688,7 @@ int GetPlayerWeaponSkin(int client, int weapon)
 	}
 
 	int requiredLevel;
-	if (!g_hSkinLevels.GetValue(name, requiredLevel) || GetLevelOf(steamId) < requiredLevel)
+	if (!g_hSkinLevels.GetValue(name, requiredLevel) || GetLevelOf(steamId) < requiredLevel || !IsReleased(name))
 	{
 		return -1;
 	}
