@@ -102,6 +102,7 @@ public void OnPluginStart()
 	g_hApiUrl = CreateConVar("weapon_skins_api_url", "", "Play Stats web URL, used to read the skin and player levels", FCVAR_PROTECTED);
 	g_hKickNoDownloads = CreateConVar("weapon_skins_kick_no_downloads", "0", "Kick players whose game does not download the server files, so everyone can see the skins", _, true, 0.0, true, 1.0);
 	g_hEnabled.AddChangeHook(OnEnabledChanged);
+	g_hApiUrl.AddChangeHook(OnApiUrlChanged);
 
 	RegConsoleCmd("sm_weaponskins", Command_WeaponSkins, "Shows whether the weapon skins are on; admins turn them on or off with sm_weaponskins on|off");
 	RegConsoleCmd("sm_skin", Command_Skin, "sm_skin [skin] - Shows the help or selects a weapon skin");
@@ -232,6 +233,15 @@ public void OnMapStart()
 	g_hTestChoices.Clear();
 
 	LoadSkins();
+}
+
+public void OnConfigsExecuted()
+{
+	RefreshLevels();
+}
+
+void OnApiUrlChanged(ConVar convar, const char[] oldValue, const char[] newValue)
+{
 	RefreshLevels();
 }
 
