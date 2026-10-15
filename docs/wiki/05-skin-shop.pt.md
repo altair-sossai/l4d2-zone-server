@@ -145,6 +145,7 @@ Testes de integração (rodando contra o Azurite) cobrem tudo isso, incluindo 20
 | POST | `/api/shop/skins/{skinId}/price` `{price}` | admin (1–100.000; `null` volta ao padrão) |
 | POST | `/api/shop/gift` `{communityId, skinId}` | admin (qualquer formato de Steam ID ou link do perfil) |
 | POST | `/api/shop/refund` `{communityId, skinId}` | admin |
+| POST | `/api/shop/refund-all` | admin — estorna todas as compras e todos os presentes, um por um: `{purchases, gifts, stars, players, failed}` |
 | GET | `/api/admin/players` | admin — jogadores para o seletor de jogadores |
 
 ### Usados pelo plugin do jogo
@@ -167,14 +168,14 @@ Testes de integração (rodando contra o Azurite) cobrem tudo isso, incluindo 20
 
 ### Perfil do jogador — `/player/{id}`
 
-Um painel **Skins** lista as skins que o jogador tem, marcando as equipadas.
+Uma linha **Estrelas** mostra o saldo, as estrelas ganhas e as gastas, e um painel **Skins** lista as skins que o jogador tem, marcando as equipadas. Quando dois jogadores são comparados (`/player/{id}/{outroId}`), os dois aparecem juntos seguindo o padrão da tela: o primeiro em branco, o segundo em amarelo.
 
 ### Admin (menu "Admin" da navbar, só para `ServerAdmins`)
 
 | Tela | Funcionalidades |
 |---|---|
 | Banimentos do chat `/chat-bans` | Lista paginada com avatar, Steam ID, motivo, data e admin; modal de detalhes para editar o motivo ou remover; *Adicionar banimento* com quem falou no chat recentemente e o seletor de jogadores |
-| Compras de skins `/admin/skins/purchases` | Totais; busca; lista paginada com imagem da skin, avatar e nome do jogador, preço ou *Presente · por admin*, data; modal de detalhes com reembolso (com confirmação); *Dar uma skin* |
+| Compras de skins `/admin/skins/purchases` | Totais; busca; lista paginada com imagem da skin, avatar e nome do jogador, preço ou *Presente · por admin*, data; modal de detalhes com estorno (com confirmação); *Dar uma skin*; *Estornar tudo* (com uma caixa de confirmação) |
 | Preços das skins `/admin/skins/prices` | Busca, filtros de raridade e arma; lista paginada marcando os preços alterados; modal para alterar/voltar o preço ou dar aquela skin de presente |
 
 Peças reutilizáveis (`Views/Shared`): `_Pagination` + `PagedListModel<T>`, `_PlayerPickerModal` (busca por nome — incluindo nomes anteriores —, Steam ID; ranking atual e histórico completo), `_SkinPickerModal` (grade como a da loja, com filtros) e `_GiftModal` (usa os dois seletores; pode abrir com uma skin já selecionada — também a partir dos detalhes da skin na loja, para admins).

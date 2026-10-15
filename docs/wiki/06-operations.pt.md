@@ -57,7 +57,8 @@ O `cfg/server.cfg` roda `exec server_secrets.cfg` no início, então os segredos
 | Tarefa | Como |
 |---|---|
 | Mudar o preço de uma skin | Admin → Preços das skins → clique na skin → altere → Salvar (ou Voltar ao padrão). Vale só para compras novas |
-| Reembolsar uma compra | Admin → Compras de skins → clique na compra → Reembolsar → Confirmar. As estrelas voltam; a skin é desequipada |
+| Estornar uma compra | Admin → Compras de skins → clique na compra → Estornar compra → Confirmar estorno. As estrelas voltam; a skin é desequipada |
+| Estornar tudo (fase de testes) | Admin → Compras de skins → *Estornar tudo* → marque a confirmação → *Estornar tudo*. Todas as compras e todos os presentes são estornados um por um (mesmas regras do estorno individual); as estrelas não mudam, só o que foi gasto volta. Se algum item falhar, rode de novo |
 | Dar uma skin | Admin → Compras de skins → *Dar uma skin* (ou pelo modal de preço, ou pelos detalhes da skin na loja). Escolha o jogador e a skin |
 | Banir um jogador do chat | Admin → Banimentos do chat → *Adicionar banimento* → escolha entre quem falou recentemente ou *Escolher da lista* |
 | Testar todas as skins no jogo | `!cvar weapon_skins_preview_all 1`, troque o mapa, reconecte; admins root podem usar qualquer skin. Depois desligue e troque o mapa (todo jogador que conectar nesse meio-tempo baixa todas as skins, ~250 MB) |

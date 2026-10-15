@@ -58,6 +58,7 @@
 |---|---|
 | Change a skin price | Admin → Skin prices → click the skin → change → Save (or Reset to default). Applies to new purchases only |
 | Refund a purchase | Admin → Skin purchases → click the purchase → Refund → Confirm. Stars go back; the skin is unequipped |
+| Refund everything (test phase) | Admin → Skin purchases → *Refund everything* → tick the confirmation → *Refund everything*. Every purchase and gift is refunded one by one (same rules as a single refund); stars are not touched, only what was spent goes back. If some items fail, run it again |
 | Give a skin | Admin → Skin purchases → *Give a skin* (or from the price modal, or from the shop's skin details). Pick the player and the skin |
 | Ban a player from the chat | Admin → Chat bans → *Add ban* → pick from recent senders or *Choose from the list* |
 | Try every skin in game | `!cvar weapon_skins_preview_all 1`, change the map, reconnect; root admins can use any skin. Turn it off and change the map afterwards (every player who connects meanwhile downloads all skins, ~250 MB) |

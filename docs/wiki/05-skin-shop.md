@@ -145,6 +145,7 @@ Integration tests (run against Azurite) cover all of this, including 20 parallel
 | POST | `/api/shop/skins/{skinId}/price` `{price}` | admin (1–100,000; `null` resets) |
 | POST | `/api/shop/gift` `{communityId, skinId}` | admin (any Steam ID format or profile link) |
 | POST | `/api/shop/refund` `{communityId, skinId}` | admin |
+| POST | `/api/shop/refund-all` | admin — refunds every purchase and gift, one by one: `{purchases, gifts, stars, players, failed}` |
 | GET | `/api/admin/players` | admin — players for the player picker |
 
 ### Used by the game plugin
@@ -167,14 +168,14 @@ Integration tests (run against Azurite) cover all of this, including 20 parallel
 
 ### Player profile — `/player/{id}`
 
-A **Skins** panel lists the skins the player owns, marking the equipped ones.
+A **Stars** row shows the balance, the stars earned and the stars spent, and a **Skins** panel lists the skins the player owns, marking the equipped ones. When two players are compared (`/player/{id}/{otherId}`), both are shown side by side following the page pattern: the first player in white, the second in yellow.
 
 ### Admin (navbar menu "Admin", only for `ServerAdmins`)
 
 | Page | Features |
 |---|---|
 | Chat bans `/chat-bans` | Paginated list with avatar, Steam ID, reason, date and admin; details modal to edit the reason or remove; *Add ban* with recent chat senders and the player picker |
-| Skin purchases `/admin/skins/purchases` | Totals; search; paginated list with skin image, player avatar and name, price or *Gift · by admin*, date; details modal with refund (with confirmation); *Give a skin* |
+| Skin purchases `/admin/skins/purchases` | Totals; search; paginated list with skin image, player avatar and name, price or *Gift · by admin*, date; details modal with refund (with confirmation); *Give a skin*; *Refund everything* (with a confirmation checkbox) |
 | Skin prices `/admin/skins/prices` | Search, rarity and weapon filters; paginated list marking changed prices; modal to change/reset the price or give that skin as a gift |
 
 Reusable pieces (`Views/Shared`): `_Pagination` + `PagedListModel<T>`, `_PlayerPickerModal` (search by name — including previous names —, Steam ID; current ranking and all-time history), `_SkinPickerModal` (grid like the shop, with filters) and `_GiftModal` (uses both pickers; can open with a skin already selected — also from the shop's skin details for admins).
