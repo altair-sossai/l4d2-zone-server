@@ -444,7 +444,7 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 
 **Source:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp)
 
-**What it does** — Lets each player pick a skin for the SMG, MAC-10 (silenced SMG), pump shotgun and chrome shotgun. The skins are texture-only workshop addons, delivered through FastDL, so players don't need to install any `.vpk`. Each weapon has one combined view/world model with one skin family per skin. The plugin swaps the weapon (and the player's viewmodel) to the combined model and sets `m_nSkin` to the skin's family. The skin follows the weapon: if it is dropped, whoever picks it up uses it with the same skin.
+**What it does** — Lets each player pick a skin for the SMG, MAC-10 (silenced SMG), pump shotgun and chrome shotgun. The skins are texture-only workshop addons, delivered through FastDL, so players don't need to install any `.vpk`. Each weapon has one combined view/world model with one skin family per skin. The plugin swaps the weapon (and the player's viewmodel) to the combined model and sets `m_nSkin` to the skin's family. The skin follows the weapon: if it is dropped, whoever picks it up uses it with the same skin. To stop weapons from piling up (for example, by swapping weapons over and over at the infinite spawns of a safe room), every time a primary weapon is dropped the plugin counts the primary weapons dropped by players within `weapon_skins_pile_radius` of it and removes the oldest ones above `weapon_skins_pile_max`. Weapon spawns, weapons placed by the map, secondary weapons, items and held weapons are never removed.
 
 Skins are unlocked by patent level. The skin levels come from `GET {weapon_skins_api_url}/api/skins` and the player levels from `GET {weapon_skins_api_url}/api/players/levels`, refreshed on map start and round start. A skin is usable when its level is less than or equal to the player's level. Unranked players are level 1.
 
@@ -465,6 +465,8 @@ This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are
 | `weapon_skins_enabled` | `0` | Enable the weapon skins |
 | `weapon_skins_api_url` | `""` | PlayStats web URL, used to read the skin and player levels and to build the `/skins` link (`PROTECTED`) |
 | `weapon_skins_kick_no_downloads` | `0` | Kick players whose game does not download the server files (`cl_allowdownload 0`, or `cl_downloadfilter` other than `all`/`nosounds`). The kick message explains how to turn downloads on |
+| `weapon_skins_pile_radius` | `120` | Radius, in game units, used to find primary weapons dropped close to each other |
+| `weapon_skins_pile_max` | `3` | Maximum number of dropped primary weapons kept inside that radius; the oldest ones are removed (`0` = off) |
 
 **Commands**
 

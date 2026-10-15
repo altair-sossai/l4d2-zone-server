@@ -16,6 +16,7 @@
 #define SKINS_CACHE_PATH "data/weapon_skins_cache.json"
 #define MAX_WEAPON_ENTITIES 2048
 #define DROPPED_MODEL_DELAY 0.1
+#define PILE_CHECK_DELAY 0.5
 #define DEFAULT_PLAYER_LEVEL 1
 #define OBS_MODE_IN_EYE 4
 #define PRIMARY_SLOT 0
@@ -63,7 +64,9 @@ public Plugin myinfo =
 ConVar
 	g_hEnabled,
 	g_hApiUrl,
-	g_hKickNoDownloads;
+	g_hKickNoDownloads,
+	g_hPileRadius,
+	g_hPileMax;
 
 int g_iOverride = -1;
 
@@ -92,6 +95,9 @@ int g_iWeaponRef[MAX_WEAPON_ENTITIES] = { INVALID_ENT_REFERENCE, ... };
 int g_iWeaponSkin[MAX_WEAPON_ENTITIES] = { -1, ... };
 int g_iWeaponOriginalSkin[MAX_WEAPON_ENTITIES] = { 0, ... };
 
+int g_iDroppedRef[MAX_WEAPON_ENTITIES] = { INVALID_ENT_REFERENCE, ... };
+float g_fDroppedTime[MAX_WEAPON_ENTITIES];
+
 int g_iAllowDownload[MAXPLAYERS + 1] = { -1, ... };
 int g_iDownloadFilter[MAXPLAYERS + 1] = { -1, ... };
 
@@ -102,6 +108,8 @@ public void OnPluginStart()
 	g_hEnabled = CreateConVar("weapon_skins_enabled", "0", "Enable the weapon skins", _, true, 0.0, true, 1.0);
 	g_hApiUrl = CreateConVar("weapon_skins_api_url", "", "Play Stats web URL, used to read the skin and player levels", FCVAR_PROTECTED);
 	g_hKickNoDownloads = CreateConVar("weapon_skins_kick_no_downloads", "0", "Kick players whose game does not download the server files, so everyone can see the skins", _, true, 0.0, true, 1.0);
+	g_hPileRadius = CreateConVar("weapon_skins_pile_radius", "120.0", "Radius, in game units, used to find primary weapons dropped close to each other", _, true, 0.0);
+	g_hPileMax = CreateConVar("weapon_skins_pile_max", "3", "Maximum number of dropped primary weapons kept inside the radius; the oldest ones are removed (0 = off)", _, true, 0.0);
 	g_hEnabled.AddChangeHook(OnEnabledChanged);
 	g_hApiUrl.AddChangeHook(OnApiUrlChanged);
 
@@ -1114,6 +1122,7 @@ public void OnClientPutInServer(int client)
 	g_iActiveSkin[client] = -1;
 
 	SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
+	SDKHook(client, SDKHook_WeaponDrop, OnWeaponDrop);
 	SDKHook(client, SDKHook_WeaponDropPost, OnWeaponDropPost);
 	SDKHook(client, SDKHook_PostThinkPost, OnPostThinkPost);
 
@@ -1496,6 +1505,16 @@ void OnWeaponEquipPost(int client, int weapon)
 	RefreshWorldModel(client, weapon);
 }
 
+Action OnWeaponDrop(int client, int weapon)
+{
+	if (weapon > MaxClients && weapon < MAX_WEAPON_ENTITIES && GetPlayerWeaponSlot(client, PRIMARY_SLOT) == weapon)
+	{
+		TrackDroppedWeapon(weapon);
+	}
+
+	return Plugin_Continue;
+}
+
 void OnWeaponDropPost(int client, int weapon)
 {
 	if (GetWeaponSkin(client, weapon) == -1)
@@ -1504,6 +1523,72 @@ void OnWeaponDropPost(int client, int weapon)
 	}
 
 	CreateTimer(DROPPED_MODEL_DELAY, Timer_ApplyDroppedWorldModel, EntIndexToEntRef(weapon), TIMER_FLAG_NO_MAPCHANGE);
+}
+
+void TrackDroppedWeapon(int weapon)
+{
+	int weaponRef = EntIndexToEntRef(weapon);
+	g_iDroppedRef[weapon] = weaponRef;
+	g_fDroppedTime[weapon] = GetGameTime();
+
+	CreateTimer(PILE_CHECK_DELAY, Timer_CleanWeaponPile, weaponRef, TIMER_FLAG_NO_MAPCHANGE);
+}
+
+bool IsLooseDroppedWeapon(int weapon)
+{
+	return g_iDroppedRef[weapon] != INVALID_ENT_REFERENCE
+		&& g_iDroppedRef[weapon] == EntIndexToEntRef(weapon)
+		&& GetEntPropEnt(weapon, Prop_Send, "m_hOwnerEntity") == -1;
+}
+
+Action Timer_CleanWeaponPile(Handle timer, int weaponRef)
+{
+	int weapon = EntRefToEntIndex(weaponRef);
+	int maxWeapons = g_hPileMax.IntValue;
+
+	if (weapon == INVALID_ENT_REFERENCE || maxWeapons <= 0 || !IsLooseDroppedWeapon(weapon))
+	{
+		return Plugin_Stop;
+	}
+
+	float radius = g_hPileRadius.FloatValue;
+	float center[3];
+	GetEntPropVector(weapon, Prop_Data, "m_vecAbsOrigin", center);
+
+	ArrayList pile = new ArrayList();
+	float position[3];
+
+	for (int entity = MaxClients + 1; entity < MAX_WEAPON_ENTITIES; entity++)
+	{
+		if (g_iDroppedRef[entity] == INVALID_ENT_REFERENCE || !IsValidEntity(entity) || !IsLooseDroppedWeapon(entity))
+		{
+			continue;
+		}
+
+		GetEntPropVector(entity, Prop_Data, "m_vecAbsOrigin", position);
+		if (GetVectorDistance(center, position) <= radius)
+		{
+			pile.Push(entity);
+		}
+	}
+
+	while (pile.Length > maxWeapons)
+	{
+		int oldest = 0;
+		for (int i = 1; i < pile.Length; i++)
+		{
+			if (g_fDroppedTime[pile.Get(i)] < g_fDroppedTime[pile.Get(oldest)])
+			{
+				oldest = i;
+			}
+		}
+
+		RemoveEntity(pile.Get(oldest));
+		pile.Erase(oldest);
+	}
+
+	delete pile;
+	return Plugin_Stop;
 }
 
 Action Timer_ApplyDroppedWorldModel(Handle timer, int weaponRef)
@@ -1654,7 +1739,7 @@ int GetOriginalSkin(int weapon)
 
 int GetAssignedWeaponSkin(int weapon)
 {
-	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES || !IsValidEntity(weapon))
+	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES || g_iWeaponRef[weapon] == INVALID_ENT_REFERENCE || !IsValidEntity(weapon))
 	{
 		return -1;
 	}
