@@ -444,7 +444,7 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 
 **Source:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp)
 
-**What it does** — Lets each player pick a skin for the SMG, MAC-10 (silenced SMG), pump shotgun and chrome shotgun. The skins are texture-only workshop addons, delivered through FastDL, so players don't need to install any `.vpk`. Each weapon has one combined view/world model with one skin family per skin. The plugin swaps the weapon (and the player's viewmodel) to the combined model and sets `m_nSkin` to the skin's family. The skin follows the weapon: if it is dropped, whoever picks it up uses it with the same skin. To stop weapons from piling up (for example, by swapping weapons over and over at the infinite spawns of a safe room), every time a primary weapon is dropped the plugin counts the primary weapons dropped by players within `weapon_skins_pile_radius` of it and removes the oldest ones above `weapon_skins_pile_max`. Weapon spawns, weapons placed by the map, secondary weapons, items and held weapons are never removed.
+**What it does** — Lets each player pick a skin for the SMG, MAC-10 (silenced SMG), MP5, pump shotgun, chrome shotgun and the melee weapons (fireaxe, katana, machete, baseball bat, cricket bat, electric guitar, crowbar, golf club and frying pan). Melee weapons share the `weapon_melee` class, so they are identified as `weapon_melee_<script name>` (for example `weapon_melee_fireaxe`). The skins are texture-only workshop addons, delivered through FastDL, so players don't need to install any `.vpk`. Each weapon has one combined view/world model with one skin family per skin. The plugin swaps the weapon (and the player's viewmodel) to the combined model and sets `m_nSkin` to the skin's family. The skin follows the weapon: if it is dropped, whoever picks it up uses it with the same skin. To stop weapons from piling up (for example, by swapping weapons over and over at the infinite spawns of a safe room), every time a primary weapon is dropped the plugin counts the primary weapons dropped by players within `weapon_skins_pile_radius` of it and removes the oldest ones above `weapon_skins_pile_max`. Weapon spawns, weapons placed by the map, secondary weapons, items and held weapons are never removed.
 
 Skins are unlocked by patent level. The skin levels come from `GET {weapon_skins_api_url}/api/skins` and the player levels from `GET {weapon_skins_api_url}/api/players/levels`, refreshed on map start and round start. A skin is usable when its level is less than or equal to the player's level. Unranked players are level 1.
 
@@ -467,6 +467,7 @@ This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are
 | `weapon_skins_kick_no_downloads` | `0` | Kick players whose game does not download the server files (`cl_allowdownload 0`, or `cl_downloadfilter` other than `all`/`nosounds`). The kick message explains how to turn downloads on |
 | `weapon_skins_pile_radius` | `120` | Radius, in game units, used to find primary weapons dropped close to each other |
 | `weapon_skins_pile_max` | `3` | Maximum number of dropped primary weapons kept inside that radius; the oldest ones are removed (`0` = off) |
+| `weapon_skins_preview_all` | `0` | Test mode. On the next map every skin in `weapon_skins.cfg` is added to the downloads table, whatever its download or release date, and root admins can use any skin (`!skin <id>`, `!skin next`, `!skin prev`), ignoring level, release date, team and ready-up. Turn it off and change the map to go back to the release calendar. Every player who connects while it is on downloads all the skins |
 
 **Commands**
 
@@ -474,13 +475,13 @@ This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are
 |---------|--------|-------------|
 | `sm_skin` / `sm_skins` | all | Without arguments, shows the help and the skins page link |
 | `sm_skin <id>` / `sm_skins <id>` | all | Selects a skin by id (e.g. `hellsing-gold`) |
-| `sm_skin_next [weapon]` / `sm_skin_prev [weapon]` | all | Cycles through the skins the player can use, wrapping through the default skin |
-| `sm_skin_default [weapon]` | all | Goes back to the default skin |
-| `sm_weaponskins` | all | Shows whether the skins are on |
-| `sm_weaponskins on\|off` | root | Turns the skins on or off. Overrides `weapon_skins_enabled` and stays in effect across map changes |
-| `sm_skin_test <id\|default> [weapon]` | root | Tests any skin on yourself until the map changes, ignoring level and ready-up |
+| `sm_skin next [weapon]` / `sm_skin prev [weapon]` | all | Cycles through the skins the player can use, wrapping through the default skin |
+| `sm_skin default [weapon]` | all | Goes back to the default skin |
+| `sm_skin status` | all | Shows whether the skins are on |
+| `sm_skin on\|off` | root | Turns the skins on or off. Overrides `weapon_skins_enabled` and stays in effect across map changes |
+| `sm_skin test <id\|default> [weapon]` | root | Tests any skin on yourself until the map changes, ignoring level and ready-up |
 
-`[weapon]` accepts `smg`/`uzi`, `mac`/`mac10`/`silenced`, `pump`/`pumpshotgun` and `chrome`/`shotgun_chrome`. Without it, the weapon in the player's hand is used, then the primary weapon.
+`[weapon]` accepts `smg`/`uzi`, `mac`/`mac10`/`silenced`, `mp5`, `pump`, `chrome`, `axe`/`fireaxe`, `bat`, `cricket`, `guitar`, `pan`, `golf`, the melee script names (`katana`, `machete`, `crowbar`...) and the full keys (`weapon_smg_mp5`, `weapon_melee_katana`...). Without it, the weapon in the player's hand is used, then the primary weapon, then the melee weapon.
 
 **How to configure** — Set `weapon_skins_api_url` in `cfg/server.cfg`, so the plugin knows which skins can be downloaded before any match config is loaded (players download the files when they first connect). Set `weapon_skins_enabled` and `weapon_skins_kick_no_downloads` in `shared_cvars.cfg`. Weapons and skins are defined in [`configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg): the `Weapons` section has the combined and default models of each weapon, and the `Skins` section maps each skin id to its weapon, skin family (`skin`) and materials folder. Family indexes follow the order of the skins in the cfg, so the combined models must be rebuilt when skins are added or removed. Models and materials live in the [`l4d2-zone-server-assets`](https://github.com/altair-sossai/l4d2-zone-server-assets) repo, whose pipeline deploys them to the server and the FastDL blob. Skin titles, descriptions, levels and thumbnails live in the PlayStats site (`/skins` page). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt`](../../addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt) (English, Portuguese and Spanish).
 

@@ -254,22 +254,34 @@ Exemplos:
 
 | Comando | O que faz |
 |---|---|
-| `!weaponskins` | Mostra se as skins estão ligadas |
-| `!weaponskins on` / `!weaponskins off` | Liga ou desliga as skins para todos. **Continua valendo depois da troca de mapa**, até outro admin mudar |
-| `!skin_test <id> [arma]` | Testa qualquer skin em você até o mapa trocar, sem precisar de nível nem de ready-up |
-| `!skin_test default [arma]` | Tira a skin de teste |
+| `!skin status` | Mostra se as skins estão ligadas |
+| `!skin on` / `!skin off` | Liga ou desliga as skins para todos. **Continua valendo depois da troca de mapa**, até outro admin mudar |
+| `!skin test <id> [arma]` | Testa qualquer skin em você até o mapa trocar, sem precisar de nível nem de ready-up |
+| `!skin test default [arma]` | Tira a skin de teste |
 
-`[arma]`: `smg`, `mac`, `pump` ou `chrome`. Sem ela, usa a arma da sua mão.
+`[arma]`: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf` ou `pan`. Sem ela, usa a arma da sua mão.
 
 Exemplos:
 
 ```
-!weaponskins off              -> desliga as skins para todos
-!skin_test hellsing-gold      -> testa a skin hellsing-gold
-!skin_test default smg        -> tira a skin de teste da SMG
+!skin off              -> desliga as skins para todos
+!skin test hellsing-gold      -> testa a skin hellsing-gold
+!skin test default smg        -> tira a skin de teste da SMG
 ```
 
-> Os comandos de skin dos jogadores (`!skin`, `!skin_next`, `!skin_prev`, `!skin_default`) estão no [Guia de Comandos para Jogadores](../players/README.pt.md#skins-de-armas). `!weaponskins on/off` e `!skin_test` só funcionam para admins com acesso **root**.
+> Os comandos de skin dos jogadores (`!skin`, `!skin next`, `!skin prev`, `!skin default`) estão no [Guia de Comandos para Jogadores](../players/README.pt.md#skins-de-armas). `!skin on/off` e `!skin test` só funcionam para admins com acesso **root**.
+
+### Modo de teste: todas as skins
+
+Para conferir no jogo skins que ainda não foram lançadas:
+
+1. `!cvar weapon_skins_preview_all 1`
+2. Troque de mapa, com `!fm zonemod` ou `!map <mapa>`. Os arquivos de todas as skins entram na lista de downloads no carregamento do mapa.
+3. Saia e entre de novo no servidor, para baixar os arquivos. Se aparecer ERROR, feche e abra o jogo.
+4. Pegue a arma e use `!skin next` / `!skin prev` para passar por todas as skins dela, ou `!skin <id>`. Para admins root, nível, data de lançamento, time e ready-up são ignorados.
+5. No fim: `!cvar weapon_skins_preview_all 0` e troque de mapa. Tudo volta ao calendário normal.
+
+> ⚠️ Enquanto o modo de teste estiver ligado, **todo jogador que entrar baixa todas as skins** (cerca de 250 MB). Use com o servidor vazio e desligue logo depois.
 
 ---
 

@@ -26,13 +26,9 @@
     {
         "es"    "Solo los administradores pueden activar o desactivar las {olive}skins de armas{default}."
     }
-    "Usage"
-    {
-        "es"    "Uso: {olive}!weaponskins{default} [on|off]"
-    }
     "HelpTitle"
     {
-        "es"    "Skins de armas: personaliza tu SMG, MAC-10 y escopetas según el nivel de tu patente."
+        "es"    "Skins de armas: personaliza tus SMGs, escopetas y armas cuerpo a cuerpo según el nivel de tu patente."
     }
     "HelpLevel"
     {
@@ -45,11 +41,11 @@
     }
     "HelpCycle"
     {
-        "es"    "{olive}!skin_next{default} / {olive}!skin_prev{default} - alternar entre las skins del arma en tu mano"
+        "es"    "{olive}!skin next{default} / {olive}!skin prev{default} - alternar entre las skins del arma en tu mano"
     }
     "HelpDefault"
     {
-        "es"    "{olive}!skin_default{default} - volver a la skin predeterminada"
+        "es"    "{olive}!skin default{default} - volver a la skin predeterminada"
     }
     "HelpReady"
     {
@@ -67,7 +63,7 @@
     }
     "NoWeapon"
     {
-        "es"    "Sostén el arma o di cuál es, por ejemplo {olive}!skin_next smg{default} (smg, mac10, pump, chrome)."
+        "es"    "Sostén el arma o di cuál es, por ejemplo {olive}!skin next smg{default} (smg, mac, mp5, pump, chrome, axe, katana, machete, bat, cricket, guitar, crowbar, golf, pan)."
     }
     "OnlyDuringReadyUp"
     {

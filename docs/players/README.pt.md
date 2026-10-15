@@ -138,25 +138,25 @@ Configs disponíveis: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`,
 |---|---|
 | `!skin` / `!skins` | Mostra a ajuda das skins e o link da página de skins |
 | `!skin <id>` / `!skins <id>` | Usa uma skin. Ex.: `!skin hellsing-gold` |
-| `!skin_next [arma]` / `!skin_prev [arma]` | Passa pelas skins que você pode usar. Depois da última, volta para a skin padrão |
-| `!skin_default [arma]` | Volta para a skin padrão |
-| `!weaponskins` | Mostra se as skins estão ligadas |
+| `!skin next [arma]` / `!skin prev [arma]` | Passa pelas skins que você pode usar. Depois da última, volta para a skin padrão |
+| `!skin default [arma]` | Volta para a skin padrão |
+| `!skin status` | Mostra se as skins estão ligadas |
 
-`[arma]` é opcional. Sem ela, o comando usa a arma que está na sua mão (ou a sua arma principal). Valores: `smg`, `mac`, `pump`, `chrome`.
+`[arma]` é opcional. Sem ela, o comando usa a arma que está na sua mão (ou a sua arma principal e depois a arma branca). Valores: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
 
 Exemplos:
 
 ```
 !skin hellsing-gold     -> usa a skin hellsing-gold
-!skin_next              -> próxima skin da arma na sua mão
-!skin_next pump         -> próxima skin da pump
-!skin_default chrome    -> volta a chrome para a skin padrão
+!skin next              -> próxima skin da arma na sua mão
+!skin next pump         -> próxima skin da pump
+!skin default chrome    -> volta a chrome para a skin padrão
 ```
 
 > **Sobre as skins:**
-> - Existem skins para a SMG, MAC-10 (SMG com silenciador), pump e chrome. Veja todas as skins, o id e o nível de cada uma em [l4d2.com.br/skins](https://l4d2.com.br/skins). Faça login no site para ver quais você pode usar.
+> - Existem skins para a SMG, MAC-10 (SMG com silenciador), MP5, pump, chrome e as armas brancas (machado, katana, facão, taco de beisebol, taco de críquete, guitarra, pé de cabra, taco de golfe e frigideira). Veja todas as skins, o id e o nível de cada uma em [l4d2.com.br/skins](https://l4d2.com.br/skins). Faça login no site para ver quais você pode usar.
 > - As skins são liberadas pelo nível da sua patente: você pode usar todas as skins até o seu nível.
-> - Novas skins são lançadas a cada duas semanas. Uma skin ainda não lançada não pode ser usada por ninguém; o site mostra a data de lançamento. Os arquivos dela começam a ser baixados uma semana antes.
+> - Novas skins são lançadas nos dias 1 e 16 de cada mês, e todo reset do ranking (a cada dois meses) abre a temporada com skins novas. Uma skin ainda não lançada não pode ser usada por ninguém; o site mostra a data de lançamento. Os arquivos dela começam a ser baixados uma semana antes.
 > - Só dá para trocar de skin como **survivor** e durante o **ready-up**, em qualquer mapa.
 > - Sua escolha fica salva e é carregada na próxima vez que você jogar. Se o seu nível cair (por exemplo, depois de um reset do ranking), as skins acima do novo nível voltam para a skin padrão.
 > - A skin acompanha a arma: se você largar a arma, quem pegar usa com a sua skin.

@@ -20,6 +20,7 @@
 #define DEFAULT_PLAYER_LEVEL 1
 #define OBS_MODE_IN_EYE 4
 #define PRIMARY_SLOT 0
+#define SECONDARY_SLOT 1
 #define TEAM_SURVIVOR 2
 
 enum struct WeaponModels
@@ -66,9 +67,48 @@ ConVar
 	g_hApiUrl,
 	g_hKickNoDownloads,
 	g_hPileRadius,
-	g_hPileMax;
+	g_hPileMax,
+	g_hPreviewAll;
 
 int g_iOverride = -1;
+
+char g_sWeaponAliases[][][] =
+{
+	{ "smg", "weapon_smg" },
+	{ "uzi", "weapon_smg" },
+	{ "mac", "weapon_smg_silenced" },
+	{ "mac10", "weapon_smg_silenced" },
+	{ "mac-10", "weapon_smg_silenced" },
+	{ "silenced", "weapon_smg_silenced" },
+	{ "mp5", "weapon_smg_mp5" },
+	{ "pump", "weapon_pumpshotgun" },
+	{ "chrome", "weapon_shotgun_chrome" },
+	{ "axe", "weapon_melee_fireaxe" },
+	{ "fireaxe", "weapon_melee_fireaxe" },
+	{ "bat", "weapon_melee_baseball_bat" },
+	{ "cricket", "weapon_melee_cricket_bat" },
+	{ "guitar", "weapon_melee_electric_guitar" },
+	{ "pan", "weapon_melee_frying_pan" },
+	{ "golf", "weapon_melee_golfclub" }
+};
+
+char g_sWeaponNames[][][] =
+{
+	{ "weapon_smg", "SMG" },
+	{ "weapon_smg_silenced", "MAC-10" },
+	{ "weapon_smg_mp5", "MP5" },
+	{ "weapon_pumpshotgun", "Pump Shotgun" },
+	{ "weapon_shotgun_chrome", "Chrome Shotgun" },
+	{ "weapon_melee_baseball_bat", "Baseball Bat" },
+	{ "weapon_melee_cricket_bat", "Cricket Bat" },
+	{ "weapon_melee_crowbar", "Crowbar" },
+	{ "weapon_melee_electric_guitar", "Electric Guitar" },
+	{ "weapon_melee_fireaxe", "Fireaxe" },
+	{ "weapon_melee_frying_pan", "Frying Pan" },
+	{ "weapon_melee_golfclub", "Golf Club" },
+	{ "weapon_melee_katana", "Katana" },
+	{ "weapon_melee_machete", "Machete" }
+};
 
 ArrayList
 	g_hSkins,
@@ -109,17 +149,13 @@ public void OnPluginStart()
 	g_hApiUrl = CreateConVar("weapon_skins_api_url", "", "Play Stats web URL, used to read the skin and player levels", FCVAR_PROTECTED);
 	g_hKickNoDownloads = CreateConVar("weapon_skins_kick_no_downloads", "0", "Kick players whose game does not download the server files, so everyone can see the skins", _, true, 0.0, true, 1.0);
 	g_hPileRadius = CreateConVar("weapon_skins_pile_radius", "120.0", "Radius, in game units, used to find primary weapons dropped close to each other", _, true, 0.0);
+	g_hPreviewAll = CreateConVar("weapon_skins_preview_all", "0", "Test mode: every skin is downloaded on the next map and root admins can use any of them, ignoring level, release date and ready-up", _, true, 0.0, true, 1.0);
 	g_hPileMax = CreateConVar("weapon_skins_pile_max", "3", "Maximum number of dropped primary weapons kept inside the radius; the oldest ones are removed (0 = off)", _, true, 0.0);
 	g_hEnabled.AddChangeHook(OnEnabledChanged);
 	g_hApiUrl.AddChangeHook(OnApiUrlChanged);
 
-	RegConsoleCmd("sm_weaponskins", Command_WeaponSkins, "Shows whether the weapon skins are on; admins turn them on or off with sm_weaponskins on|off");
-	RegConsoleCmd("sm_skin", Command_Skin, "sm_skin [skin] - Shows the help or selects a weapon skin");
-	RegConsoleCmd("sm_skins", Command_Skin, "sm_skins [skin] - Shows the help or selects a weapon skin");
-	RegConsoleCmd("sm_skin_next", Command_SkinNext, "sm_skin_next [weapon] - Selects the next skin you can use");
-	RegConsoleCmd("sm_skin_prev", Command_SkinPrev, "sm_skin_prev [weapon] - Selects the previous skin you can use");
-	RegConsoleCmd("sm_skin_default", Command_SkinDefault, "sm_skin_default [weapon] - Goes back to the default skin");
-	RegAdminCmd("sm_skin_test", Command_SkinTest, ADMFLAG_ROOT, "sm_skin_test <skin|default> [weapon] - Tests any skin on yourself until the map changes, ignoring level and ready-up");
+	RegConsoleCmd("sm_skin", Command_Skin, "sm_skin [<skin> | next | prev | default | status] [weapon] - Weapon skins; admins also use on | off | test <skin|default> [weapon]");
+	RegConsoleCmd("sm_skins", Command_Skin, "sm_skins [<skin> | next | prev | default | status] [weapon] - Weapon skins; admins also use on | off | test <skin|default> [weapon]");
 
 	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
 
@@ -275,37 +311,20 @@ void OnEnabledChanged(ConVar convar, const char[] oldValue, const char[] newValu
 	RefreshWorldModelsState();
 }
 
-Action Command_WeaponSkins(int client, int args)
+bool IsAdmin(int client)
 {
-	if (args < 1)
-	{
-		CReplyToCommand(client, "%T %T", "Tag", client, IsEnabled() ? "StatusOn" : "StatusOff", client);
-		return Plugin_Handled;
-	}
+	return CheckCommandAccess(client, "sm_weaponskins_admin", ADMFLAG_ROOT, true);
+}
 
-	if (!CheckCommandAccess(client, "sm_weaponskins_admin", ADMFLAG_ROOT, true))
+void ToggleSkins(int client, bool enabled)
+{
+	if (!IsAdmin(client))
 	{
 		CReplyToCommand(client, "%T %T", "Tag", client, "NoAccess", client);
-		return Plugin_Handled;
+		return;
 	}
 
-	char arg[16];
-	GetCmdArg(1, arg, sizeof(arg));
-
-	if (StrEqual(arg, "on", false) || StrEqual(arg, "enable", false) || StrEqual(arg, "1"))
-	{
-		SetEnabled(client, true);
-		return Plugin_Handled;
-	}
-
-	if (StrEqual(arg, "off", false) || StrEqual(arg, "disable", false) || StrEqual(arg, "0"))
-	{
-		SetEnabled(client, false);
-		return Plugin_Handled;
-	}
-
-	CReplyToCommand(client, "%T %T", "Tag", client, "Usage", client);
-	return Plugin_Handled;
+	SetEnabled(client, enabled);
 }
 
 bool IsEnabled()
@@ -349,6 +368,21 @@ void SetEnabled(int admin, bool enabled)
 
 Action Command_Skin(int client, int args)
 {
+	char action[16];
+	GetCmdArg(1, action, sizeof(action));
+
+	if (StrEqual(action, "status", false) || (client == 0 && args < 1))
+	{
+		CReplyToCommand(client, "%T %T", "Tag", client, IsEnabled() ? "StatusOn" : "StatusOff", client);
+		return Plugin_Handled;
+	}
+
+	if (StrEqual(action, "on", false) || StrEqual(action, "off", false))
+	{
+		ToggleSkins(client, StrEqual(action, "on", false));
+		return Plugin_Handled;
+	}
+
 	if (client == 0)
 	{
 		ReplyToCommand(client, "[WeaponSkins] This command can only be used in game.");
@@ -364,9 +398,25 @@ Action Command_Skin(int client, int args)
 	char name[64];
 	GetCmdArg(1, name, sizeof(name));
 
+	if (StrEqual(name, "next", false))
+	{
+		return CycleSkin(client, args, 1);
+	}
+
+	if (StrEqual(name, "prev", false))
+	{
+		return CycleSkin(client, args, -1);
+	}
+
 	if (StrEqual(name, "default", false))
 	{
 		SelectDefault(client, args, 2);
+		return Plugin_Handled;
+	}
+
+	if (StrEqual(name, "test", false))
+	{
+		TestSkin(client, args);
 		return Plugin_Handled;
 	}
 
@@ -376,14 +426,16 @@ Action Command_Skin(int client, int args)
 		return Plugin_Handled;
 	}
 
+	bool preview = HasPreviewAccess(client);
+
 	char releaseDate[16];
-	if (g_hUpcomingSkins.GetString(name, releaseDate, sizeof(releaseDate)))
+	if (!preview && g_hUpcomingSkins.GetString(name, releaseDate, sizeof(releaseDate)))
 	{
 		CPrintToChat(client, "%T %T", "Tag", client, "SkinComingSoon", client, name, releaseDate);
 		return Plugin_Handled;
 	}
 
-	int skinIndex = FindAvailableSkin(name);
+	int skinIndex = preview ? FindReadySkin(name) : FindAvailableSkin(name);
 	if (skinIndex == -1)
 	{
 		char siteUrl[256];
@@ -394,7 +446,7 @@ Action Command_Skin(int client, int args)
 
 	int requiredLevel = GetSkinLevel(name);
 	int playerLevel = GetPlayerLevel(client);
-	if (playerLevel < requiredLevel)
+	if (!preview && playerLevel < requiredLevel)
 	{
 		CPrintToChat(client, "%T %T", "Tag", client, "SkinLocked", client, name, requiredLevel, playerLevel);
 		return Plugin_Handled;
@@ -409,7 +461,7 @@ Action Command_Skin(int client, int args)
 	g_hSkins.GetArray(skinIndex, skin);
 
 	SetChoice(client, skin.weapon, skin.name);
-	ApplyChoiceToPrimaryWeapon(client, skin.weapon);
+	ApplyChoiceToWeapon(client, skin.weapon);
 
 	char weaponName[32];
 	GetWeaponDisplayName(skin.weapon, weaponName, sizeof(weaponName));
@@ -418,49 +470,27 @@ Action Command_Skin(int client, int args)
 	return Plugin_Handled;
 }
 
-Action Command_SkinNext(int client, int args)
+void TestSkin(int client, int args)
 {
-	return CycleSkin(client, args, 1);
-}
-
-Action Command_SkinPrev(int client, int args)
-{
-	return CycleSkin(client, args, -1);
-}
-
-Action Command_SkinDefault(int client, int args)
-{
-	if (client == 0)
+	if (!IsAdmin(client))
 	{
-		ReplyToCommand(client, "[WeaponSkins] This command can only be used in game.");
-		return Plugin_Handled;
+		CPrintToChat(client, "%T %T", "Tag", client, "NoAccess", client);
+		return;
 	}
 
-	SelectDefault(client, args, 1);
-	return Plugin_Handled;
-}
-
-Action Command_SkinTest(int client, int args)
-{
-	if (client == 0)
+	if (args < 2)
 	{
-		ReplyToCommand(client, "[WeaponSkins] This command can only be used in game.");
-		return Plugin_Handled;
-	}
-
-	if (args < 1)
-	{
-		ReplyToCommand(client, "[WeaponSkins] Usage: sm_skin_test <skin|default> [weapon]");
-		return Plugin_Handled;
+		ReplyToCommand(client, "[WeaponSkins] Usage: sm_skin test <skin|default> [weapon]");
+		return;
 	}
 
 	char name[64];
-	GetCmdArg(1, name, sizeof(name));
+	GetCmdArg(2, name, sizeof(name));
 
 	char steamId[32];
 	if (!GetSteamId(client, steamId, sizeof(steamId)))
 	{
-		return Plugin_Handled;
+		return;
 	}
 
 	char weapon[64];
@@ -468,18 +498,18 @@ Action Command_SkinTest(int client, int args)
 
 	if (StrEqual(name, "default", false))
 	{
-		if (!ResolveWeapon(client, args, 2, weapon, sizeof(weapon)))
+		if (!ResolveWeapon(client, args, 3, weapon, sizeof(weapon)))
 		{
 			CPrintToChat(client, "%T %T", "Tag", client, "NoWeapon", client);
-			return Plugin_Handled;
+			return;
 		}
 
 		FormatEx(key, sizeof(key), "%s:%s", steamId, weapon);
 		g_hTestChoices.Remove(key);
-		ApplyChoiceToPrimaryWeapon(client, weapon);
+		ApplyChoiceToWeapon(client, weapon);
 
 		ReplyToCommand(client, "[WeaponSkins] Test skin removed from %s.", weapon);
-		return Plugin_Handled;
+		return;
 	}
 
 	int skinIndex;
@@ -488,7 +518,7 @@ Action Command_SkinTest(int client, int args)
 		char siteUrl[256];
 		GetSiteUrl(siteUrl, sizeof(siteUrl));
 		CPrintToChat(client, "%T %T", "Tag", client, "SkinUnknown", client, name, siteUrl);
-		return Plugin_Handled;
+		return;
 	}
 
 	WeaponSkin skin;
@@ -497,15 +527,14 @@ Action Command_SkinTest(int client, int args)
 	if (!skin.ready)
 	{
 		ReplyToCommand(client, "[WeaponSkins] %s is not being downloaded yet, so it cannot be tested.", skin.name);
-		return Plugin_Handled;
+		return;
 	}
 
 	FormatEx(key, sizeof(key), "%s:%s", steamId, skin.weapon);
 	g_hTestChoices.SetString(key, skin.name);
-	ApplyChoiceToPrimaryWeapon(client, skin.weapon);
+	ApplyChoiceToWeapon(client, skin.weapon);
 
 	ReplyToCommand(client, "[WeaponSkins] Testing %s on %s until the map changes.", skin.name, skin.weapon);
-	return Plugin_Handled;
 }
 
 void ShowHelp(int client)
@@ -524,12 +553,6 @@ void ShowHelp(int client)
 
 Action CycleSkin(int client, int args, int direction)
 {
-	if (client == 0)
-	{
-		ReplyToCommand(client, "[WeaponSkins] This command can only be used in game.");
-		return Plugin_Handled;
-	}
-
 	if (!IsEnabled())
 	{
 		CPrintToChat(client, "%T %T", "Tag", client, "StatusOff", client);
@@ -537,7 +560,7 @@ Action CycleSkin(int client, int args, int direction)
 	}
 
 	char weapon[64];
-	if (!ResolveWeapon(client, args, 1, weapon, sizeof(weapon)))
+	if (!ResolveWeapon(client, args, 2, weapon, sizeof(weapon)))
 	{
 		CPrintToChat(client, "%T %T", "Tag", client, "NoWeapon", client);
 		return Plugin_Handled;
@@ -589,7 +612,7 @@ Action CycleSkin(int client, int args, int direction)
 		delete available;
 
 		ClearChoice(client, weapon);
-		ApplyChoiceToPrimaryWeapon(client, weapon);
+		ApplyChoiceToWeapon(client, weapon);
 
 		CPrintToChat(client, "%T %T", "Tag", client, "SkinDefault", client, weaponName);
 		return Plugin_Handled;
@@ -599,7 +622,7 @@ Action CycleSkin(int client, int args, int direction)
 	delete available;
 
 	SetChoice(client, weapon, skin.name);
-	ApplyChoiceToPrimaryWeapon(client, weapon);
+	ApplyChoiceToWeapon(client, weapon);
 
 	CPrintToChat(client, "%T %T", "Tag", client, "SkinCycle", client, weaponName, skin.name, nextPosition + 1, total);
 	return Plugin_Handled;
@@ -620,15 +643,25 @@ void SelectDefault(int client, int args, int weaponArg)
 	}
 
 	ClearChoice(client, weapon);
-	ApplyChoiceToPrimaryWeapon(client, weapon);
+	ApplyChoiceToWeapon(client, weapon);
 
 	char weaponName[32];
 	GetWeaponDisplayName(weapon, weaponName, sizeof(weaponName));
 	CPrintToChat(client, "%T %T", "Tag", client, "SkinDefault", client, weaponName);
 }
 
+bool HasPreviewAccess(int client)
+{
+	return g_hPreviewAll.BoolValue && client > 0 && CheckCommandAccess(client, "sm_weaponskins_admin", ADMFLAG_ROOT, true);
+}
+
 bool CanChangeNow(int client)
 {
+	if (HasPreviewAccess(client))
+	{
+		return true;
+	}
+
 	if (GetClientTeam(client) != TEAM_SURVIVOR)
 	{
 		CPrintToChat(client, "%T %T", "Tag", client, "OnlySurvivors", client);
@@ -648,13 +681,25 @@ ArrayList GetAvailableSkins(int client, const char[] weapon)
 {
 	ArrayList available = new ArrayList();
 	int playerLevel = GetPlayerLevel(client);
+	bool preview = HasPreviewAccess(client);
 
 	WeaponSkin skin;
 	for (int i = 0; i < g_hSkins.Length; i++)
 	{
 		g_hSkins.GetArray(i, skin);
 
-		if (!skin.ready || !StrEqual(skin.weapon, weapon) || !IsReleased(skin.name))
+		if (!skin.ready || !StrEqual(skin.weapon, weapon))
+		{
+			continue;
+		}
+
+		if (preview)
+		{
+			available.Push(i);
+			continue;
+		}
+
+		if (!IsReleased(skin.name))
 		{
 			continue;
 		}
@@ -730,54 +775,53 @@ bool ResolveWeapon(int client, int args, int argIndex, char[] weapon, int maxlen
 	}
 
 	int active = GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon");
-	if (active > MaxClients && IsValidEntity(active))
+	if (IsSkinnableEntity(active, weapon, maxlength))
 	{
-		GetEntityClassname(active, weapon, maxlength);
-
-		if (IsSkinnableWeapon(weapon))
-		{
-			return true;
-		}
+		return true;
 	}
 
-	int primary = GetPlayerWeaponSlot(client, PRIMARY_SLOT);
-	if (primary > MaxClients && IsValidEntity(primary))
+	if (IsSkinnableEntity(GetPlayerWeaponSlot(client, PRIMARY_SLOT), weapon, maxlength))
 	{
-		GetEntityClassname(primary, weapon, maxlength);
-
-		if (IsSkinnableWeapon(weapon))
-		{
-			return true;
-		}
+		return true;
 	}
 
-	return false;
+	return IsSkinnableEntity(GetPlayerWeaponSlot(client, SECONDARY_SLOT), weapon, maxlength);
+}
+
+bool IsSkinnableEntity(int weapon, char[] key, int maxlength)
+{
+	if (weapon <= MaxClients || !IsValidEntity(weapon))
+	{
+		return false;
+	}
+
+	GetWeaponKey(weapon, key, maxlength);
+	return IsSkinnableWeapon(key);
+}
+
+void GetWeaponKey(int weapon, char[] key, int maxlength)
+{
+	GetEntityClassname(weapon, key, maxlength);
+
+	if (!StrEqual(key, "weapon_melee") || !HasEntProp(weapon, Prop_Data, "m_strMapSetScriptName"))
+	{
+		return;
+	}
+
+	char script[32];
+	GetEntPropString(weapon, Prop_Data, "m_strMapSetScriptName", script, sizeof(script));
+	FormatEx(key, maxlength, "weapon_melee_%s", script);
 }
 
 void NormalizeWeapon(const char[] arg, char[] weapon, int maxlength)
 {
-	if (StrEqual(arg, "smg", false) || StrEqual(arg, "uzi", false))
+	for (int i = 0; i < sizeof(g_sWeaponAliases); i++)
 	{
-		strcopy(weapon, maxlength, "weapon_smg");
-		return;
-	}
-
-	if (StrEqual(arg, "mac", false) || StrEqual(arg, "mac10", false) || StrEqual(arg, "mac-10", false) || StrEqual(arg, "silenced", false) || StrEqual(arg, "smg_silenced", false))
-	{
-		strcopy(weapon, maxlength, "weapon_smg_silenced");
-		return;
-	}
-
-	if (StrEqual(arg, "pump", false) || StrEqual(arg, "pumpshotgun", false))
-	{
-		strcopy(weapon, maxlength, "weapon_pumpshotgun");
-		return;
-	}
-
-	if (StrEqual(arg, "chrome", false) || StrEqual(arg, "shotgun_chrome", false))
-	{
-		strcopy(weapon, maxlength, "weapon_shotgun_chrome");
-		return;
+		if (StrEqual(arg, g_sWeaponAliases[i][0], false))
+		{
+			strcopy(weapon, maxlength, g_sWeaponAliases[i][1]);
+			return;
+		}
 	}
 
 	if (StrContains(arg, "weapon_", false) == 0)
@@ -787,6 +831,10 @@ void NormalizeWeapon(const char[] arg, char[] weapon, int maxlength)
 	}
 
 	FormatEx(weapon, maxlength, "weapon_%s", arg);
+	if (!IsSkinnableWeapon(weapon))
+	{
+		FormatEx(weapon, maxlength, "weapon_melee_%s", arg);
+	}
 }
 
 bool IsSkinnableWeapon(const char[] weapon)
@@ -807,28 +855,13 @@ bool IsSkinnableWeapon(const char[] weapon)
 
 void GetWeaponDisplayName(const char[] weapon, char[] name, int maxlength)
 {
-	if (StrEqual(weapon, "weapon_smg"))
+	for (int i = 0; i < sizeof(g_sWeaponNames); i++)
 	{
-		strcopy(name, maxlength, "SMG");
-		return;
-	}
-
-	if (StrEqual(weapon, "weapon_smg_silenced"))
-	{
-		strcopy(name, maxlength, "MAC-10");
-		return;
-	}
-
-	if (StrEqual(weapon, "weapon_pumpshotgun"))
-	{
-		strcopy(name, maxlength, "Pump Shotgun");
-		return;
-	}
-
-	if (StrEqual(weapon, "weapon_shotgun_chrome"))
-	{
-		strcopy(name, maxlength, "Chrome Shotgun");
-		return;
+		if (StrEqual(weapon, g_sWeaponNames[i][0]))
+		{
+			strcopy(name, maxlength, g_sWeaponNames[i][1]);
+			return;
+		}
 	}
 
 	strcopy(name, maxlength, weapon);
@@ -1070,18 +1103,20 @@ void OnPlayerLevelsResponse(HTTPResponse response, any value)
 	g_hPlayerLevels = levels;
 }
 
-void ApplyChoiceToPrimaryWeapon(int client, const char[] weaponClass)
+void ApplyChoiceToWeapon(int client, const char[] weaponClass)
 {
+	char key[64];
 	int weapon = GetPlayerWeaponSlot(client, PRIMARY_SLOT);
-	if (weapon <= MaxClients || weapon >= MAX_WEAPON_ENTITIES || !IsValidEntity(weapon))
+	if (!IsSkinnableEntity(weapon, key, sizeof(key)) || !StrEqual(key, weaponClass))
 	{
-		return;
+		weapon = GetPlayerWeaponSlot(client, SECONDARY_SLOT);
+		if (!IsSkinnableEntity(weapon, key, sizeof(key)) || !StrEqual(key, weaponClass))
+		{
+			return;
+		}
 	}
 
-	char classname[64];
-	GetEntityClassname(weapon, classname, sizeof(classname));
-
-	if (!StrEqual(classname, weaponClass))
+	if (weapon >= MAX_WEAPON_ENTITIES)
 	{
 		return;
 	}
@@ -1477,7 +1512,7 @@ bool PrepareSkin(WeaponSkin skin)
 	WeaponModels models;
 	g_hWeaponModels.GetArray(modelsIndex, models);
 
-	if (!models.ready || !g_hSkinLevels.ContainsKey(skin.name))
+	if (!models.ready || (!g_hPreviewAll.BoolValue && !g_hSkinLevels.ContainsKey(skin.name)))
 	{
 		return false;
 	}
@@ -1761,7 +1796,7 @@ int GetPlayerWeaponSkin(int client, int weapon)
 	}
 
 	char classname[64];
-	GetEntityClassname(weapon, classname, sizeof(classname));
+	GetWeaponKey(weapon, classname, sizeof(classname));
 
 	char key[128];
 	FormatEx(key, sizeof(key), "%s:%s", steamId, classname);
@@ -1775,6 +1810,11 @@ int GetPlayerWeaponSkin(int client, int weapon)
 	if (!g_hPlayerChoices.GetString(key, name, sizeof(name)))
 	{
 		return -1;
+	}
+
+	if (HasPreviewAccess(client))
+	{
+		return FindReadySkin(name);
 	}
 
 	int requiredLevel;

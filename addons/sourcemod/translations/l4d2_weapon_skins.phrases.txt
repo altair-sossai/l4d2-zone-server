@@ -26,13 +26,9 @@
     {
         "en"    "Only admins can turn the {olive}weapon skins{default} on or off."
     }
-    "Usage"
-    {
-        "en"    "Usage: {olive}!weaponskins{default} [on|off]"
-    }
     "HelpTitle"
     {
-        "en"    "Weapon skins: customize your SMG, MAC-10 and shotguns according to your patent level."
+        "en"    "Weapon skins: customize your SMGs, shotguns and melee weapons according to your patent level."
     }
     "HelpLevel"
     {
@@ -45,11 +41,11 @@
     }
     "HelpCycle"
     {
-        "en"    "{olive}!skin_next{default} / {olive}!skin_prev{default} - cycle through the skins of the weapon in your hand"
+        "en"    "{olive}!skin next{default} / {olive}!skin prev{default} - cycle through the skins of the weapon in your hand"
     }
     "HelpDefault"
     {
-        "en"    "{olive}!skin_default{default} - back to the default skin"
+        "en"    "{olive}!skin default{default} - back to the default skin"
     }
     "HelpReady"
     {
@@ -67,7 +63,7 @@
     }
     "NoWeapon"
     {
-        "en"    "Hold the weapon or say which one, e.g. {olive}!skin_next smg{default} (smg, mac10, pump, chrome)."
+        "en"    "Hold the weapon or say which one, e.g. {olive}!skin next smg{default} (smg, mac, mp5, pump, chrome, axe, katana, machete, bat, cricket, guitar, crowbar, golf, pan)."
     }
     "OnlyDuringReadyUp"
     {

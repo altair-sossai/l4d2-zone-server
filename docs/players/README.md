@@ -138,25 +138,25 @@ Available configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `z
 |---|---|
 | `!skin` / `!skins` | Shows the skins help and the link to the skins page |
 | `!skin <id>` / `!skins <id>` | Uses a skin. Ex.: `!skin hellsing-gold` |
-| `!skin_next [weapon]` / `!skin_prev [weapon]` | Cycles through the skins you can use. After the last one, it goes back to the default skin |
-| `!skin_default [weapon]` | Goes back to the default skin |
-| `!weaponskins` | Shows whether the skins are on |
+| `!skin next [weapon]` / `!skin prev [weapon]` | Cycles through the skins you can use. After the last one, it goes back to the default skin |
+| `!skin default [weapon]` | Goes back to the default skin |
+| `!skin status` | Shows whether the skins are on |
 
-`[weapon]` is optional. Without it, the command uses the weapon in your hand (or your primary weapon). Values: `smg`, `mac`, `pump`, `chrome`.
+`[weapon]` is optional. Without it, the command uses the weapon in your hand (or your primary weapon, then your melee weapon). Values: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
 
 Examples:
 
 ```
 !skin hellsing-gold     -> uses the hellsing-gold skin
-!skin_next              -> next skin for the weapon in your hand
-!skin_next pump         -> next skin for the pump shotgun
-!skin_default chrome    -> chrome shotgun back to the default skin
+!skin next              -> next skin for the weapon in your hand
+!skin next pump         -> next skin for the pump shotgun
+!skin default chrome    -> chrome shotgun back to the default skin
 ```
 
 > **About skins:**
-> - There are skins for the SMG, MAC-10 (silenced SMG), pump shotgun and chrome shotgun. See every skin, its id and level at [l4d2.com.br/skins](https://l4d2.com.br/skins). Log in on the site to see which ones you can use.
+> - There are skins for the SMG, MAC-10 (silenced SMG), MP5, pump shotgun, chrome shotgun and the melee weapons (fireaxe, katana, machete, baseball bat, cricket bat, electric guitar, crowbar, golf club and frying pan). See every skin, its id and level at [l4d2.com.br/skins](https://l4d2.com.br/skins). Log in on the site to see which ones you can use.
 > - Skins are unlocked by your patent level: you can use every skin up to your level.
-> - New skins are released every two weeks. A skin that is not released yet cannot be used by anyone; the site shows its release date. Its files start downloading one week before the release.
+> - New skins are released on the 1st and 16th of every month, and every ranking reset (every two months) opens the season with new skins. A skin that is not released yet cannot be used by anyone; the site shows its release date. Its files start downloading one week before the release.
 > - You can only change skins as a **survivor** and during the **ready-up**, on any map.
 > - Your choice is saved and loaded the next time you play. If your level drops (for example, after a ranking reset), skins above your new level go back to the default skin.
 > - The skin stays with the weapon: if you drop it, whoever picks it up uses it with your skin.
