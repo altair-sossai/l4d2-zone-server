@@ -136,11 +136,11 @@ Available configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `z
 
 | Command | What it does |
 |---|---|
-| `!skin` / `!skins` | Shows the skins help and the link to the skins page |
-| `!skin <id>` / `!skins <id>` | Uses a skin. Ex.: `!skin hellsing-gold` |
-| `!skin next [weapon]` / `!skin prev [weapon]` | Cycles through the skins you can use. After the last one, it goes back to the default skin |
+| `!skin` / `!skins` | Shows the skins help and the link to the skin shop |
+| `!skin <id>` / `!skins <id>` | Uses one of your skins. Ex.: `!skin hellsing-gold` |
+| `!skin next [weapon]` / `!skin prev [weapon]` | Cycles through the skins you bought. After the last one, it goes back to the default skin |
 | `!skin default [weapon]` | Goes back to the default skin |
-| `!skin status` | Shows whether the skins are on |
+| `!skin status` | Shows whether the skins are on, how many stars you have and how many skins you own |
 
 `[weapon]` is optional. Without it, the command uses the weapon in your hand (or your primary weapon, then your melee weapon). Values: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
 
@@ -154,11 +154,11 @@ Examples:
 ```
 
 > **About skins:**
-> - There are skins for the SMG, MAC-10 (silenced SMG), MP5, pump shotgun, chrome shotgun and the melee weapons (fireaxe, katana, machete, baseball bat, cricket bat, electric guitar, crowbar, golf club and frying pan). See every skin, its id and level at [l4d2.com.br/skins](https://l4d2.com.br/skins). Log in on the site to see which ones you can use.
-> - Skins are unlocked by your patent level: you can use every skin up to your level.
-> - New skins are released on the 1st and 16th of every month, and every ranking reset (every two months) opens the season with new skins. A skin that is not released yet cannot be used by anyone; the site shows its release date. Its files start downloading one week before the release.
-> - You can only change skins as a **survivor** and during the **ready-up**, on any map.
-> - Your choice is saved and loaded the next time you play. If your level drops (for example, after a ranking reset), skins above your new level go back to the default skin.
+> - There are skins for the SMG, MAC-10 (silenced SMG), MP5, pump shotgun, chrome shotgun and the melee weapons (fireaxe, katana, machete, baseball bat, cricket bat, electric guitar, crowbar, golf club and frying pan).
+> - Skins are bought in the shop at [l4d2.com.br/skins](https://l4d2.com.br/skins) (log in with Steam) with **stars**: every SI damage MVP and every common infected MVP in competitive matches is worth 1 star. Your whole history counts, since the ranking began, and stars never expire.
+> - A skin you buy is yours forever and is **equipped right away**. It shows up on the server **from the next map change**, because its files are sent to everyone when the map loads.
+> - You can also equip or go back to the default skin on the site; the change shows up from the next map change.
+> - You can only change skins in game as a **survivor** and during the **ready-up**, on any map. Your choice is saved and loaded the next time you play.
 > - The skin stays with the weapon: if you drop it, whoever picks it up uses it with your skin.
 > - Downloads must be on to play on the server: **Options > Multiplayer > Custom Server Content > Allow All**, or in the console: `cl_allowdownload 1; cl_downloadfilter all`. Players with downloads off are kicked with a message explaining how to turn them on.
 

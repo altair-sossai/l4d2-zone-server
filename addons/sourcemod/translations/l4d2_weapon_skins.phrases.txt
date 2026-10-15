@@ -28,20 +28,15 @@
     }
     "HelpTitle"
     {
-        "en"    "Weapon skins: customize your SMGs, shotguns and melee weapons according to your patent level."
-    }
-    "HelpLevel"
-    {
-        "#format"   "{1:d}"
-        "en"    "Your level: {green}{1}{default}. You can use every skin up to your level."
+        "en"    "Weapon skins: buy skins in the shop with the stars you earn as MVP."
     }
     "HelpChoose"
     {
-        "en"    "{olive}!skin <id>{default} - use a skin"
+        "en"    "{olive}!skin <id>{default} - use one of your skins"
     }
     "HelpCycle"
     {
-        "en"    "{olive}!skin next{default} / {olive}!skin prev{default} - cycle through the skins of the weapon in your hand"
+        "en"    "{olive}!skin next{default} / {olive}!skin prev{default} - switch between your skins for the weapon in your hand"
     }
     "HelpDefault"
     {
@@ -54,12 +49,16 @@
     "HelpSite"
     {
         "#format"   "{1:s}"
-        "en"    "See every skin and its level at {green}{1}{default}"
+        "en"    "Shop: {green}{1}{default} - a skin you buy is equipped right away and shows up from the next map change."
+    }
+    "HelpStatus"
+    {
+        "en"    "{olive}!skin status{default} - see your stars and skins"
     }
     "NoSkinsForWeapon"
     {
-        "#format"   "{1:s}"
-        "en"    "There are no skins for the {olive}{1}{default} at your level yet."
+        "#format"   "{1:s},{2:s}"
+        "en"    "You do not own any skins for the {olive}{1}{default} yet. Buy them at {green}{2}{default}"
     }
     "NoWeapon"
     {
@@ -79,11 +78,6 @@
         "#format"   "{1:s}"
         "en"    "{olive}{1}{default}: back to the default skin."
     }
-    "SkinLocked"
-    {
-        "#format"   "{1:s},{2:d},{3:d}"
-        "en"    "You can't use {olive}{1}{default}: it requires level {green}{2}{default} and you are level {green}{3}{default}."
-    }
     "SkinSelected"
     {
         "#format"   "{1:s},{2:s}"
@@ -92,7 +86,7 @@
     "SkinUnknown"
     {
         "#format"   "{1:s},{2:s}"
-        "en"    "The skin {olive}{1}{default} does not exist. See the list at {green}{2}{default}"
+        "en"    "The skin {olive}{1}{default} does not exist. See the shop at {green}{2}{default}"
     }
     "OnlySurvivors"
     {
@@ -102,9 +96,38 @@
     {
         "en"    "This server requires downloads turned on. Turn them on in Options > Multiplayer > Custom Server Content > Allow All. Then reconnect."
     }
-    "SkinComingSoon"
+    "SkinNotOwned"
     {
         "#format"   "{1:s},{2:s}"
-        "en"    "The skin {olive}{1}{default} is not available yet. It will be released on {green}{2}{default}."
+        "en"    "You do not own the skin {olive}{1}{default} yet. Buy it at {green}{2}{default}"
+    }
+    "SkinNextMap"
+    {
+        "#format"   "{1:s}"
+        "en"    "Skin {olive}{1}{default} equipped. Its files only arrive on the {green}next map change{default}; until then the weapon keeps the default skin."
+    }
+    "SkinsNextMap"
+    {
+        "#format"   "{1:s}"
+        "en"    "Your {olive}{1}{default} skins arrive on the {green}next map change{default}. Until then the weapon keeps the default skin."
+    }
+    "PurchaseNextMap"
+    {
+        "#format"   "{1:s},{2:s}"
+        "en"    "Purchase received: {green}{1}{default} ({olive}{2}{default}). It is already equipped and shows up from the {green}next map change{default}."
+    }
+    "PurchaseReady"
+    {
+        "#format"   "{1:s},{2:s}"
+        "en"    "Purchase received: {green}{1}{default} ({olive}{2}{default}). It is already equipped."
+    }
+    "Wallet"
+    {
+        "#format"   "{1:d},{2:d},{3:s}"
+        "en"    "You have {green}{1} stars{default} and {green}{2}{default} skins. Shop: {green}{3}{default}"
+    }
+    "WalletUnavailable"
+    {
+        "en"    "Could not load your stars right now. Try again in a moment."
     }
 }

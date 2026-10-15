@@ -136,11 +136,11 @@ Configs disponibles: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, 
 
 | Comando | Qué hace |
 |---|---|
-| `!skin` / `!skins` | Muestra la ayuda de las skins y el enlace de la página de skins |
-| `!skin <id>` / `!skins <id>` | Usa una skin. Ej.: `!skin hellsing-gold` |
-| `!skin next [arma]` / `!skin prev [arma]` | Recorre las skins que puedes usar. Después de la última, vuelve a la skin predeterminada |
+| `!skin` / `!skins` | Muestra la ayuda de las skins y el enlace de la tienda de skins |
+| `!skin <id>` / `!skins <id>` | Usa una de tus skins. Ej.: `!skin hellsing-gold` |
+| `!skin next [arma]` / `!skin prev [arma]` | Recorre las skins que compraste. Después de la última, vuelve a la skin predeterminada |
 | `!skin default [arma]` | Vuelve a la skin predeterminada |
-| `!skin status` | Muestra si las skins están activadas |
+| `!skin status` | Muestra si las skins están activadas, cuántas estrellas tienes y cuántas skins compraste |
 
 `[arma]` es opcional. Sin ella, el comando usa el arma que tienes en la mano (o tu arma principal y luego tu arma cuerpo a cuerpo). Valores: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
 
@@ -154,11 +154,11 @@ Ejemplos:
 ```
 
 > **Sobre las skins:**
-> - Hay skins para la SMG, MAC-10 (SMG con silenciador), MP5, pump, chrome y las armas cuerpo a cuerpo (hacha, katana, machete, bate de béisbol, bate de críquet, guitarra eléctrica, palanca, palo de golf y sartén). Mira todas las skins, el id y el nivel de cada una en [l4d2.com.br/skins](https://l4d2.com.br/skins). Inicia sesión en el sitio para ver cuáles puedes usar.
-> - Las skins se desbloquean según el nivel de tu patente: puedes usar todas las skins hasta tu nivel.
-> - Se lanzan nuevas skins los días 1 y 16 de cada mes, y cada reinicio del ranking (cada dos meses) abre la temporada con skins nuevas. Una skin que todavía no se lanzó no puede usarla nadie; el sitio muestra la fecha de lanzamiento. Sus archivos empiezan a descargarse una semana antes.
-> - Solo puedes cambiar de skin como **survivor** y durante el **ready-up**, en cualquier mapa.
-> - Tu elección queda guardada y se carga la próxima vez que juegues. Si tu nivel baja (por ejemplo, después de un reinicio del ranking), las skins por encima de tu nuevo nivel vuelven a la predeterminada.
+> - Hay skins para la SMG, MAC-10 (SMG con silenciador), MP5, pump, chrome y las armas cuerpo a cuerpo (hacha, katana, machete, bate de béisbol, bate de críquet, guitarra eléctrica, palanca, palo de golf y sartén).
+> - Las skins se compran en la tienda en [l4d2.com.br/skins](https://l4d2.com.br/skins) (inicia sesión con Steam) con **estrellas**: cada MVP de daño a SI y cada MVP de comunes en partidas competitivas vale 1 estrella. Cuenta todo tu historial, desde el inicio del ranking, y las estrellas no caducan.
+> - La skin comprada es tuya para siempre y queda **equipada al instante**. Aparece en el servidor **a partir del próximo cambio de mapa**, porque sus archivos se envían a todos cuando el mapa carga.
+> - También puedes equipar o volver a la skin predeterminada en el sitio; el cambio aparece a partir del próximo cambio de mapa.
+> - En el juego, solo puedes cambiar de skin como **survivor** y durante el **ready-up**, en cualquier mapa. Tu elección queda guardada y se carga la próxima vez que juegues.
 > - La skin acompaña al arma: si la sueltas, quien la recoja la usa con tu skin.
 > - Las descargas deben estar activadas para jugar en el servidor: **Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo**, o en la consola: `cl_allowdownload 1; cl_downloadfilter all`. Quien tenga las descargas desactivadas es expulsado con un mensaje que explica cómo activarlas.
 

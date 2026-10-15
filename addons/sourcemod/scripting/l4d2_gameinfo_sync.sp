@@ -78,8 +78,8 @@ public void OnPluginStart()
 
     g_hVersusBossBuffer = FindConVar("versus_boss_buffer");
 
-    g_hUrl = CreateConVar("gameinfo_url", "", "Game Info API URL", FCVAR_PROTECTED);
-    g_hSecretKey = CreateConVar("gameinfo_secret", "", "Game Info API Secret Key", FCVAR_PROTECTED);
+    g_hUrl = CreateConVar("l4d2_web_url", "", "L4D2 web URL, shared by the plugins that talk to the site", FCVAR_PROTECTED);
+    g_hSecretKey = CreateConVar("l4d2_web_secret", "", "L4D2 web secret key, shared by the plugins that talk to the site", FCVAR_PROTECTED);
     g_hRelatedAccountsChat = CreateConVar("gameinfo_related_accounts_chat", "1", "Announce related accounts (same IP) in chat", _, true, 0.0, true, 1.0);
     g_hBoomerVomitMinSurvivors = CreateConVar("gameinfo_boomer_vomit_min_survivors", "3", "Minimum number of survivors hit to report a boomer vomit event", _, true, 1.0);
 

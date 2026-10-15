@@ -256,7 +256,7 @@ Exemplos:
 |---|---|
 | `!skin status` | Mostra se as skins estão ligadas |
 | `!skin on` / `!skin off` | Liga ou desliga as skins para todos. **Continua valendo depois da troca de mapa**, até outro admin mudar |
-| `!skin test <id> [arma]` | Testa qualquer skin em você até o mapa trocar, sem precisar de nível nem de ready-up |
+| `!skin test <id> [arma]` | Testa em você, até o mapa trocar, qualquer skin que já está na lista de downloads do mapa, sem precisar comprar nem de ready-up |
 | `!skin test default [arma]` | Tira a skin de teste |
 
 `[arma]`: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf` ou `pan`. Sem ela, usa a arma da sua mão.
@@ -271,15 +271,29 @@ Exemplos:
 
 > Os comandos de skin dos jogadores (`!skin`, `!skin next`, `!skin prev`, `!skin default`) estão no [Guia de Comandos para Jogadores](../players/README.pt.md#skins-de-armas). `!skin on/off` e `!skin test` só funcionam para admins com acesso **root**.
 
+### Loja de skins (site)
+
+Os jogadores compram as skins em [l4d2.com.br/skins](https://l4d2.com.br/skins) com estrelas (1 estrela por MVP de dano em SI ou de comuns em partidas competitivas, desde o início do ranking). Só os arquivos das skins que pelo menos um jogador comprou entram na lista de downloads, a partir da troca de mapa seguinte à compra.
+
+Admins (`ServerAdmins` do site) têm o botão **Administrar loja** na página de skins, ou acessam [l4d2.com.br/skins/admin](https://l4d2.com.br/skins/admin):
+
+| O que fazer | Como |
+|---|---|
+| Mudar o preço de uma skin | Em **Preços**, troque o valor e clique em **Salvar**. Vale só para as próximas compras; quem já comprou não é afetado. **Restaurar** volta ao preço padrão do catálogo |
+| Dar uma skin de presente | Em **Dar skin de presente**, informe o Steam ID do jogador (qualquer formato ou o link do perfil), escolha a skin e clique em **Dar de presente**. A skin fica equipada para o jogador e não gasta estrelas |
+| Estornar uma compra | Em **Compras**, clique em **Estornar** na linha da compra. As estrelas pagas voltam para o jogador, a skin sai da conta dele e, se estava equipada, a arma volta para a padrão |
+
+> As estrelas sempre vêm do ranking (API): o admin não altera o saldo de ninguém, só dá presente ou estorna compras.
+
 ### Modo de teste: todas as skins
 
-Para conferir no jogo skins que ainda não foram lançadas:
+Para conferir no jogo skins que ninguém comprou ainda:
 
 1. `!cvar weapon_skins_preview_all 1`
 2. Troque de mapa, com `!fm zonemod` ou `!map <mapa>`. Os arquivos de todas as skins entram na lista de downloads no carregamento do mapa.
 3. Saia e entre de novo no servidor, para baixar os arquivos. Se aparecer ERROR, feche e abra o jogo.
-4. Pegue a arma e use `!skin next` / `!skin prev` para passar por todas as skins dela, ou `!skin <id>`. Para admins root, nível, data de lançamento, time e ready-up são ignorados.
-5. No fim: `!cvar weapon_skins_preview_all 0` e troque de mapa. Tudo volta ao calendário normal.
+4. Pegue a arma e use `!skin next` / `!skin prev` para passar por todas as skins dela, ou `!skin <id>`. Para admins root, compra, time e ready-up são ignorados.
+5. No fim: `!cvar weapon_skins_preview_all 0` e troque de mapa. Volta a ser baixado só o que foi comprado.
 
 > ⚠️ Enquanto o modo de teste estiver ligado, **todo jogador que entrar baixa todas as skins** (cerca de 250 MB). Use com o servidor vazio e desligue logo depois.
 

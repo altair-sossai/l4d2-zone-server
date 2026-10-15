@@ -53,7 +53,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 | [l4d2_gameinfo_sync](#l4d2_gameinfo_sync) | Syncs live game info & chat to the Game Info API |
 | [l4d2_campaign_vote](#l4d2_campaign_vote) | Lets any player vote to change to any installed campaign |
 | [l4d2_lerp_advisor](#l4d2_lerp_advisor) | Tells players with an invalid lerp which network commands to run |
-| [l4d2_weapon_skins](#l4d2_weapon_skins) | Weapon skins per player, unlocked by patent level |
+| [l4d2_weapon_skins](#l4d2_weapon_skins) | Weapon skins per player, bought in the skin shop with MVP stars |
 
 **Adapted plugins (third-party)**
 
@@ -382,16 +382,15 @@ sm_cvar playstats_access_token "your-token-here"
 
 | ConVar | Default | Description |
 |--------|---------|-------------|
-| `gameinfo_url` | `""` | Game Info API URL (`PROTECTED`) |
-| `gameinfo_secret` | `""` | Game Info API secret key (`PROTECTED`) |
+| `l4d2_web_url` | `""` | L4D2 web URL (`https://l4d2.com.br`), shared with `l4d2_weapon_skins` (`PROTECTED`) |
+| `l4d2_web_secret` | `""` | L4D2 web secret key (the site `SecretKey`), shared with `l4d2_weapon_skins` (`PROTECTED`) |
 
 **Commands** — Hooks `say` and `say_team` to relay chat (no new commands registered).
 
-**How to configure** — Set `gameinfo_url` in `shared_cvars.cfg`; set the secret **`gameinfo_secret` in `cfg/server_secrets.cfg`** (git-ignored):
+**How to configure** — `l4d2_web_url` is set in `cfg/server.cfg`; set the secret **`l4d2_web_secret` in `cfg/server_secrets.cfg`** (git-ignored). Both cvars are shared by every plugin that talks to the site:
 
 ```
-sm_cvar gameinfo_url "https://your-domain"
-sm_cvar gameinfo_secret "your-secret-here"
+sm_cvar l4d2_web_secret "your-secret-here"
 ```
 
 ---
@@ -446,44 +445,45 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 
 **What it does** — Lets each player pick a skin for the SMG, MAC-10 (silenced SMG), MP5, pump shotgun, chrome shotgun and the melee weapons (fireaxe, katana, machete, baseball bat, cricket bat, electric guitar, crowbar, golf club and frying pan). Melee weapons share the `weapon_melee` class, so they are identified as `weapon_melee_<script name>` (for example `weapon_melee_fireaxe`). The skins are texture-only workshop addons, delivered through FastDL, so players don't need to install any `.vpk`. Each weapon has one combined view/world model with one skin family per skin. The plugin swaps the weapon (and the player's viewmodel) to the combined model and sets `m_nSkin` to the skin's family. The skin follows the weapon: if it is dropped, whoever picks it up uses it with the same skin. To stop weapons from piling up (for example, by swapping weapons over and over at the infinite spawns of a safe room), every time a primary weapon is dropped the plugin counts the primary weapons dropped by players within `weapon_skins_pile_radius` of it and removes the oldest ones above `weapon_skins_pile_max`. Weapon spawns, weapons placed by the map, secondary weapons, items and held weapons are never removed.
 
-Skins are unlocked by patent level. The skin levels come from `GET {weapon_skins_api_url}/api/skins` and the player levels from `GET {weapon_skins_api_url}/api/players/levels`, refreshed on map start and round start. A skin is usable when its level is less than or equal to the player's level. Unranked players are level 1.
+Skins are bought in the skin shop of the PlayStats site (`/skins`) with stars, which are the player's all-time MVP count (SI damage MVPs + common infected MVPs in competitive matches) served by the PlayStats API. The site keeps the purchases and the equipped skin of each weapon in Azure Table Storage. The plugin reads `GET {l4d2_web_url}/api/skins` (skins bought by at least one player, `[{id, weapon}]`) and `GET {l4d2_web_url}/api/players/skins` (`[{communityId, skins, equipped: [{weapon, skin}]}]`), refreshed on map start, round start, round end and every 2 minutes while there are players. Only the materials of purchased skins are added to the downloads table, so players only download what someone bought. The downloads table is built when the map starts, before the API answers, so it uses the last valid API response: kept in memory between maps, and saved to `addons/sourcemod/data/weapon_skins_cache.json` (and the player data to `weapon_skins_players_cache.json`) for the first map after a restart (an empty L4D2 server hibernates and only processes the API answer when the first player connects, which is too late for that player's downloads).
 
-Skins are released gradually. Each skin has a release date in the PlayStats site (`releaseDate` in `skins.json`), and its files can be downloaded from one week before that date (midnight, Brasília time). `/api/skins` only returns the skins that can already be downloaded, each with `released` and `releaseDate`. Only the materials of those skins are added to the downloads table, so new players download only what is already out or about to come out. A skin can only be used once `released` is true; `!skin <id>` on a skin that is not released yet replies with its release date. The downloads table is built when the map starts, before the API answers, so it uses the last valid API response: kept in memory between maps, and saved to `addons/sourcemod/data/weapon_skins_cache.json` for the first map after a restart (an empty L4D2 server hibernates and only processes the API answer when the first player connects, which is too late for that player's downloads).
+A skin bought during a map is only downloaded on the next map change. When the plugin sees a new purchase of a connected player it tells them in chat that the skin is already equipped and shows up from the next map change (or right away, when another player had already bought that skin and its files are in this map's downloads). `!skin <id>` on an owned skin whose files are not in this map yet equips it and explains that it shows up on the next map.
 
-Rules for changing skins: only **survivors**, and only during the **ready-up** (when `readyup` is loaded), on any map. The choices are saved to `addons/sourcemod/data/weapon_skins_players.txt` when the round goes live, only if something changed. If a player's level drops (for example, after a ranking reset), skins above the new level are no longer applied and the player sees the default skin; the choice stays saved and comes back if the level is regained. API responses that are empty or missing fields are ignored, keeping the last valid data.
+Rules for changing skins: only **survivors**, and only during the **ready-up** (when `readyup` is loaded), on any map, and only skins the player owns. Each change made in game is sent to `POST {l4d2_web_url}/api/players/{communityId}/skins/equip` with the `Authorization` header set to `l4d2_web_secret`, so the site and the next sessions show it. Changes made on the site are picked up on the next refresh and show up on the next weapon pickup or map change; a change made in game is kept while the site still returns the previous value. `!skin status` also shows the player's stars and skins (`GET /api/players/{communityId}/wallet`). API responses that are missing fields are ignored, keeping the last valid data.
 
 When `weapon_skins_kick_no_downloads` is on, players without downloads (`cl_allowdownload 0`, or `cl_downloadfilter` other than `all`/`nosounds`) are kicked with a message that explains how to turn them on (Options > Multiplayer > Custom Server Content > Allow All). When it is off, those players stay and the skins in third person go back to the default for everyone while they are in the server, so no one ever sees an ERROR model; their own first-person view also stays default, and so does the first-person view of anyone they spectate. The download settings are queried as soon as the player starts connecting, so the answer is usually known before they enter the game and the skins do not blink for everyone on each connection.
 
-This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are downloaded when players connect. Downloading new skin files during a changelevel shows ERROR models until the game restarts.
+This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are downloaded when players connect. Downloading new skin models during a changelevel shows ERROR models until the game restarts; skin materials alone download fine on a map change, which is how purchased skins reach the players.
 
-**Objective** — Reward ranking progress with cosmetic weapon skins, without forcing players to install anything.
+**Objective** — Reward MVP performance with cosmetic weapon skins bought in the skin shop, without forcing players to install anything.
 
 **ConVars**
 
 | ConVar | Default | Description |
 |--------|---------|-------------|
 | `weapon_skins_enabled` | `0` | Enable the weapon skins |
-| `weapon_skins_api_url` | `""` | PlayStats web URL, used to read the skin and player levels and to build the `/skins` link (`PROTECTED`) |
+| `l4d2_web_url` | `""` | L4D2 web URL, shared with `l4d2_gameinfo_sync`. Used to read the purchased and equipped skins, save the skins equipped in game and build the `/skins` link (`PROTECTED`) |
+| `l4d2_web_secret` | `""` | L4D2 web secret key (the site `SecretKey`), shared with `l4d2_gameinfo_sync`. Sent in the `Authorization` header to save the skins equipped in game (`PROTECTED`) |
 | `weapon_skins_kick_no_downloads` | `0` | Kick players whose game does not download the server files (`cl_allowdownload 0`, or `cl_downloadfilter` other than `all`/`nosounds`). The kick message explains how to turn downloads on |
 | `weapon_skins_pile_radius` | `120` | Radius, in game units, used to find primary weapons dropped close to each other |
 | `weapon_skins_pile_max` | `3` | Maximum number of dropped primary weapons kept inside that radius; the oldest ones are removed (`0` = off) |
-| `weapon_skins_preview_all` | `0` | Test mode. On the next map every skin in `weapon_skins.cfg` is added to the downloads table, whatever its download or release date, and root admins can use any skin (`!skin <id>`, `!skin next`, `!skin prev`), ignoring level, release date, team and ready-up. Turn it off and change the map to go back to the release calendar. Every player who connects while it is on downloads all the skins |
+| `weapon_skins_preview_all` | `0` | Test mode. On the next map every skin in `weapon_skins.cfg` is added to the downloads table, bought or not, and root admins can use any skin (`!skin <id>`, `!skin next`, `!skin prev`), ignoring purchases, team and ready-up. Turn it off and change the map to go back to downloading only the purchased skins. Every player who connects while it is on downloads all the skins |
 
 **Commands**
 
 | Command | Access | Description |
 |---------|--------|-------------|
-| `sm_skin` / `sm_skins` | all | Without arguments, shows the help and the skins page link |
-| `sm_skin <id>` / `sm_skins <id>` | all | Selects a skin by id (e.g. `hellsing-gold`) |
-| `sm_skin next [weapon]` / `sm_skin prev [weapon]` | all | Cycles through the skins the player can use, wrapping through the default skin |
+| `sm_skin` / `sm_skins` | all | Without arguments, shows the help and the skin shop link |
+| `sm_skin <id>` / `sm_skins <id>` | all | Selects one of the player's skins by id (e.g. `hellsing-gold`) |
+| `sm_skin next [weapon]` / `sm_skin prev [weapon]` | all | Cycles through the skins the player owns, wrapping through the default skin |
 | `sm_skin default [weapon]` | all | Goes back to the default skin |
-| `sm_skin status` | all | Shows whether the skins are on |
+| `sm_skin status` | all | Shows whether the skins are on and, in game, the player's stars and number of skins |
 | `sm_skin on\|off` | root | Turns the skins on or off. Overrides `weapon_skins_enabled` and stays in effect across map changes |
-| `sm_skin test <id\|default> [weapon]` | root | Tests any skin on yourself until the map changes, ignoring level and ready-up |
+| `sm_skin test <id\|default> [weapon]` | root | Tests on yourself, until the map changes, any skin already in this map's downloads, without buying it and outside the ready-up |
 
 `[weapon]` accepts `smg`/`uzi`, `mac`/`mac10`/`silenced`, `mp5`, `pump`, `chrome`, `axe`/`fireaxe`, `bat`, `cricket`, `guitar`, `pan`, `golf`, the melee script names (`katana`, `machete`, `crowbar`...) and the full keys (`weapon_smg_mp5`, `weapon_melee_katana`...). Without it, the weapon in the player's hand is used, then the primary weapon, then the melee weapon.
 
-**How to configure** — Set `weapon_skins_api_url` in `cfg/server.cfg`, so the plugin knows which skins can be downloaded before any match config is loaded (players download the files when they first connect). Set `weapon_skins_enabled` and `weapon_skins_kick_no_downloads` in `shared_cvars.cfg`. Weapons and skins are defined in [`configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg): the `Weapons` section has the combined and default models of each weapon, and the `Skins` section maps each skin id to its weapon, skin family (`skin`) and materials folder. Family indexes follow the order of the skins in the cfg, so the combined models must be rebuilt when skins are added or removed. Models and materials live in the [`l4d2-zone-server-assets`](https://github.com/altair-sossai/l4d2-zone-server-assets) repo, whose pipeline deploys them to the server and the FastDL blob. Skin titles, descriptions, levels and thumbnails live in the PlayStats site (`/skins` page). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt`](../../addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt) (English, Portuguese and Spanish).
+**How to configure** — `l4d2_web_url` is set in `cfg/server.cfg`, so the plugin knows which skins can be downloaded before any match config is loaded (players download the files when they first connect), and the secret **`l4d2_web_secret` in `cfg/server_secrets.cfg`** (git-ignored); both are shared with `l4d2_gameinfo_sync`. Set `weapon_skins_enabled` and `weapon_skins_kick_no_downloads` in `shared_cvars.cfg`. Weapons and skins are defined in [`configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg): the `Weapons` section has the combined and default models of each weapon, and the `Skins` section maps each skin id to its weapon, skin family (`skin`) and materials folder. Family indexes follow the order of the skins in the cfg, so the combined models must be rebuilt when skins are added or removed. Models and materials live in the [`l4d2-zone-server-assets`](https://github.com/altair-sossai/l4d2-zone-server-assets) repo, whose pipeline deploys them to the server and the FastDL blob. Skin titles, descriptions, rarities, prices and thumbnails live in the PlayStats site (`skins.json` and the `/skins` shop; admins can change prices, give skins and refund purchases at `/skins/admin`). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt`](../../addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt) (English, Portuguese and Spanish).
 
 ---
 

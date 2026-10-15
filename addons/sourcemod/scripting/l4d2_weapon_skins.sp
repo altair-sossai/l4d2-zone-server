@@ -12,12 +12,13 @@
 #define REQUIRE_PLUGIN
 
 #define CONFIG_PATH "configs/weapon_skins.cfg"
-#define CHOICES_PATH "data/weapon_skins_players.txt"
 #define SKINS_CACHE_PATH "data/weapon_skins_cache.json"
+#define PLAYERS_CACHE_PATH "data/weapon_skins_players_cache.json"
 #define MAX_WEAPON_ENTITIES 2048
 #define DROPPED_MODEL_DELAY 0.1
 #define PILE_CHECK_DELAY 0.5
-#define DEFAULT_PLAYER_LEVEL 1
+#define REFRESH_INTERVAL 120.0
+#define LOCAL_CHANGE_GRACE 15.0
 #define OBS_MODE_IN_EYE 4
 #define PRIMARY_SLOT 0
 #define SECONDARY_SLOT 1
@@ -57,14 +58,15 @@ public Plugin myinfo =
 {
 	name = "L4D2 Weapon Skins",
 	author = "Altair Sossai",
-	description = "Lets players use custom weapon skins, downloaded through FastDL, unlocked by their patent level",
-	version = "2.0.0",
+	description = "Lets players use the custom weapon skins they bought in the skin shop, downloaded through FastDL",
+	version = "3.0.0",
 	url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
 ConVar
 	g_hEnabled,
 	g_hApiUrl,
+	g_hApiSecret,
 	g_hKickNoDownloads,
 	g_hPileRadius,
 	g_hPileMax,
@@ -117,16 +119,17 @@ ArrayList
 StringMap
 	g_hSkinsByName,
 	g_hWeaponModelsByClass,
-	g_hSkinLevels,
-	g_hUpcomingSkins,
-	g_hPlayerLevels,
+	g_hPurchasedSkins,
+	g_hOwnedSkins,
 	g_hPlayerChoices,
+	g_hLocalChanges,
 	g_hTestChoices;
 
 bool
 	g_bReadyUpAvailable = false,
 	g_bWorldModelsEnabled = false,
-	g_bChoicesChanged = false;
+	g_bSkinsLoaded = false,
+	g_bPlayersLoaded = false;
 
 int g_iActiveWeaponRef[MAXPLAYERS + 1] = { INVALID_ENT_REFERENCE, ... };
 int g_iActiveSkin[MAXPLAYERS + 1] = { -1, ... };
@@ -146,10 +149,11 @@ public void OnPluginStart()
 	LoadTranslations("l4d2_weapon_skins.phrases");
 
 	g_hEnabled = CreateConVar("weapon_skins_enabled", "0", "Enable the weapon skins", _, true, 0.0, true, 1.0);
-	g_hApiUrl = CreateConVar("weapon_skins_api_url", "", "Play Stats web URL, used to read the skin and player levels", FCVAR_PROTECTED);
+	g_hApiUrl = CreateConVar("l4d2_web_url", "", "L4D2 web URL, shared by the plugins that talk to the site", FCVAR_PROTECTED);
+	g_hApiSecret = CreateConVar("l4d2_web_secret", "", "L4D2 web secret key, shared by the plugins that talk to the site", FCVAR_PROTECTED);
 	g_hKickNoDownloads = CreateConVar("weapon_skins_kick_no_downloads", "0", "Kick players whose game does not download the server files, so everyone can see the skins", _, true, 0.0, true, 1.0);
 	g_hPileRadius = CreateConVar("weapon_skins_pile_radius", "120.0", "Radius, in game units, used to find primary weapons dropped close to each other", _, true, 0.0);
-	g_hPreviewAll = CreateConVar("weapon_skins_preview_all", "0", "Test mode: every skin is downloaded on the next map and root admins can use any of them, ignoring level, release date and ready-up", _, true, 0.0, true, 1.0);
+	g_hPreviewAll = CreateConVar("weapon_skins_preview_all", "0", "Test mode: every skin is downloaded on the next map and root admins can use any of them, without buying it and outside the ready-up", _, true, 0.0, true, 1.0);
 	g_hPileMax = CreateConVar("weapon_skins_pile_max", "3", "Maximum number of dropped primary weapons kept inside the radius; the oldest ones are removed (0 = off)", _, true, 0.0);
 	g_hEnabled.AddChangeHook(OnEnabledChanged);
 	g_hApiUrl.AddChangeHook(OnApiUrlChanged);
@@ -157,7 +161,8 @@ public void OnPluginStart()
 	RegConsoleCmd("sm_skin", Command_Skin, "sm_skin [<skin> | next | prev | default | status] [weapon] - Weapon skins; admins also use on | off | test <skin|default> [weapon]");
 	RegConsoleCmd("sm_skins", Command_Skin, "sm_skins [<skin> | next | prev | default | status] [weapon] - Weapon skins; admins also use on | off | test <skin|default> [weapon]");
 
-	HookEvent("round_start", Event_RoundStart, EventHookMode_PostNoCopy);
+	HookEvent("round_start", Event_RoundChanged, EventHookMode_PostNoCopy);
+	HookEvent("round_end", Event_RoundChanged, EventHookMode_PostNoCopy);
 
 	AutoExecConfig(false);
 
@@ -165,13 +170,15 @@ public void OnPluginStart()
 	g_hWeaponModels = new ArrayList(sizeof(WeaponModels));
 	g_hSkinsByName = new StringMap();
 	g_hWeaponModelsByClass = new StringMap();
-	g_hSkinLevels = new StringMap();
-	g_hUpcomingSkins = new StringMap();
-	g_hPlayerLevels = new StringMap();
+	g_hPurchasedSkins = new StringMap();
+	g_hOwnedSkins = new StringMap();
 	g_hPlayerChoices = new StringMap();
+	g_hLocalChanges = new StringMap();
 	g_hTestChoices = new StringMap();
 
-	LoadChoices();
+	LoadPlayersCache();
+
+	CreateTimer(REFRESH_INTERVAL, Timer_Refresh, _, TIMER_REPEAT);
 
 	for (int client = 1; client <= MaxClients; client++)
 	{
@@ -282,28 +289,40 @@ public void OnMapStart()
 
 public void OnConfigsExecuted()
 {
-	RefreshLevels();
+	RefreshShop();
 }
 
 void OnApiUrlChanged(ConVar convar, const char[] oldValue, const char[] newValue)
 {
-	RefreshLevels();
+	RefreshShop();
 }
 
-void Event_RoundStart(Event event, const char[] name, bool dontBroadcast)
+void Event_RoundChanged(Event event, const char[] name, bool dontBroadcast)
 {
-	RefreshLevels();
+	RefreshShop();
 }
 
-public void OnRoundIsLive()
+Action Timer_Refresh(Handle timer)
 {
-	if (!g_bChoicesChanged)
+	if (HasHumanPlayer())
 	{
-		return;
+		RefreshShop();
 	}
 
-	SaveChoices();
-	g_bChoicesChanged = false;
+	return Plugin_Continue;
+}
+
+bool HasHumanPlayer()
+{
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && !IsFakeClient(client))
+		{
+			return true;
+		}
+	}
+
+	return false;
 }
 
 void OnEnabledChanged(ConVar convar, const char[] oldValue, const char[] newValue)
@@ -374,6 +393,12 @@ Action Command_Skin(int client, int args)
 	if (StrEqual(action, "status", false) || (client == 0 && args < 1))
 	{
 		CReplyToCommand(client, "%T %T", "Tag", client, IsEnabled() ? "StatusOn" : "StatusOff", client);
+
+		if (client > 0)
+		{
+			RequestWallet(client);
+		}
+
 		return Plugin_Handled;
 	}
 
@@ -426,29 +451,22 @@ Action Command_Skin(int client, int args)
 		return Plugin_Handled;
 	}
 
-	bool preview = HasPreviewAccess(client);
+	char siteUrl[256];
+	GetSiteUrl(siteUrl, sizeof(siteUrl));
 
-	char releaseDate[16];
-	if (!preview && g_hUpcomingSkins.GetString(name, releaseDate, sizeof(releaseDate)))
+	int skinIndex;
+	if (!g_hSkinsByName.GetValue(name, skinIndex))
 	{
-		CPrintToChat(client, "%T %T", "Tag", client, "SkinComingSoon", client, name, releaseDate);
-		return Plugin_Handled;
-	}
-
-	int skinIndex = preview ? FindReadySkin(name) : FindAvailableSkin(name);
-	if (skinIndex == -1)
-	{
-		char siteUrl[256];
-		GetSiteUrl(siteUrl, sizeof(siteUrl));
 		CPrintToChat(client, "%T %T", "Tag", client, "SkinUnknown", client, name, siteUrl);
 		return Plugin_Handled;
 	}
 
-	int requiredLevel = GetSkinLevel(name);
-	int playerLevel = GetPlayerLevel(client);
-	if (!preview && playerLevel < requiredLevel)
+	WeaponSkin skin;
+	g_hSkins.GetArray(skinIndex, skin);
+
+	if (!HasPreviewAccess(client) && !OwnsSkin(client, skin.name))
 	{
-		CPrintToChat(client, "%T %T", "Tag", client, "SkinLocked", client, name, requiredLevel, playerLevel);
+		CPrintToChat(client, "%T %T", "Tag", client, "SkinNotOwned", client, skin.name, siteUrl);
 		return Plugin_Handled;
 	}
 
@@ -457,10 +475,15 @@ Action Command_Skin(int client, int args)
 		return Plugin_Handled;
 	}
 
-	WeaponSkin skin;
-	g_hSkins.GetArray(skinIndex, skin);
-
 	SetChoice(client, skin.weapon, skin.name);
+
+	if (!skin.ready)
+	{
+		ApplyChoiceToWeapon(client, skin.weapon);
+		CPrintToChat(client, "%T %T", "Tag", client, "SkinNextMap", client, skin.name);
+		return Plugin_Handled;
+	}
+
 	ApplyChoiceToWeapon(client, skin.weapon);
 
 	char weaponName[32];
@@ -543,12 +566,12 @@ void ShowHelp(int client)
 	GetSiteUrl(siteUrl, sizeof(siteUrl));
 
 	CPrintToChat(client, "%T %T", "Tag", client, "HelpTitle", client);
-	CPrintToChat(client, "%T", "HelpLevel", client, GetPlayerLevel(client));
-	CPrintToChat(client, "%T", "HelpChoose", client);
-	CPrintToChat(client, "%T", "HelpCycle", client);
-	CPrintToChat(client, "%T", "HelpDefault", client);
-	CPrintToChat(client, "%T", "HelpReady", client);
 	CPrintToChat(client, "%T", "HelpSite", client, siteUrl);
+	CPrintToChat(client, "%T", "HelpCycle", client);
+	CPrintToChat(client, "%T", "HelpChoose", client);
+	CPrintToChat(client, "%T", "HelpDefault", client);
+	CPrintToChat(client, "%T", "HelpStatus", client);
+	CPrintToChat(client, "%T", "HelpReady", client);
 }
 
 Action CycleSkin(int client, int args, int direction)
@@ -575,7 +598,16 @@ Action CycleSkin(int client, int args, int direction)
 	if (total == 0)
 	{
 		delete available;
-		CPrintToChat(client, "%T %T", "Tag", client, "NoSkinsForWeapon", client, weaponName);
+
+		if (OwnsSkinFor(client, weapon))
+		{
+			CPrintToChat(client, "%T %T", "Tag", client, "SkinsNextMap", client, weaponName);
+			return Plugin_Handled;
+		}
+
+		char siteUrl[256];
+		GetSiteUrl(siteUrl, sizeof(siteUrl));
+		CPrintToChat(client, "%T %T", "Tag", client, "NoSkinsForWeapon", client, weaponName, siteUrl);
 		return Plugin_Handled;
 	}
 
@@ -680,7 +712,6 @@ bool CanChangeNow(int client)
 ArrayList GetAvailableSkins(int client, const char[] weapon)
 {
 	ArrayList available = new ArrayList();
-	int playerLevel = GetPlayerLevel(client);
 	bool preview = HasPreviewAccess(client);
 
 	WeaponSkin skin;
@@ -693,74 +724,48 @@ ArrayList GetAvailableSkins(int client, const char[] weapon)
 			continue;
 		}
 
-		if (preview)
+		if (preview || OwnsSkin(client, skin.name))
 		{
 			available.Push(i);
-			continue;
 		}
-
-		if (!IsReleased(skin.name))
-		{
-			continue;
-		}
-
-		int level;
-		if (!g_hSkinLevels.GetValue(skin.name, level) || level > playerLevel)
-		{
-			continue;
-		}
-
-		available.Push(i);
 	}
 
 	return available;
 }
 
-int FindAvailableSkin(const char[] name)
-{
-	int skinIndex;
-	if (!g_hSkinsByName.GetValue(name, skinIndex) || !g_hSkinLevels.ContainsKey(name))
-	{
-		return -1;
-	}
-
-	WeaponSkin skin;
-	g_hSkins.GetArray(skinIndex, skin);
-
-	return skin.ready ? skinIndex : -1;
-}
-
-int GetSkinLevel(const char[] name)
-{
-	int level;
-	if (!g_hSkinLevels.GetValue(name, level))
-	{
-		return 0;
-	}
-
-	return level;
-}
-
-int GetPlayerLevel(int client)
+bool OwnsSkin(int client, const char[] name)
 {
 	char steamId[32];
 	if (!GetSteamId(client, steamId, sizeof(steamId)))
 	{
-		return DEFAULT_PLAYER_LEVEL;
+		return false;
 	}
 
-	return GetLevelOf(steamId);
+	return SteamIdOwnsSkin(steamId, name);
 }
 
-int GetLevelOf(const char[] steamId)
+bool OwnsSkinFor(int client, const char[] weapon)
 {
-	int level;
-	if (!g_hPlayerLevels.GetValue(steamId, level))
+	WeaponSkin skin;
+	for (int i = 0; i < g_hSkins.Length; i++)
 	{
-		return DEFAULT_PLAYER_LEVEL;
+		g_hSkins.GetArray(i, skin);
+
+		if (StrEqual(skin.weapon, weapon) && OwnsSkin(client, skin.name))
+		{
+			return true;
+		}
 	}
 
-	return level;
+	return false;
+}
+
+bool SteamIdOwnsSkin(const char[] steamId, const char[] name)
+{
+	char key[128];
+	FormatEx(key, sizeof(key), "%s:%s", steamId, name);
+
+	return g_hOwnedSkins.ContainsKey(key);
 }
 
 bool ResolveWeapon(int client, int args, int argIndex, char[] weapon, int maxlength)
@@ -869,9 +874,16 @@ void GetWeaponDisplayName(const char[] weapon, char[] name, int maxlength)
 
 void GetSiteUrl(char[] url, int maxlength)
 {
+	GetApiUrl(url, maxlength);
+	StrCat(url, maxlength, "/skins");
+}
+
+bool GetApiUrl(char[] url, int maxlength)
+{
 	g_hApiUrl.GetString(url, maxlength);
 	TrimTrailingSlash(url);
-	StrCat(url, maxlength, "/skins");
+
+	return url[0] != '\0';
 }
 
 void TrimTrailingSlash(char[] url)
@@ -927,7 +939,7 @@ void SetChoice(int client, const char[] weapon, const char[] name)
 	}
 
 	g_hPlayerChoices.SetString(key, name);
-	g_bChoicesChanged = true;
+	SaveEquippedSkin(steamId, weapon, name);
 }
 
 void ClearChoice(int client, const char[] weapon)
@@ -944,93 +956,56 @@ void ClearChoice(int client, const char[] weapon)
 
 	if (g_hPlayerChoices.Remove(key))
 	{
-		g_bChoicesChanged = true;
+		SaveEquippedSkin(steamId, weapon, "");
 	}
 }
 
-void LoadChoices()
+void SaveEquippedSkin(const char[] steamId, const char[] weapon, const char[] name)
 {
-	g_hPlayerChoices.Clear();
+	char key[128];
+	FormatEx(key, sizeof(key), "%s:%s", steamId, weapon);
+	g_hLocalChanges.SetValue(key, GetEngineTime());
 
-	char path[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, path, sizeof(path), CHOICES_PATH);
-
-	KeyValues kv = new KeyValues("WeaponSkinsPlayers");
-	if (!kv.ImportFromFile(path) || !kv.GotoFirstSubKey())
+	if (name[0] != '\0' && !SteamIdOwnsSkin(steamId, name))
 	{
-		delete kv;
 		return;
 	}
 
-	do
+	char apiUrl[256];
+	if (!GetApiUrl(apiUrl, sizeof(apiUrl)))
 	{
-		char steamId[32];
-		kv.GetSectionName(steamId, sizeof(steamId));
-
-		if (!kv.GotoFirstSubKey(false))
-		{
-			continue;
-		}
-
-		do
-		{
-			char weapon[64];
-			char name[64];
-			kv.GetSectionName(weapon, sizeof(weapon));
-			kv.GetString(NULL_STRING, name, sizeof(name));
-
-			char key[128];
-			FormatEx(key, sizeof(key), "%s:%s", steamId, weapon);
-			g_hPlayerChoices.SetString(key, name);
-		}
-		while (kv.GotoNextKey(false));
-
-		kv.GoBack();
+		return;
 	}
-	while (kv.GotoNextKey());
 
-	delete kv;
+	char endpoint[320];
+	FormatEx(endpoint, sizeof(endpoint), "%s/api/players/%s/skins/equip", apiUrl, steamId);
+
+	char secret[256];
+	g_hApiSecret.GetString(secret, sizeof(secret));
+
+	JSONObject body = new JSONObject();
+	body.SetString("weapon", weapon);
+	body.SetString("skin", name);
+
+	HTTPRequest request = new HTTPRequest(endpoint);
+	request.SetHeader("Authorization", secret);
+	request.Post(body, OnEquippedSkinSaved);
+
+	delete body;
 }
 
-void SaveChoices()
+void OnEquippedSkinSaved(HTTPResponse response, any value)
 {
-	KeyValues kv = new KeyValues("WeaponSkinsPlayers");
-
-	StringMapSnapshot snapshot = g_hPlayerChoices.Snapshot();
-	for (int i = 0; i < snapshot.Length; i++)
+	if (response.Status != HTTPStatus_OK)
 	{
-		char key[128];
-		snapshot.GetKey(i, key, sizeof(key));
-
-		char parts[2][64];
-		if (ExplodeString(key, ":", parts, sizeof(parts), sizeof(parts[])) != 2)
-		{
-			continue;
-		}
-
-		char name[64];
-		g_hPlayerChoices.GetString(key, name, sizeof(name));
-
-		kv.JumpToKey(parts[0], true);
-		kv.SetString(parts[1], name);
-		kv.GoBack();
+		LogError("Could not save the equipped skin (HTTP %d)", response.Status);
 	}
-	delete snapshot;
-
-	char path[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, path, sizeof(path), CHOICES_PATH);
-	kv.ExportToFile(path);
-
-	delete kv;
 }
 
-void RefreshLevels()
+void RefreshShop()
 {
 	char apiUrl[256];
-	g_hApiUrl.GetString(apiUrl, sizeof(apiUrl));
-	TrimTrailingSlash(apiUrl);
-
-	if (apiUrl[0] == '\0')
+	if (!GetApiUrl(apiUrl, sizeof(apiUrl)))
 	{
 		return;
 	}
@@ -1039,68 +1014,315 @@ void RefreshLevels()
 
 	FormatEx(endpoint, sizeof(endpoint), "%s/api/skins", apiUrl);
 	HTTPRequest skinsRequest = new HTTPRequest(endpoint);
-	skinsRequest.Get(OnSkinLevelsResponse);
+	skinsRequest.Get(OnPurchasedSkinsResponse);
 
-	FormatEx(endpoint, sizeof(endpoint), "%s/api/players/levels", apiUrl);
+	FormatEx(endpoint, sizeof(endpoint), "%s/api/players/skins", apiUrl);
 	HTTPRequest playersRequest = new HTTPRequest(endpoint);
-	playersRequest.Get(OnPlayerLevelsResponse);
+	playersRequest.Get(OnPlayerSkinsResponse, GetEngineTime());
 }
 
-void OnSkinLevelsResponse(HTTPResponse response, any value)
+void OnPurchasedSkinsResponse(HTTPResponse response, any value)
 {
 	if (response.Status != HTTPStatus_OK)
 	{
-		LogError("Could not load the skin levels (HTTP %d)", response.Status);
+		LogError("Could not load the purchased skins (HTTP %d)", response.Status);
 		return;
 	}
 
 	JSONArray skins = view_as<JSONArray>(response.Data);
-	if (!ReadSkinsData(skins))
+	if (!ReadPurchasedSkins(skins))
 	{
-		LogError("Ignored an invalid skin list from the API");
+		LogError("Ignored an invalid purchased skin list from the API");
 		return;
 	}
 
-	SaveSkinsCache(skins);
+	SaveCache(skins, SKINS_CACHE_PATH);
 }
 
-void OnPlayerLevelsResponse(HTTPResponse response, any value)
+void OnPlayerSkinsResponse(HTTPResponse response, any requestedAt)
 {
 	if (response.Status != HTTPStatus_OK)
 	{
-		LogError("Could not load the player levels (HTTP %d)", response.Status);
+		LogError("Could not load the player skins (HTTP %d)", response.Status);
 		return;
 	}
 
 	JSONArray players = view_as<JSONArray>(response.Data);
-	if (players.Length == 0)
+	if (!ReadPlayerSkins(players, view_as<float>(requestedAt)))
 	{
-		LogError("Ignored an empty player level list from the API");
+		LogError("Ignored an invalid player skin list from the API");
 		return;
 	}
 
-	StringMap levels = new StringMap();
+	SaveCache(players, PLAYERS_CACHE_PATH);
+}
+
+bool ReadPurchasedSkins(JSONArray skins)
+{
+	StringMap purchased = new StringMap();
+
+	for (int i = 0; i < skins.Length; i++)
+	{
+		JSONObject skin = view_as<JSONObject>(skins.Get(i));
+
+		if (!skin.HasKey("id"))
+		{
+			delete skin;
+			delete purchased;
+			return false;
+		}
+
+		char id[64];
+		skin.GetString("id", id, sizeof(id));
+		purchased.SetValue(id, true);
+
+		delete skin;
+	}
+
+	delete g_hPurchasedSkins;
+	g_hPurchasedSkins = purchased;
+	g_bSkinsLoaded = true;
+
+	return true;
+}
+
+bool ReadPlayerSkins(JSONArray players, float requestedAt)
+{
+	StringMap owned = new StringMap();
+	StringMap choices = new StringMap();
+
 	for (int i = 0; i < players.Length; i++)
 	{
 		JSONObject player = view_as<JSONObject>(players.Get(i));
 
-		if (!player.HasKey("communityId") || !player.HasKey("level"))
+		if (!player.HasKey("communityId") || !player.HasKey("skins") || !player.HasKey("equipped"))
 		{
 			delete player;
-			delete levels;
-			LogError("Ignored an invalid player level list from the API");
-			return;
+			delete owned;
+			delete choices;
+			return false;
 		}
 
 		char communityId[32];
 		player.GetString("communityId", communityId, sizeof(communityId));
-		levels.SetValue(communityId, player.GetInt("level"));
+
+		char key[128];
+		char name[64];
+		char weapon[64];
+
+		JSONArray skins = view_as<JSONArray>(player.Get("skins"));
+		for (int j = 0; j < skins.Length; j++)
+		{
+			skins.GetString(j, name, sizeof(name));
+			FormatEx(key, sizeof(key), "%s:%s", communityId, name);
+			owned.SetValue(key, true);
+		}
+		delete skins;
+
+		JSONArray equipped = view_as<JSONArray>(player.Get("equipped"));
+		for (int j = 0; j < equipped.Length; j++)
+		{
+			JSONObject item = view_as<JSONObject>(equipped.Get(j));
+
+			if (item.HasKey("weapon") && item.HasKey("skin"))
+			{
+				item.GetString("weapon", weapon, sizeof(weapon));
+				item.GetString("skin", name, sizeof(name));
+				FormatEx(key, sizeof(key), "%s:%s", communityId, weapon);
+				choices.SetString(key, name);
+			}
+
+			delete item;
+		}
+		delete equipped;
 
 		delete player;
 	}
 
-	delete g_hPlayerLevels;
-	g_hPlayerLevels = levels;
+	KeepLocalChanges(choices, requestedAt);
+
+	StringMap previous = g_hOwnedSkins;
+	bool notify = g_bPlayersLoaded;
+
+	g_hOwnedSkins = owned;
+	delete g_hPlayerChoices;
+	g_hPlayerChoices = choices;
+	g_bPlayersLoaded = true;
+
+	if (notify)
+	{
+		NotifyNewPurchases(previous);
+	}
+
+	delete previous;
+
+	return true;
+}
+
+void KeepLocalChanges(StringMap choices, float requestedAt)
+{
+	StringMapSnapshot snapshot = g_hLocalChanges.Snapshot();
+
+	char key[128];
+	char name[64];
+	float changedAt;
+
+	for (int i = 0; i < snapshot.Length; i++)
+	{
+		snapshot.GetKey(i, key, sizeof(key));
+		g_hLocalChanges.GetValue(key, changedAt);
+
+		if (requestedAt > changedAt + LOCAL_CHANGE_GRACE)
+		{
+			g_hLocalChanges.Remove(key);
+			continue;
+		}
+
+		if (g_hPlayerChoices.GetString(key, name, sizeof(name)))
+		{
+			choices.SetString(key, name);
+			continue;
+		}
+
+		choices.Remove(key);
+	}
+
+	delete snapshot;
+}
+
+void NotifyNewPurchases(StringMap previous)
+{
+	StringMapSnapshot snapshot = g_hOwnedSkins.Snapshot();
+
+	char key[128];
+	char parts[2][64];
+
+	for (int i = 0; i < snapshot.Length; i++)
+	{
+		snapshot.GetKey(i, key, sizeof(key));
+
+		if (previous.ContainsKey(key) || ExplodeString(key, ":", parts, sizeof(parts), sizeof(parts[])) != 2)
+		{
+			continue;
+		}
+
+		int client = FindClientBySteamId(parts[0]);
+		if (client != 0)
+		{
+			NotifyPurchase(client, parts[1]);
+		}
+	}
+
+	delete snapshot;
+}
+
+void NotifyPurchase(int client, const char[] name)
+{
+	int skinIndex;
+	if (!g_hSkinsByName.GetValue(name, skinIndex))
+	{
+		return;
+	}
+
+	WeaponSkin skin;
+	g_hSkins.GetArray(skinIndex, skin);
+
+	char weaponName[32];
+	GetWeaponDisplayName(skin.weapon, weaponName, sizeof(weaponName));
+
+	if (!skin.ready)
+	{
+		CPrintToChat(client, "%T %T", "Tag", client, "PurchaseNextMap", client, skin.name, weaponName);
+		return;
+	}
+
+	ApplyChoiceToWeapon(client, skin.weapon);
+	CPrintToChat(client, "%T %T", "Tag", client, "PurchaseReady", client, skin.name, weaponName);
+}
+
+int FindClientBySteamId(const char[] steamId)
+{
+	char clientSteamId[32];
+
+	for (int client = 1; client <= MaxClients; client++)
+	{
+		if (IsClientInGame(client) && GetSteamId(client, clientSteamId, sizeof(clientSteamId)) && StrEqual(clientSteamId, steamId))
+		{
+			return client;
+		}
+	}
+
+	return 0;
+}
+
+int CountOwnedSkins(const char[] steamId)
+{
+	StringMapSnapshot snapshot = g_hOwnedSkins.Snapshot();
+
+	char prefix[40];
+	FormatEx(prefix, sizeof(prefix), "%s:", steamId);
+
+	char key[128];
+	int count = 0;
+
+	for (int i = 0; i < snapshot.Length; i++)
+	{
+		snapshot.GetKey(i, key, sizeof(key));
+
+		if (StrContains(key, prefix) == 0)
+		{
+			count++;
+		}
+	}
+
+	delete snapshot;
+
+	return count;
+}
+
+void RequestWallet(int client)
+{
+	char steamId[32];
+	char apiUrl[256];
+
+	if (!GetSteamId(client, steamId, sizeof(steamId)) || !GetApiUrl(apiUrl, sizeof(apiUrl)))
+	{
+		return;
+	}
+
+	char endpoint[320];
+	FormatEx(endpoint, sizeof(endpoint), "%s/api/players/%s/wallet", apiUrl, steamId);
+
+	HTTPRequest request = new HTTPRequest(endpoint);
+	request.Get(OnWalletResponse, GetClientUserId(client));
+}
+
+void OnWalletResponse(HTTPResponse response, any userId)
+{
+	int client = GetClientOfUserId(userId);
+	if (client == 0)
+	{
+		return;
+	}
+
+	if (response.Status != HTTPStatus_OK)
+	{
+		CPrintToChat(client, "%T %T", "Tag", client, "WalletUnavailable", client);
+		return;
+	}
+
+	char steamId[32];
+	if (!GetSteamId(client, steamId, sizeof(steamId)))
+	{
+		return;
+	}
+
+	JSONObject wallet = view_as<JSONObject>(response.Data);
+
+	char siteUrl[256];
+	GetSiteUrl(siteUrl, sizeof(siteUrl));
+
+	CPrintToChat(client, "%T %T", "Tag", client, "Wallet", client, wallet.GetInt("balance"), CountOwnedSkins(steamId), siteUrl);
 }
 
 void ApplyChoiceToWeapon(int client, const char[] weaponClass)
@@ -1324,7 +1546,7 @@ void LoadSkins()
 		return;
 	}
 
-	if (g_hSkinLevels.Size == 0)
+	if (!g_bSkinsLoaded)
 	{
 		LoadSkinsCache();
 	}
@@ -1337,87 +1559,64 @@ void LoadSkins()
 
 void LoadSkinsCache()
 {
-	char path[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, path, sizeof(path), SKINS_CACHE_PATH);
-
-	if (!FileExists(path))
-	{
-		return;
-	}
-
-	JSONArray skins = JSONArray.FromFile(path);
+	JSONArray skins = ReadCache(SKINS_CACHE_PATH);
 	if (skins == null)
 	{
-		LogError("Could not read %s", path);
 		return;
 	}
 
-	if (!ReadSkinsData(skins))
+	if (!ReadPurchasedSkins(skins))
 	{
-		LogError("Ignored an invalid skin list in %s", path);
+		LogError("Ignored an invalid purchased skin list in %s", SKINS_CACHE_PATH);
 	}
 
 	delete skins;
 }
 
-void SaveSkinsCache(JSONArray skins)
+void LoadPlayersCache()
+{
+	JSONArray players = ReadCache(PLAYERS_CACHE_PATH);
+	if (players == null)
+	{
+		return;
+	}
+
+	if (!ReadPlayerSkins(players, 0.0))
+	{
+		LogError("Ignored an invalid player skin list in %s", PLAYERS_CACHE_PATH);
+	}
+
+	delete players;
+}
+
+JSONArray ReadCache(const char[] file)
 {
 	char path[PLATFORM_MAX_PATH];
-	BuildPath(Path_SM, path, sizeof(path), SKINS_CACHE_PATH);
+	BuildPath(Path_SM, path, sizeof(path), file);
 
-	if (!skins.ToFile(path))
+	if (!FileExists(path))
+	{
+		return null;
+	}
+
+	JSONArray data = JSONArray.FromFile(path);
+	if (data == null)
+	{
+		LogError("Could not read %s", path);
+	}
+
+	return data;
+}
+
+void SaveCache(JSONArray data, const char[] file)
+{
+	char path[PLATFORM_MAX_PATH];
+	BuildPath(Path_SM, path, sizeof(path), file);
+
+	if (!data.ToFile(path))
 	{
 		LogError("Could not write %s", path);
 	}
-}
-
-bool ReadSkinsData(JSONArray skins)
-{
-	if (skins.Length == 0)
-	{
-		return false;
-	}
-
-	StringMap levels = new StringMap();
-	StringMap upcoming = new StringMap();
-
-	for (int i = 0; i < skins.Length; i++)
-	{
-		JSONObject skin = view_as<JSONObject>(skins.Get(i));
-
-		if (!skin.HasKey("id") || !skin.HasKey("level") || !skin.HasKey("released") || !skin.HasKey("releaseDate"))
-		{
-			delete skin;
-			delete levels;
-			delete upcoming;
-			return false;
-		}
-
-		char id[64];
-		skin.GetString("id", id, sizeof(id));
-		levels.SetValue(id, skin.GetInt("level"));
-
-		if (!skin.GetBool("released"))
-		{
-			char releaseDate[16];
-			skin.GetString("releaseDate", releaseDate, sizeof(releaseDate));
-			upcoming.SetString(id, releaseDate);
-		}
-
-		delete skin;
-	}
-
-	delete g_hSkinLevels;
-	delete g_hUpcomingSkins;
-	g_hSkinLevels = levels;
-	g_hUpcomingSkins = upcoming;
-
-	return true;
-}
-
-bool IsReleased(const char[] name)
-{
-	return !g_hUpcomingSkins.ContainsKey(name);
 }
 
 void LoadWeaponModels(KeyValues kv)
@@ -1512,7 +1711,7 @@ bool PrepareSkin(WeaponSkin skin)
 	WeaponModels models;
 	g_hWeaponModels.GetArray(modelsIndex, models);
 
-	if (!models.ready || (!g_hPreviewAll.BoolValue && !g_hSkinLevels.ContainsKey(skin.name)))
+	if (!models.ready || (!g_hPreviewAll.BoolValue && !g_hPurchasedSkins.ContainsKey(skin.name)))
 	{
 		return false;
 	}
@@ -1812,13 +2011,7 @@ int GetPlayerWeaponSkin(int client, int weapon)
 		return -1;
 	}
 
-	if (HasPreviewAccess(client))
-	{
-		return FindReadySkin(name);
-	}
-
-	int requiredLevel;
-	if (!g_hSkinLevels.GetValue(name, requiredLevel) || GetLevelOf(steamId) < requiredLevel || !IsReleased(name))
+	if (!HasPreviewAccess(client) && !SteamIdOwnsSkin(steamId, name))
 	{
 		return -1;
 	}
