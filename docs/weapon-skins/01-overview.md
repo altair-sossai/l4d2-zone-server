@@ -1,6 +1,6 @@
 # 1. Overview & architecture
 
-🌐 **English** | [Português](01-overview.pt.md) · [Wiki home](README.md)
+🌐 **English** | [Português](01-overview.pt.md) | [Español](01-overview.es.md) · [Wiki home](README.md)
 
 ## Components
 
@@ -34,7 +34,7 @@ flowchart LR
 |---|---|---|
 | `l4d2_playstats` / `l4d2_playstats_sync` | Game server | Write one statistics file per map and upload it to the API |
 | PlayStats API | Azure Functions | Store statistics, build matches and the ranking, compute **stars** |
-| l4d2.com.br | Linux host (Kestrel in a `screen` session) | Skin catalog, shop, admin pages, plugin-facing API |
+| l4d2.com.br | Linux host (Kestrel in a `screen` session) | Skin catalog, shop, season refunds, admin pages, plugin-facing API |
 | `l4d2_weapon_skins` | Game server | Download only purchased skins, apply them in game, sync equipped skins |
 | `l4d2_gameinfo_sync` | Game server | Push live game info and chat to the site |
 | Assets repository | Pipeline → game server + FastDL blob | Models and materials of the skins |
@@ -44,6 +44,7 @@ flowchart LR
 - **Stars** = all-time MVPs of a player (SI damage MVPs + common infected MVPs) in **competitive** matches. They are **derived data**: computed by the API from the stored match statistics, never edited by hand. See [Stars](04-stars-api.md).
 - **Spent stars, purchases and equipped skins** live in the site's `SkinShop` table. The balance shown to a player is always `stars − spent`. See [Skin shop](05-skin-shop.md).
 - **Prices** come from the catalog (`skins.json`) and can be overridden by admins in the `SkinPrices` table.
+- **Seasons** — a bought skin lasts until the next ranking reset (00:00 UTC on the 1st of Jan, Mar, May, Jul, Sep and Nov). At the reset, every purchase that is not a gift is refunded automatically: the stars spent come back and the skin leaves the account. Gifts are kept forever. See [Skin shop → Equip, gift, refund](05-skin-shop.md#equip-gift-refund).
 
 ## Life of a purchase
 
@@ -73,12 +74,13 @@ sequenceDiagram
 2. The plugin refreshes the purchases on round start, round end and every 2 minutes. When it sees a new purchase of a connected player, it tells the player in chat.
 3. On the next map start the plugin adds the materials of every purchased skin to the downloads table. Every connected player downloads them during the map load.
 4. When the owner holds the weapon, the plugin swaps the weapon to the combined model and sets the skin family.
+5. At the next ranking reset the site refunds the purchase automatically (unless it was a gift) and the plugin stops seeing the skin as owned on its next refresh.
 
 ## Why "next map change"?
 
 The Source engine builds the list of files that clients must download (the *downloads table*) once per map, before players load it. A file added in the middle of a map is not sent to anyone until the next map. That is why:
 
-- the **models** of all 14 weapons are always in the downloads table (downloading models during a map change shows `ERROR` until the game restarts);
+- the **models** of all 15 weapons are always in the downloads table (downloading models during a map change shows `ERROR` until the game restarts);
 - only the **materials** (textures) of a skin are added when someone buys it — textures download fine on a map change.
 
 ## Key decisions (and why)
@@ -89,6 +91,7 @@ The Source engine builds the list of files that clients must download (the *down
 | One combined model per weapon, one skin family per skin | Players download the model once; a new skin only adds textures |
 | Only purchased skins are downloaded | Smaller downloads; the set grows with the shop |
 | Stars are derived, never stored as a counter | They cannot drift out of sync; admins cannot change them |
+| Purchases last one ranking season, gifts forever | The shop follows the ranking reset: the stars come back every season so players can choose again |
 | Purchase = one Table Storage transaction with an ETag | No double purchase, no purchase without debit, no overspending under concurrency |
 | The front end sends only the skin id | The backend never trusts prices or balances from the client |
 | Catalog in `skins.json`, prices overridable in a table | Skins need files and a deploy anyway; prices can be tuned without a deploy |

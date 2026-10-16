@@ -1,8 +1,8 @@
 # 3. Game server plugin — `l4d2_weapon_skins`
 
-🌐 **English** | [Português](03-game-plugin.pt.md) · [Wiki home](README.md)
+🌐 **English** | [Português](03-game-plugin.pt.md) | [Español](03-game-plugin.es.md) · [Wiki home](README.md)
 
-**Source:** `addons/sourcemod/scripting/l4d2_weapon_skins.sp` · **Config:** `addons/sourcemod/configs/weapon_skins.cfg` · **Translations:** `addons/sourcemod/translations/{,pt/,es/}l4d2_weapon_skins.phrases.txt`
+**Source:** [`addons/sourcemod/scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) (v3.1.0) · **Config:** [`addons/sourcemod/configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg) · **Translations:** `addons/sourcemod/translations/{,pt/,es/}l4d2_weapon_skins.phrases.txt`
 
 The plugin loads from `plugins/` (auto-load), not `optional/`, so it is already running in the lobby and the skin files are in the downloads table when players first connect.
 
@@ -93,6 +93,10 @@ if (requestedAt > changedAt + LOCAL_CHANGE_GRACE)
 
 When a refresh shows a skin that the previous data did not have, the owner (if connected) gets a chat message: *"Purchase received: X (weapon). It is already equipped and shows up from the next map change."* If another player had already bought that skin (its files are in this map), the plugin applies it right away and says so.
 
+### Refunds
+
+When a purchase is refunded (by an admin or at the end of the ranking season), the next refresh no longer lists that skin for the player: weapons tracked from then on use the default skin, and from the next map the skin's files are only downloaded if someone else still owns it. A weapon that already has the skin keeps it until it leaves the game.
+
 ## Applying a skin
 
 A skin is applied by swapping the model to the weapon's **combined model** and setting `m_nSkin` to the skin's family (simplified):
@@ -113,7 +117,7 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 }
 ```
 
-- **World model** (what others see, and the weapon on the ground): set on equip, on pick-up, and 0.1 s after a drop (the engine resets the model when the weapon is dropped).
+- **World model** (what others see, and the weapon on the ground): set on equip, on pick-up, and 0.1 s after a drop (the engine resets the model when the weapon is dropped). When a player takes a weapon from a spawn (`weapon_*_spawn`), the weapon in the slot of the spawned weapon (pistols and melee: secondary; everything else: primary) gets the stock world model back before the use and its skin again right after it.
 - **View model** (first person): the player's `m_hViewModel` entity gets the combined view model and the family in `OnPostThinkPost`, every frame, only while the active weapon has a skin.
 - **Restoring**: when a weapon loses its skin, the stock model and the weapon's original `m_nSkin` are put back.
 
@@ -142,10 +146,17 @@ Melee weapons share the `weapon_melee` class, so the weapon key is built from th
 
 ## Players without downloads
 
-A player with `cl_allowdownload 0` (or `cl_downloadfilter` other than `all`/`nosounds`) would see an `ERROR` model. The plugin queries both cvars as soon as the player starts connecting:
+A player with `cl_allowdownload 0` (or `cl_downloadfilter` other than `all`/`nosounds`) would see an `ERROR` model. The plugin queries both cvars as soon as the player starts connecting (`OnClientConnected`):
 
-- `weapon_skins_kick_no_downloads 1` → the player is kicked with a message explaining how to turn downloads on;
+- `weapon_skins_kick_no_downloads 1` (the value set in `shared_cvars.cfg`) → while skins are on, the player is kicked. The kick message names the cvar with the wrong value and the console command that fixes it (`cl_allowdownload 1` or `cl_downloadfilter all`), and tells the player to check that cvar in `autoexec.cfg` or `config.cfg` if it keeps happening. Each kick is written to the SourceMod log with `LogMessage` (player name and SteamID, never the IP):
+
+  ```text
+  [l4d2_weapon_skins.smx] Kicked Player<12><STEAM_1:0:12345><> because cl_allowdownload is "0"
+  ```
+
 - `0` → the player stays and **world models go back to stock for everyone** while that player is in the server (view models still show for players who can see them, except to someone spectating them in first person).
+
+> The game menu option *Options > Multiplayer > Custom Server Content > Allow All* only changes `cl_downloadfilter`. `cl_allowdownload` has no menu option: it can only be changed in the console or in a config file. That is why a player who picked "Allow all" in the menu can still be kicked, and why the message gives the exact console command.
 
 ## Weapon pile cleanup
 
@@ -163,7 +174,7 @@ Swapping weapons over and over at infinite safe-room spawns can pile up dropped 
 | `!skin on` / `!skin off` | root | Turn skins on/off for everyone (survives map changes) |
 | `!skin test <id\|default> [weapon]` | root | Try a skin on yourself until the map changes |
 
-`[weapon]` accepts `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan` and the full keys.
+`[weapon]` accepts `smg` (or `uzi`), `mac` (or `mac10`, `mac-10`, `silenced`), `mp5`, `pump`, `chrome`, `magnum` (or `deagle`), `axe` (or `fireaxe`), `bat`, `cricket`, `guitar`, `golf`, `pan`, any other melee script name (`katana`, `machete`, `crowbar`) and the full keys (`weapon_smg`, `weapon_melee_katana`, …).
 
 ## Cvars
 
@@ -172,6 +183,6 @@ Swapping weapons over and over at infinite safe-room spawns can pile up dropped 
 | `weapon_skins_enabled` | `0` | Master switch (set to `1` in `shared_cvars.cfg`) |
 | `l4d2_web_url` | `""` | Site URL, shared with `l4d2_gameinfo_sync` |
 | `l4d2_web_secret` | `""` | Site secret, shared with `l4d2_gameinfo_sync` |
-| `weapon_skins_kick_no_downloads` | `0` | Kick players without downloads |
-| `weapon_skins_pile_radius` / `weapon_skins_pile_max` | `120` / `3` | Weapon pile cleanup |
+| `weapon_skins_kick_no_downloads` | `0` | Kick players without downloads (set to `1` in `shared_cvars.cfg`) |
+| `weapon_skins_pile_radius` / `weapon_skins_pile_max` | `120` / `3` | Weapon pile cleanup (`weapon_skins_pile_max 0` turns it off) |
 | `weapon_skins_preview_all` | `0` | Test mode: every skin downloaded and usable by root admins |

@@ -50,8 +50,9 @@ In this guide, `< >` and `[ ]` only show what goes in that spot. **Don't type th
 | Command | What it does |
 |---|---|
 | `!pause` | Pauses the game |
-| `!unpause` / `!ready` | Marks your team as ready to resume. The game resumes when both teams are ready |
+| `!unpause` / `!ready` / `!r` | Marks your team as ready to resume. The game resumes when both teams are ready |
 | `!unready` / `!nr` | Marks your team as not ready to resume |
+| `!toggleready` | Switches your team between ready and not ready to resume |
 
 > If a player crashes or disconnects during a live round, the game may pause automatically. Once they are back, use `!unpause` / `!ready` to resume.
 
@@ -77,7 +78,7 @@ Examples:
 !mix "(LoD) Adeilson" Feeh     -> use quotes when the name has spaces or symbols
 ```
 
-> **About the mix:** both teams must be full and the mix can only start at the beginning of a new game (0 x 0). Captains must be playing (not spectating). There is no mix in 1v1. If someone leaves during a mix, the mix is canceled; doing it a second time gets you **banned for 30 minutes**.
+> **About the mix:** both teams must be full and the mix can only start at the beginning of a new game (0 x 0). Captains must be playing (not spectating). There is no mix in 1v1. If someone leaves during a mix, the mix is canceled; doing it a second time gets you **banned for 60 minutes**.
 
 > **About the queue (`!slot`):**
 > - **Before the game starts (0 x 0):** if you are ahead of someone who is playing, `!slot` puts you in their place and they go to spectators.
@@ -97,11 +98,11 @@ Examples:
 | `!chmatch <config>` | Starts a vote to change to another config |
 | `!rmatch` | Starts a vote to turn the current config off |
 | `!votecamp` / `!votecampaign` | Opens a menu to vote for a campaign change (official and custom campaigns) |
-| `!voteboss <tank> <witch>` | Votes to change the Tank and Witch spawn percentages (ready-up only). `0` = no spawn, `-1` = keep current |
+| `!voteboss <tank> <witch>` | Votes to change the Tank and Witch spawn percentages (only during the ready-up of the first round of a map). `0` = no spawn, `-1` = keep current |
 | `!setscores <survivors> <infected>` | Starts a vote to change the match score (players on a team only) |
 | `!slots <number>` | Starts a vote to change the number of server slots. Ex.: `!slots 10` |
 
-Available configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`.
+Main configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`. `!match` without a config opens a menu with every config installed on the server.
 
 ---
 
@@ -138,11 +139,11 @@ Available configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `z
 |---|---|
 | `!skin` / `!skins` | Shows the skins help and the link to the skin shop |
 | `!skin <id>` / `!skins <id>` | Uses one of your skins. Ex.: `!skin hellsing-gold` |
-| `!skin next [weapon]` / `!skin prev [weapon]` | Cycles through the skins you bought. After the last one, it goes back to the default skin |
+| `!skin next [weapon]` / `!skin prev [weapon]` | Cycles through the skins you own for that weapon. After the last one, it goes back to the default skin |
 | `!skin default [weapon]` | Goes back to the default skin |
 | `!skin status` | Shows whether the skins are on, how many stars you have and how many skins you own |
 
-`[weapon]` is optional. Without it, the command uses the weapon in your hand (or your primary weapon, then your melee weapon). Values: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
+`[weapon]` is optional. Without it, the command uses the weapon in your hand (or your primary weapon, then your secondary weapon: melee or Magnum). Values: `smg`, `mac`, `mp5`, `pump`, `chrome`, `magnum` (or `deagle`), `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
 
 Examples:
 
@@ -150,17 +151,23 @@ Examples:
 !skin hellsing-gold     -> uses the hellsing-gold skin
 !skin next              -> next skin for the weapon in your hand
 !skin next pump         -> next skin for the pump shotgun
+!skin next magnum       -> next skin for the Magnum
 !skin default chrome    -> chrome shotgun back to the default skin
 ```
 
 > **About skins:**
-> - There are skins for the SMG, MAC-10 (silenced SMG), MP5, pump shotgun, chrome shotgun and the melee weapons (fireaxe, katana, machete, baseball bat, cricket bat, electric guitar, crowbar, golf club and frying pan).
-> - Skins are bought in the shop at [l4d2.com.br/skins](https://l4d2.com.br/skins) (log in with Steam) with **stars**: every SI damage MVP and every common infected MVP in competitive matches is worth 1 star. Your whole history counts, since the ranking began, and stars never expire.
-> - A skin you buy is yours forever and is **equipped right away**. It shows up on the server **from the next map change**, because its files are sent to everyone when the map loads.
-> - You can also equip or go back to the default skin on the site; the change shows up from the next map change.
-> - You can only change skins in game as a **survivor** and during the **ready-up**, on any map. Your choice is saved and loaded the next time you play.
+> - There are skins for the SMG, MAC-10 (silenced SMG), MP5, pump shotgun, chrome shotgun, Magnum (Desert Eagle) and the melee weapons (fireaxe, katana, machete, baseball bat, cricket bat, electric guitar, crowbar, golf club and frying pan).
+> - **Buying:** skins are bought in the shop at [l4d2.com.br/skins](https://l4d2.com.br/skins) (log in with Steam) with **stars**: every SI damage MVP and every common infected MVP in competitive matches is worth 1 star. Your whole history counts, since the ranking began.
+> - **When it shows up:** a skin you buy is **equipped right away** and shows up on the server **from the next map change**, because its files are sent to everyone when the map loads. You can also equip a skin or go back to the default skin on the site; that change also shows up from the next map change.
+> - **How long it lasts:** a skin you buy lasts until the **ranking reset** (every 2 months). At the reset it is refunded automatically and its stars come back to you, so you can buy it again. Skins you receive as a **gift** are kept forever.
+> - **Changing in game:** `!skin <id>`, `!skin next`, `!skin prev` and `!skin default` only work while you are a **survivor** and during the **ready-up**, on any map. Your choice is saved and loaded the next time you play.
 > - The skin stays with the weapon: if you drop it, whoever picks it up uses it with your skin.
-> - Downloads must be on to play on the server: **Options > Multiplayer > Custom Server Content > Allow All**, or in the console: `cl_allowdownload 1; cl_downloadfilter all`. Players with downloads off are kicked with a message explaining how to turn them on.
+
+> **Downloads must be on:** the skin files are sent when the map loads, so players with downloads off are kicked. The kick message says which setting is wrong and the console command that fixes it:
+> - `cl_allowdownload` is `0`: type `cl_allowdownload 1`
+> - `cl_downloadfilter` is `mapsonly` or `none`: type `cl_downloadfilter all`
+>
+> Then reconnect. The menu option **Options > Multiplayer > Custom Server Content > Allow All** only changes `cl_downloadfilter`, so if the message is about `cl_allowdownload`, use the console. If it keeps happening, check that setting in your `autoexec.cfg` or `config.cfg`.
 
 ---
 

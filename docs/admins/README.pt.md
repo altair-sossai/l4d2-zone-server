@@ -1,0 +1,378 @@
+# Guia de Comandos para Admins
+
+🌐 [English](README.md) | **Português** | [Español](README.es.md)
+
+Guia rápido dos comandos de admin do servidor. Os primeiros comandos são os mais usados no dia a dia; quanto mais para o fim, menos você vai precisar deles.
+
+> Os comandos que qualquer jogador pode usar estão no [Guia de Comandos para Jogadores](../players/README.pt.md).
+
+---
+
+## Como usar os comandos
+
+| Forma | Exemplo | Observação |
+|---|---|---|
+| Chat com `!` | `!swap Miosha` | O comando aparece no chat para todos |
+| Chat com `/` | `/swap Miosha` | O comando fica **silencioso**, só você vê a resposta |
+| Console (`~`) | `sm_swap Miosha` | Troque o `!` por `sm_` |
+
+**O que significam `< >` e `[ ]`**
+
+Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali. **Não digite os símbolos**, troque tudo pelo valor:
+
+| No guia | Significa | Você digita |
+|---|---|---|
+| `!swapto <time> <jogador>` | `< >` = obrigatório | `!swapto 2 vorkyss` |
+| `!hp [quantidade]` | `[ ]` = opcional, pode deixar sem | `!hp` ou `!hp 50` |
+| `!ban <alvo> <minutos> [motivo]` | os dois juntos | `!ban #12 60` ou `!ban #12 60 flood no chat` |
+
+❌ Errado: `!swapto <2> <vorkyss>`
+
+✅ Certo: `!swapto 2 vorkyss`
+
+**Nome com espaço:** coloque o nome entre aspas `" "`. Sem aspas, o jogo entende cada palavra como uma parte separada do comando.
+
+❌ Errado: `!swapto 2 (LoD) Adeilson`
+
+✅ Certo: `!swapto 2 "(LoD) Adeilson"`
+
+**Como escolher o alvo (`<alvo>`)**
+
+- **Parte do nome:** `!swap mio` funciona se só um jogador tiver "mio" no nome.
+- **`#userid`:** é o jeito mais seguro quando o nome tem caracteres estranhos ou é parecido com outro (veja abaixo como descobrir o número).
+- **Grupos:** `@all` (todos), `@humans` (só humanos), `@bots` (só bots), `@me` (você mesmo), `@aim` (quem está na sua mira).
+
+**Como descobrir o `#userid`**
+
+Abra o console (`~`) e digite `status`. Vai aparecer algo assim (colunas do fim da linha omitidas):
+
+```
+] status
+hostname: L4D2 Zone
+map     : c2m1_highway at: 0 x, 0 y, 0 z
+players : 4 humans, 0 bots (8 max)
+
+# userid name uniqueid connected ping loss state
+#  12 "vorkyss" STEAM_1:0:11111111 25:14 45 0 active
+#  15 "Feeh" STEAM_1:1:22222222 18:02 38 0 active
+#  21 "♏" STEAM_1:0:33333333 07:45 60 0 active
+#  23 "Finn ™" STEAM_1:1:44444444 02:10 52 0 active
+```
+
+O **primeiro número** de cada linha é o `userid`. No exemplo, o nome `♏` é difícil de digitar, então é só usar o número dele:
+
+```
+!swap #21
+!swapto 1 #21
+```
+
+Funciona em qualquer comando que pede `<alvo>` (kick, ban, mute, swap etc.).
+
+> O `userid` muda toda vez que o jogador reconecta. Se ele sair e voltar, rode `status` de novo.
+
+> 💡 Na dúvida, abra o menu com **`!admin`**. Quase tudo que está aqui (kick, ban, mute, trocar mapa, trocar de time) também dá para fazer por ele, sem digitar nada.
+
+---
+
+## Menu de admin
+
+| Comando | O que faz |
+|---|---|
+| `!admin` | Abre o menu de admin (jogadores, votações, mapas, comandos do servidor) |
+
+## Config da partida (ZoneMod)
+
+| Comando | O que faz |
+|---|---|
+| `!forcematch <config> [mapa]` / `!fm <config> [mapa]` | Carrega a config competitiva. Se passar um mapa, a config já carrega nele. **Use `!fm zonemod` sempre que o servidor estiver sem config** |
+| `!resetmatch` | Desliga a config atual e volta o servidor ao modo padrão |
+| `!forcechangematch <config> [mapa]` / `!fchmatch <config> [mapa]` | Troca para outra config sem precisar desligar a atual |
+
+Exemplos:
+
+```
+!fm zonemod               -> carrega o ZoneMod no mapa atual
+!fm zonemod c2m1_highway  -> carrega o ZoneMod já em Dark Carnival
+!fchmatch zm3v3           -> troca para o ZoneMod 3v3
+```
+
+Configs mais usadas: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`.
+
+## Ready-up e pausa
+
+| Comando | O que faz |
+|---|---|
+| `!forcestart` / `!fs` | Começa o round sem esperar todo mundo dar `!ready`. Com o jogo pausado, também despausa |
+| `!forcepause` | Pausa o jogo. **Só um admin consegue despausar** uma pausa feita assim |
+| `!forceunpause` | Despausa sem esperar os times darem ready (começa a contagem para o jogo voltar) |
+
+> Use `!forcepause` quando precisar resolver algo (troca de jogador, alguém travado, discussão). Os jogadores não conseguem despausar até você usar `!forceunpause`.
+
+## Times
+
+| Comando | O que faz |
+|---|---|
+| `!swap <jogador1> [jogador2] ...` | Manda os jogadores listados para o time oposto |
+| `!swapto <time> <jogador1> [jogador2] ...` | Manda os jogadores para um time específico: `1` = spectator, `2` = survivors, `3` = infected |
+| `!swapto force <time> <jogador1> [jogador2] ...` | Igual ao anterior, mas força a troca mesmo se o time estiver cheio |
+| `!swapteams` | Inverte os dois times inteiros (survivors ↔ infected) |
+| `!fixbots` | Acerta a quantidade de bots de survivor para o tamanho do time da config (ex.: 4 no 4v4), criando os que estiverem faltando |
+
+Exemplos:
+
+```
+!swapto 1 Zenk            -> manda Zenk para spectator
+!swapto 2 Guigo Vegueta   -> manda os dois para survivors
+!swap #12                 -> manda o jogador #12 para o time oposto
+```
+
+## Mix
+
+| Comando | O que faz |
+|---|---|
+| `!mix` | Começa o mix **na hora**, sem votação. Os dois capitães são escolhidos por votação dos jogadores |
+| `!mix <capitão1>` | Começa o mix na hora com `capitão1` como capitão dos survivors. O segundo capitão é escolhido por votação |
+| `!mix <capitão1> <capitão2>` | Começa o mix na hora com os dois capitães definidos: `capitão1` nos survivors e `capitão2` nos infected |
+| `!stopmix` | Cancela o mix em andamento (por exemplo, se um capitão saiu ou travou a escolha) |
+
+Exemplos:
+
+```
+!mix                            -> começa o mix e os jogadores votam nos capitães
+!mix vorkyss                    -> vorkyss é capitão, o outro sai por votação
+!mix vorkyss Feeh               -> vorkyss e Feeh são os capitães
+!mix "(LoD) Adeilson" Feeh      -> use aspas quando o nome tiver espaço ou símbolos
+```
+
+> - Os capitães precisam estar **jogando** (em survivors ou infected), não em spectator.
+> - Pode usar o nome completo ou só o começo do nome.
+> - Os dois times precisam estar **cheios**, e o mix só pode começar no **início de um jogo novo** (placar 0 x 0), antes de o primeiro round começar.
+> - Não existe mix em 1v1.
+> - Se alguém sair do servidor durante o mix, o mix é cancelado. Na primeira vez a pessoa só leva um aviso; se sair de novo, é **banida por 60 minutos**.
+
+## Moderação: kick, ban e mute
+
+| Comando | O que faz |
+|---|---|
+| `!kick <alvo> [motivo]` | Expulsa o jogador do servidor |
+| `!ban <alvo> <minutos> [motivo]` | Bane um jogador que **está no servidor**. `0` = permanente |
+| `!addban <minutos> <SteamID> [motivo]` | Bane um jogador que **já saiu** do servidor, usando a SteamID |
+| `!unban <SteamID>` | Remove o ban |
+| `!mute <alvo>` / `!unmute <alvo>` | Bloqueia ou libera a **voz** do jogador |
+| `!gag <alvo>` / `!ungag <alvo>` | Bloqueia ou libera o **chat de texto** do jogador |
+| `!silence <alvo>` / `!unsilence <alvo>` | Bloqueia ou libera **voz e chat** ao mesmo tempo |
+
+Exemplos:
+
+```
+!ban #12 60 xingando no chat
+!ban #7 0 trapaça
+!addban 1440 STEAM_1:0:12345678 saiu antes do ban
+!unban STEAM_1:0:12345678
+```
+
+> ⚠️ Mute, gag e silence duram **até o jogador sair do servidor**. Se o problema continuar, use kick ou ban.
+>
+> ⚠️ Nos motivos de ban, escreva **só o motivo**. Nunca coloque IP ou dados pessoais do jogador.
+
+## Mapa
+
+| Comando | O que faz |
+|---|---|
+| `!map <mapa>` | Troca o mapa na hora. Ex.: `!map c2m1_highway` |
+
+---
+
+## Tank e Witch
+
+| Comando | O que faz |
+|---|---|
+| `!givetank <jogador>` | Define quem vai ser o próximo Tank. O jogador precisa estar no time **infected** |
+| `!tankshuffle` | Sorteia de novo quem vai ser o Tank |
+| `!ftank <porcentagem>` | Força a porcentagem de spawn do Tank. **Só funciona durante o ready-up** e não funciona em mapas onde o Tank tem spawn fixo |
+| `!fwitch <porcentagem>` | Força a porcentagem de spawn da Witch. **Só funciona durante o ready-up** e não funciona em mapas onde a Witch tem spawn fixo |
+
+> Os jogadores também podem pedir isso por votação com `!voteboss <tank> <witch>`. O `!ftank`/`!fwitch` pula a votação.
+
+## Placar e campanha
+
+| Comando | O que faz |
+|---|---|
+| `!setscores <survivors> <infected>` | Muda o placar **na hora**, sem votação (quando um jogador usa, abre uma votação). **Só funciona durante o ready-up**, antes de o round começar. `<survivors>` é o placar do time que está de survivor agora |
+| `!setnextcampaign` | Abre um menu para escolher a(s) próxima(s) campanha(s) da rotação, ou limpar a lista |
+
+> Útil quando o servidor caiu no meio da partida e vocês precisam voltar com o placar certo.
+
+## Ajudas durante a partida
+
+| Comando | O que faz |
+|---|---|
+| `!hp [quantidade]` | Soma a quantidade (de 1 a 100, padrão: 100) à vida de todos os survivors vivos, sem passar de 100, e levanta quem estiver caído |
+
+## Spectators e casters
+
+| Comando | O que faz |
+|---|---|
+| `!caster <jogador>` | Registra o jogador como caster (narrador) |
+| `!notcasting <jogador>` | Tira o jogador da lista de casters |
+| `!resetcasters` | Limpa todos os casters registrados |
+| `!kickspecs` | Expulsa os spectators **na hora**, sem votação (casters e admins não são expulsos) |
+| `!broadcast` | Liga/desliga o modo "falar com todos": enquanto ligado, **todo mundo ouve sua voz**, inclusive os dois times |
+
+> Use `!broadcast` para dar um aviso rápido por voz aos dois times. Lembre de desligar depois.
+
+## Moderação geral
+
+| Comando | O que faz |
+|---|---|
+| `!slay <alvo>` | Mata o jogador |
+| `!rename <alvo> <novo nome>` | Troca o nome do jogador |
+| `!who` | Mostra os jogadores conectados e quem é admin |
+| `!votekick <alvo>` | Abre votação para expulsar o jogador |
+| `!voteban <alvo>` | Abre votação para banir o jogador |
+| `!votemap <mapa>` | Abre votação para trocar de mapa |
+
+## Mensagens de admin
+
+| Comando | O que faz |
+|---|---|
+| `!say <mensagem>` | Mensagem para todos no chat, com destaque de admin |
+| `!csay <mensagem>` | Mensagem no **centro da tela** de todos |
+| `!hsay <mensagem>` | Mensagem na caixa de dica (hint) de todos |
+| `!psay <alvo> <mensagem>` | Mensagem privada para um jogador |
+| `!chat <mensagem>` | Mensagem que **só os admins** veem |
+
+> Atalho: no chat do time (`say_team`), comece a mensagem com `@` para falar só com os admins. Ex.: `@alguém pode ajudar aqui?`
+
+## Servidor
+
+| Comando | O que faz |
+|---|---|
+| `!slots <número>` | Muda a quantidade de vagas do servidor **na hora**, sem votação (máximo 30). Ex.: `!slots 10` |
+| `!killlobbyres` | Remove a reserva de lobby do servidor (libera a entrada de quem não veio pelo lobby) |
+
+## Skins de armas
+
+| Comando | O que faz |
+|---|---|
+| `!skin on` / `!skin off` | Liga ou desliga as skins para todos. **Continua valendo depois da troca de mapa**, até outro admin mudar ou o servidor reiniciar |
+| `!skin test <id>` | Testa a skin em você, até o mapa trocar, sem precisar comprar, estar de survivor ou no ready-up. Só funciona com skins que já estão na lista de downloads do mapa |
+| `!skin test default [arma]` | Tira a skin de teste |
+
+`[arma]`: `smg`, `mac`, `mp5`, `pump`, `chrome`, `magnum` (ou `deagle`), `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf` ou `pan`. Sem ela, usa a arma da sua mão. No `!skin test <id>` não precisa dela: a skin já define a arma.
+
+Exemplos:
+
+```
+!skin off                     -> desliga as skins para todos
+!skin test hellsing-gold      -> testa a skin hellsing-gold
+!skin test default smg        -> tira a skin de teste da SMG
+```
+
+> Os comandos de skin dos jogadores (`!skin`, `!skin <id>`, `!skin next`, `!skin prev`, `!skin default`, `!skin status`) estão no [Guia de Comandos para Jogadores](../players/README.pt.md#skins-de-armas). `!skin on/off` e `!skin test` só funcionam para admins com acesso **root**.
+
+### Loja de skins (site)
+
+Os jogadores compram as skins em [l4d2.com.br/skins](https://l4d2.com.br/skins) com estrelas (1 estrela por MVP de dano em SI ou de comuns em partidas competitivas, desde o início do ranking). Só os arquivos das skins que pelo menos um jogador comprou entram na lista de downloads, a partir da troca de mapa seguinte à compra.
+
+As compras valem até o fim da temporada do ranking: a cada reset do ranking (a cada 2 meses), elas são **estornadas automaticamente** e as estrelas voltam para os jogadores. As skins dadas de presente ficam.
+
+Os admins do site têm o menu **Admin** no topo de [l4d2.com.br](https://l4d2.com.br):
+
+| O que fazer | Como |
+|---|---|
+| Mudar o preço de uma skin | **Admin → Preços das skins**: clique na skin, troque o valor e clique em **Salvar**. Vale só para as próximas compras; quem já comprou não é afetado. **Restaurar padrão** volta ao preço do catálogo |
+| Dar uma skin de presente | **Admin → Compras de skins → Dar skin de presente** (ou **Dar de presente** na skin, em Preços das skins): escolha o jogador e a skin. A skin fica equipada para o jogador e não gasta estrelas |
+| Estornar uma compra | **Admin → Compras de skins**: clique na compra, depois em **Estornar compra** e **Confirmar estorno**. As estrelas pagas voltam para o jogador, a skin sai da conta dele e, se estava equipada, a arma volta para a padrão |
+| Estornar tudo | **Admin → Compras de skins → Estornar tudo**: marque a confirmação e clique em **Estornar tudo**. Estorna todas as compras e todos os presentes de todos os jogadores, e não dá para desfazer. Se algum item falhar, rode de novo |
+| Banir um jogador do chat do site | **Admin → Bans do Chat → Adicionar ban**: o jogador não consegue mais mandar mensagens para o servidor pelo chat do site |
+
+> As estrelas sempre vêm do ranking: o admin não altera o saldo de ninguém, só dá presente ou estorna compras. Mais detalhes em [Operação das skins → Tarefas comuns](../weapon-skins/06-operations.pt.md#tarefas-comuns).
+
+### Modo de teste: todas as skins
+
+Para conferir no jogo skins que ninguém comprou ainda:
+
+1. `!cvar weapon_skins_preview_all 1`
+2. Troque de mapa, com `!fm zonemod` ou `!map <mapa>`. Os arquivos de todas as skins entram na lista de downloads no carregamento do mapa.
+3. Saia e entre de novo no servidor, para baixar os arquivos. Se aparecer ERROR, feche e abra o jogo.
+4. Pegue a arma e use `!skin next` / `!skin prev` para passar por todas as skins dela, ou `!skin <id>`. Para admins root, compra, time e ready-up são ignorados.
+5. No fim: `!cvar weapon_skins_preview_all 0` e troque de mapa. Volta a ser baixado só o que foi comprado.
+
+> ⚠️ Enquanto o modo de teste estiver ligado, **todo jogador que entrar baixa todas as skins** (cerca de 300 MB). Use com o servidor vazio e desligue logo depois.
+
+---
+
+## Comandos avançados
+
+| Comando | O que faz |
+|---|---|
+| `!cvar <cvar> [valor]` | Mostra ou altera uma cvar do servidor |
+| `!rcon <comando>` | Executa um comando direto no console do servidor |
+| `!execcfg <arquivo>` | Executa um arquivo `.cfg` da pasta `cfg/` do servidor |
+| `!reloadadmins` | Recarrega a lista de admins (depois de alguém ser adicionado) |
+| `!listcampaigns` | Lista no console todas as campanhas instaladas |
+| `!refreshcampaigns` | Atualiza a lista de campanhas do `!votecamp` |
+| `!add_caster_id <SteamID>` | Adiciona a SteamID à lista de quem pode se registrar sozinho como caster (`!cast`) |
+| `!remove_caster_id <SteamID>` | Remove a SteamID dessa lista |
+| `!printcasters` | Mostra a lista de SteamIDs de casters |
+| `statsreset` | **Só pelo console.** Zera as estatísticas da partida atual (`!stats`, `!mvp`) |
+
+> ⚠️ Cuidado com `!cvar`, `!rcon` e `!execcfg`: dá para quebrar a config da partida. Se algo ficar estranho, `!resetmatch` e depois `!forcematch zonemod` resolve.
+
+---
+
+## Testes e debug (não use em partida)
+
+Estes comandos existem, mas servem para **testes, debug ou diversão**. Usar em partida valendo estraga o jogo.
+
+### Comandos de diversão e testes
+
+| Comando | O que faz |
+|---|---|
+| `!cchelp` | Lista todos os comandos de testes disponíveis |
+| `!godmode <alvo>` | Deixa o jogador imortal |
+| `!teleport <alvo>` | Teleporta o jogador para onde você está mirando |
+| `!revive <alvo>` | Levanta um survivor caído |
+| `!sethpplayer <alvo> <vida>` | Define a vida do jogador |
+| `!speedplayer <alvo> <velocidade>` | Muda a velocidade do jogador |
+| `!panic` | Força um evento de horda |
+| `!slap`, `!burn`, `!freeze`, `!beacon`, `!noclip`, `!timebomb` | Comandos de diversão: tapa, fogo, congelar, sinalizar, atravessar paredes, bomba |
+
+### Manutenção e debug
+
+| Comando | O que faz |
+|---|---|
+| `!crash` | **Derruba o servidor** para ele reiniciar. Todos são desconectados. Só use se o servidor estiver quebrado e ninguém estiver jogando |
+| `!early_victory_debug` | Mostra os valores internos da vitória antecipada |
+| `!tank_witch_debug_info` | Mostra informações internas de spawn do Tank e da Witch |
+
+---
+
+## Situações comuns
+
+**Servidor sem config / jogo em modo padrão**
+1. `!forcematch zonemod`
+
+**Jogador caiu no meio do round**
+1. `!forcepause`
+2. Espere ele voltar, ou traga alguém da fila com `!swapto <time> <jogador>`
+3. `!forceunpause`
+
+**Times desbalanceados ou jogador no time errado**
+1. `!swapto 1 <jogador>` para mandar para spectator
+2. `!swapto 2 <jogador>` ou `!swapto 3 <jogador>` para colocar no time certo
+3. Se faltar survivor, `!fixbots`
+
+**Mix travado (capitão saiu ou não escolhe)**
+1. `!stopmix`
+2. Comece outro com `!mix`, ou já defina os capitães com `!mix <capitão1> <capitão2>`
+
+**Servidor caiu e a partida voltou zerada**
+1. `!forcematch zonemod <mapa>` para voltar no mapa em que vocês estavam
+2. Ainda no ready-up, `!setscores <survivors> <infected>` com o placar de antes. Com admin, o placar muda na hora
+
+**Jogador tóxico**
+1. `!gag` / `!mute` / `!silence` para parar na hora
+2. Se continuar: `!kick <alvo> <motivo>`
+3. Se for grave ou reincidente: `!ban <alvo> <minutos> <motivo>`

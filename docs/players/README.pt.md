@@ -50,8 +50,9 @@ Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali
 | Comando | O que faz |
 |---|---|
 | `!pause` | Pausa o jogo |
-| `!unpause` / `!ready` | Marca seu time como pronto para voltar. O jogo volta quando os dois times estiverem prontos |
+| `!unpause` / `!ready` / `!r` | Marca seu time como pronto para voltar. O jogo volta quando os dois times estiverem prontos |
 | `!unready` / `!nr` | Marca seu time como não pronto para voltar |
+| `!toggleready` | Alterna seu time entre pronto e não pronto para voltar |
 
 > Se um jogador cair ou desconectar com o round valendo, o jogo pode pausar sozinho. Quando ele voltar, use `!unpause` / `!ready` para continuar.
 
@@ -77,7 +78,7 @@ Exemplos:
 !mix "(LoD) Adeilson" Feeh     -> use aspas quando o nome tiver espaço ou símbolos
 ```
 
-> **Sobre o mix:** os dois times precisam estar cheios e o mix só começa no início de um jogo novo (0 x 0). Os capitães precisam estar jogando (não em spectator). Não existe mix em 1v1. Se alguém sair durante o mix, o mix é cancelado; quem fizer isso pela segunda vez é **banido por 30 minutos**.
+> **Sobre o mix:** os dois times precisam estar cheios e o mix só começa no início de um jogo novo (0 x 0). Os capitães precisam estar jogando (não em spectator). Não existe mix em 1v1. Se alguém sair durante o mix, o mix é cancelado; quem fizer isso pela segunda vez é **banido por 60 minutos**.
 
 > **Sobre a fila (`!vaga`):**
 > - **Antes do jogo começar (0 x 0):** se você está à frente na fila de alguém que está jogando, o `!vaga` coloca você no lugar dessa pessoa, e ela vai para spectator.
@@ -97,11 +98,11 @@ Exemplos:
 | `!chmatch <config>` | Abre votação para trocar para outra config |
 | `!rmatch` | Abre votação para desligar a config atual |
 | `!votecamp` / `!votecampaign` | Abre um menu para votar na troca de campanha (oficiais e customizadas) |
-| `!voteboss <tank> <witch>` | Vota para mudar a porcentagem de spawn do Tank e da Witch (só no ready-up). `0` = não aparece, `-1` = mantém a atual |
+| `!voteboss <tank> <witch>` | Vota para mudar a porcentagem de spawn do Tank e da Witch (só no ready-up do primeiro round do mapa). `0` = não aparece, `-1` = mantém a atual |
 | `!setscores <survivors> <infected>` | Abre votação para mudar o placar da partida (só quem está em um time) |
 | `!slots <número>` | Abre votação para mudar a quantidade de vagas do servidor. Ex.: `!slots 10` |
 
-Configs disponíveis: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`.
+Configs principais: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`. O `!match` sem config abre um menu com todas as configs instaladas no servidor.
 
 ---
 
@@ -138,11 +139,11 @@ Configs disponíveis: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`,
 |---|---|
 | `!skin` / `!skins` | Mostra a ajuda das skins e o link da loja de skins |
 | `!skin <id>` / `!skins <id>` | Usa uma das suas skins. Ex.: `!skin hellsing-gold` |
-| `!skin next [arma]` / `!skin prev [arma]` | Passa pelas skins que você comprou. Depois da última, volta para a skin padrão |
+| `!skin next [arma]` / `!skin prev [arma]` | Passa pelas skins que você tem para aquela arma. Depois da última, volta para a skin padrão |
 | `!skin default [arma]` | Volta para a skin padrão |
-| `!skin status` | Mostra se as skins estão ligadas, quantas estrelas você tem e quantas skins comprou |
+| `!skin status` | Mostra se as skins estão ligadas, quantas estrelas você tem e quantas skins você tem |
 
-`[arma]` é opcional. Sem ela, o comando usa a arma que está na sua mão (ou a sua arma principal e depois a arma branca). Valores: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
+`[arma]` é opcional. Sem ela, o comando usa a arma que está na sua mão (ou a sua arma principal e depois a secundária: arma branca ou Magnum). Valores: `smg`, `mac`, `mp5`, `pump`, `chrome`, `magnum` (ou `deagle`), `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf`, `pan`.
 
 Exemplos:
 
@@ -150,17 +151,23 @@ Exemplos:
 !skin hellsing-gold     -> usa a skin hellsing-gold
 !skin next              -> próxima skin da arma na sua mão
 !skin next pump         -> próxima skin da pump
+!skin next magnum       -> próxima skin da Magnum
 !skin default chrome    -> volta a chrome para a skin padrão
 ```
 
 > **Sobre as skins:**
-> - Existem skins para a SMG, MAC-10 (SMG com silenciador), MP5, pump, chrome e as armas brancas (machado, katana, facão, taco de beisebol, taco de críquete, guitarra, pé de cabra, taco de golfe e frigideira).
-> - As skins são compradas na loja em [l4d2.com.br/skins](https://l4d2.com.br/skins) (entre com a Steam) usando **estrelas**: cada MVP de dano em SI e cada MVP de comuns em partidas competitivas vale 1 estrela. Conta todo o seu histórico, desde o início do ranking, e as estrelas não expiram.
-> - A skin comprada é sua para sempre e já fica **equipada**. Ela aparece no servidor **a partir da próxima troca de mapa**, porque os arquivos dela são enviados para todos quando o mapa carrega.
-> - Também dá para equipar ou voltar para a skin padrão pelo site; a mudança aparece a partir da próxima troca de mapa.
-> - No jogo, só dá para trocar de skin como **survivor** e durante o **ready-up**, em qualquer mapa. Sua escolha fica salva e é carregada na próxima vez que você jogar.
+> - Existem skins para a SMG, MAC-10 (SMG com silenciador), MP5, pump, chrome, Magnum (Desert Eagle) e as armas brancas (machado, katana, facão, taco de beisebol, taco de críquete, guitarra, pé de cabra, taco de golfe e frigideira).
+> - **Compra:** as skins são compradas na loja em [l4d2.com.br/skins](https://l4d2.com.br/skins) (entre com a Steam) usando **estrelas**: cada MVP de dano em SI e cada MVP de comuns em partidas competitivas vale 1 estrela. Conta todo o seu histórico, desde o início do ranking.
+> - **Quando aparece:** a skin comprada já fica **equipada** e aparece no servidor **a partir da próxima troca de mapa**, porque os arquivos dela são enviados para todos quando o mapa carrega. Também dá para equipar uma skin ou voltar para a skin padrão pelo site; essa mudança também aparece a partir da próxima troca de mapa.
+> - **Quanto tempo dura:** a skin comprada dura até o **reset do ranking** (a cada 2 meses). No reset ela é reembolsada automaticamente e as estrelas voltam para você, então dá para comprar de novo. Skins recebidas de **presente** ficam para sempre.
+> - **Trocar no jogo:** `!skin <id>`, `!skin next`, `!skin prev` e `!skin default` só funcionam quando você é **survivor** e durante o **ready-up**, em qualquer mapa. Sua escolha fica salva e é carregada na próxima vez que você jogar.
 > - A skin acompanha a arma: se você largar a arma, quem pegar usa com a sua skin.
-> - Os downloads precisam estar ligados para jogar no servidor: **Opções > Multijogador > Conteúdo personalizado do servidor > Permitir tudo**, ou no console: `cl_allowdownload 1; cl_downloadfilter all`. Quem estiver com os downloads desligados é expulso com uma mensagem explicando como ligar.
+
+> **Os downloads precisam estar ligados:** os arquivos das skins são enviados quando o mapa carrega, então quem estiver com os downloads desligados é expulso. A mensagem de expulsão diz qual configuração está errada e o comando de console que corrige:
+> - `cl_allowdownload` está em `0`: digite `cl_allowdownload 1`
+> - `cl_downloadfilter` está em `mapsonly` ou `none`: digite `cl_downloadfilter all`
+>
+> Depois, conecte de novo. A opção do menu **Opções > Multijogador > Conteúdo personalizado do servidor > Permitir tudo** só muda o `cl_downloadfilter`, então se a mensagem falar do `cl_allowdownload`, use o console. Se continuar acontecendo, confira essa configuração no seu `autoexec.cfg` ou `config.cfg`.
 
 ---
 

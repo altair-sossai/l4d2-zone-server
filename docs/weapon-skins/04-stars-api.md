@@ -1,6 +1,6 @@
 # 4. Stars (PlayStats API)
 
-🌐 **English** | [Português](04-stars-api.pt.md) · [Wiki home](README.md)
+🌐 **English** | [Português](04-stars-api.pt.md) | [Español](04-stars-api.es.md) · [Wiki home](README.md)
 
 **Repository:** l4d2-playstats-api (Azure Functions, .NET) · **Module:** `L4D2PlayStats.Core/Modules/Stars`
 
@@ -43,7 +43,7 @@ public async Task<List<PlayerStars>> StarsAsync(string serverId)
 }
 ```
 
-- **Closed periods** — computed once per ranking period (periods are two months: Jan–Feb, Mar–Apr, …) from every match *before* the current period starts, then saved as `closed_yyyyMM.json` in the private blob container `{serverId}-stars`. A timer (`0 30 0 * * *`) makes sure it exists every day.
+- **Closed periods** — computed once per ranking period (the two-month ranking seasons: Jan–Feb, Mar–Apr, …) from every match *before* the current period starts, then saved as `closed_yyyyMM.json` in the private blob container `{serverId}-stars`. A timer (`0 30 0 * * *`) makes sure it exists every day. Once read, the blob is also kept in memory for 12 hours.
 - **Current period** — the matches of the current period, cached in memory for 1 hour. The cache is cleared when a new statistics file is uploaded (on the instance that received it).
 
 Counting the MVPs of a set of matches:
@@ -93,5 +93,6 @@ When the feature was built, the totals were checked against the stored all-time 
 
 ## Things to keep in mind
 
-- Stars only grow in normal use. If the statistics were ever fixed (for example, a score correction) a player's stars could drop; the shop then shows a balance of 0 and blocks purchases, but owned skins are never taken away.
+- Stars only grow in normal use. If the statistics were ever fixed (for example, a score correction) a player's stars could drop; the shop then shows a balance of 0 and blocks purchases, but a drop in stars never removes owned skins.
+- Stars are all-time and are **not** reset with the ranking. What the ranking reset does is refund the skins bought in the season that ended, so the stars spent on them can be spent again (see [Skin shop → Equip, gift, refund](05-skin-shop.md#equip-gift-refund)).
 - A new MVP may take up to 1 hour to show if the Functions app runs more than one instance (each instance has its own cache).

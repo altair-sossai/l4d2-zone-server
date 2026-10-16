@@ -1,6 +1,6 @@
 # 4. Estrelas (PlayStats API)
 
-🌐 [English](04-stars-api.md) | **Português** · [Início da wiki](README.pt.md)
+🌐 [English](04-stars-api.md) | **Português** | [Español](04-stars-api.es.md) · [Início da wiki](README.pt.md)
 
 **Repositório:** l4d2-playstats-api (Azure Functions, .NET) · **Módulo:** `L4D2PlayStats.Core/Modules/Stars`
 
@@ -43,7 +43,7 @@ public async Task<List<PlayerStars>> StarsAsync(string serverId)
 }
 ```
 
-- **Períodos fechados** — calculados uma vez por período do ranking (os períodos são bimestrais: jan–fev, mar–abr, …) a partir de todas as partidas *antes* do início do período atual, e salvos como `closed_yyyyMM.json` no container de blob privado `{serverId}-stars`. Um timer (`0 30 0 * * *`) garante todo dia que ele exista.
+- **Períodos fechados** — calculados uma vez por período do ranking (as temporadas bimestrais do ranking: jan–fev, mar–abr, …) a partir de todas as partidas *antes* do início do período atual, e salvos como `closed_yyyyMM.json` no container de blob privado `{serverId}-stars`. Um timer (`0 30 0 * * *`) garante todo dia que ele exista. Depois de lido, o blob também fica em memória por 12 horas.
 - **Período atual** — as partidas do período atual, em cache na memória por 1 hora. O cache é limpo quando um novo arquivo de estatísticas é enviado (na instância que o recebeu).
 
 Contando os MVPs de um conjunto de partidas:
@@ -93,5 +93,6 @@ Quando a funcionalidade foi feita, os totais foram conferidos com o ranking de t
 
 ## Pontos de atenção
 
-- No uso normal as estrelas só aumentam. Se as estatísticas forem corrigidas algum dia (por exemplo, uma correção de pontuação), as estrelas de um jogador podem cair; a loja então mostra saldo 0 e bloqueia compras, mas as skins que ele já tem nunca são retiradas.
+- No uso normal as estrelas só aumentam. Se as estatísticas forem corrigidas algum dia (por exemplo, uma correção de pontuação), as estrelas de um jogador podem cair; a loja então mostra saldo 0 e bloqueia compras, mas uma queda nas estrelas nunca remove as skins que ele já tem.
+- As estrelas são de todo o histórico e **não** zeram com o ranking. O que o reset do ranking faz é estornar as skins compradas na temporada que terminou, para que as estrelas gastas nelas possam ser gastas de novo (veja [Loja de skins → Equipar, presentear, estornar](05-skin-shop.pt.md#equipar-presentear-estornar)).
 - Um MVP novo pode levar até 1 hora para aparecer se o app de Functions rodar em mais de uma instância (cada instância tem seu próprio cache).

@@ -1,12 +1,12 @@
 # 5. Skin shop (PlayStats web)
 
-🌐 **English** | [Português](05-skin-shop.pt.md) · [Wiki home](README.md)
+🌐 **English** | [Português](05-skin-shop.pt.md) | [Español](05-skin-shop.es.md) · [Wiki home](README.md)
 
 **Repository:** l4d2-playstats-web (ASP.NET Core MVC, Bootstrap 3) · **Core module:** `L4D2PlayStats.Core/Skins`
 
 ## Catalog: `skins.json`
 
-The catalog is an embedded resource (`L4D2PlayStats.Core/Skins/Data/skins.json`), versioned with the code. It is sorted by rarity, then price, so it is easy to read:
+The catalog is an embedded resource (`L4D2PlayStats.Core/Skins/Data/skins.json`), versioned with the code. The file is an object with a `skins` array, sorted by rarity, then price, so it is easy to read. One entry:
 
 ```json
 {
@@ -24,6 +24,7 @@ The catalog is an embedded resource (`L4D2PlayStats.Core/Skins/Data/skins.json`)
 
 - `id` is the same id used in `weapon_skins.cfg` and by `!skin <id>`.
 - The thumbnail is `wwwroot/imgs/skins/<id>.jpg`.
+- `workshopId` links the skin to its original Workshop page (the *View on Workshop* button).
 
 ### Rarities and prices
 
@@ -31,13 +32,13 @@ Every skin was reviewed by looking at its images and given a rarity and an indiv
 
 | Rarity | Skins | Price range (stars) |
 |---|---|---|
-| Legendary | 8 | 520–700 |
-| Epic | 26 | 300–450 |
-| Rare | 51 | 150–240 |
-| Uncommon | 44 | 70–130 |
-| Common | 42 | 30–60 |
+| Legendary | 9 | 520–700 |
+| Epic | 30 | 300–450 |
+| Rare | 58 | 150–240 |
+| Uncommon | 54 | 70–130 |
+| Common | 45 | 30–60 |
 
-The whole catalog costs about **29,700 stars** — more than all the stars of the top 100 players together when the shop opened — so owning every skin is meant to be close to impossible.
+The 196 skins of the catalog cost **34,500 stars** together (default prices) — more than all the stars of every player together when the shop opened — so owning every skin in one season is meant to be close to impossible.
 
 ### Price overrides
 
@@ -53,7 +54,7 @@ public record Skin
 }
 ```
 
-Saving the default price again (or "Reset to default") deletes the override. Purchases store the price actually paid, so changing a price never affects past purchases.
+Saving the default price again (or "Reset to default") deletes the override. Purchases store the price actually paid, so changing a price never affects past purchases (and a refund always gives back what was paid).
 
 ## Storage: the `SkinShop` table
 
@@ -125,14 +126,15 @@ What this guarantees:
 | Forged price or balance from the browser | The request carries only the skin id; price comes from the catalog, stars from the API |
 | API down | Purchases are refused (`StarsUnavailable`), never assumed |
 
-Integration tests (run against Azurite) cover all of this, including 20 parallel purchases of the same skin (exactly one succeeds) and parallel purchases of different skins (never spending more than the balance).
+During development these cases were covered by integration tests run against Azurite, including 20 parallel purchases of the same skin (exactly one succeeds) and parallel purchases of different skins (never spending more than the balance). The test project is not versioned in the repository.
 
 ### Equip, gift, refund
 
 - **Equip / unequip** — checks ownership (or that the weapon exists) and upserts/deletes the `Equipped_<weapon>` row.
-- **Gift** (admin) — adds a purchase with `Price = 0`, `Gift = true`, the admin's id and name, and equips it. Stars are not touched.
+- **Gift** (admin) — adds a purchase with `Price = 0`, `Gift = true`, the admin's id and name, and equips it. Stars are not touched. Gifts are never refunded by the season refund.
 - **Refund** (admin) — in one transaction: deletes the purchase, subtracts its price from `Spent` and removes the equipment row if that skin was equipped. Retries on ETag conflicts.
-- **Season refund** (automatic) — skins are bought per ranking season (two months, in UTC: Jan–Feb, Mar–Apr, …). The `SkinSeasonRefundBackgroundService` runs when the site starts and every 10 minutes and calls `RefundSeasonAsync(SkinSeason.Current.Start)`: every purchase that is **not a gift** and was made before the current season started is refunded one by one with the same rules as an admin refund (the purchase is checked again right before deleting it, so a skin bought again in the new season is never touched). Stars spent come back; gifts stay forever. It is idempotent, so a missed run (site down at midnight) is caught up on the next run. The shop shows the season end date and the days left, and the purchase confirmation says until when the skin lasts.
+- **Season refund** (automatic) — skins are bought per ranking season (two months, in UTC: Jan–Feb, Mar–Apr, …; the reset is at 00:00 UTC on the 1st of Jan, Mar, May, Jul, Sep and Nov, which is 21:00 of the previous day in Brasília). `SkinSeason.Current` gives the season's start, end, last day and days left. The `SkinSeasonRefundBackgroundService` runs when the site starts and every 10 minutes and calls `SkinShopService.RefundSeasonAsync(SkinSeason.Current.Start)`: every purchase that is **not a gift** and was made before the current season started is refunded with the same rules as an admin refund — the stars spent come back, the skin leaves the account and its equipment row is removed. The purchase is checked again right before it is deleted, so a skin bought again in the new season is never touched. Gifts stay forever. The run is idempotent, so a missed run (site down at the reset) is caught up on the next one; when something was refunded it logs `Skin purchases made before the season of … refunded` with the totals.
+- **Refund everything** (admin tool) — `RefundAllAsync` refunds every purchase **and every gift** of every player with the same rules as a single refund. Like the season refund, it works player by player (up to 8 players in parallel, one purchase at a time per player) and returns the totals and the number of failures.
 
 ## Endpoints
 
@@ -146,7 +148,7 @@ Integration tests (run against Azurite) cover all of this, including 20 parallel
 | POST | `/api/shop/skins/{skinId}/price` `{price}` | admin (1–100,000; `null` resets) |
 | POST | `/api/shop/gift` `{communityId, skinId}` | admin (any Steam ID format or profile link) |
 | POST | `/api/shop/refund` `{communityId, skinId}` | admin |
-| POST | `/api/shop/refund-all` | admin — refunds every purchase and gift, one by one: `{purchases, gifts, stars, players, failed}` |
+| POST | `/api/shop/refund-all` | admin — refunds every purchase and gift: `{purchases, gifts, stars, players, failed}` |
 | GET | `/api/admin/players` | admin — players for the player picker |
 
 ### Used by the game plugin
@@ -163,8 +165,11 @@ Integration tests (run against Azurite) cover all of this, including 20 parallel
 ### Shop — `/skins`
 
 - Hero with the three steps (earn stars, buy and equip, switch in game), the player's balance (`X stars to spend`, with MVPs earned and stars spent) and the **"How do I use my skins in game?"** button, which opens a table with every command.
+- A **"Skins per season"** banner: bought skins last until the ranking reset, every two months; it shows the last day of the current season and the days left, and says that at the reset every purchase is refunded automatically and the stars come back, while gifts are kept forever.
+- A credits line: every skin was made by the community on the Steam Workshop; the *View on Workshop* button of each skin opens the original work.
 - Tabs **Shop** (grouped by rarity, colored) and **My skins**; filters by weapon, rarity and "only the ones I can buy".
 - Cards show the price and the state: *Buy for N*, *N stars to go*, *Owned → Equip*, *Equipped → Back to default*.
+- The purchase confirmation shows the skin and the price, says that it is equipped on the weapon right away and shows up from the next map change, says until when the skin lasts (the last day of the season, then it is refunded automatically) and ends with *"Purchases cannot be undone before the ranking reset."*
 - Every action shows a clear message; purchases and equips always remind that the skin **shows up from the next map change**.
 
 ### Player profile — `/player/{id}`
@@ -176,7 +181,7 @@ A **Stars** row shows the balance, the stars earned and the stars spent, and a *
 | Page | Features |
 |---|---|
 | Chat bans `/chat-bans` | Paginated list with avatar, Steam ID, reason, date and admin; details modal to edit the reason or remove; *Add ban* with recent chat senders and the player picker |
-| Skin purchases `/admin/skins/purchases` | Totals; search; paginated list with skin image, player avatar and name, price or *Gift · by admin*, date; details modal with refund (with confirmation); *Give a skin*; *Refund everything* (with a confirmation checkbox) |
+| Skin purchases `/admin/skins/purchases` | Notice with the last day of the season (when purchases are refunded automatically; gifts stay); totals; search; paginated list with skin image, player avatar and name, price or *Gift · by admin*, date; details modal with *Refund purchase* (with confirmation); *Give a skin*; *Refund everything* (admin tool that refunds every purchase and gift, with a confirmation checkbox) |
 | Skin prices `/admin/skins/prices` | Search, rarity and weapon filters; paginated list marking changed prices; modal to change/reset the price or give that skin as a gift |
 
 Reusable pieces (`Views/Shared`): `_Pagination` + `PagedListModel<T>`, `_PlayerPickerModal` (search by name — including previous names —, Steam ID; current ranking and all-time history), `_SkinPickerModal` (grid like the shop, with filters) and `_GiftModal` (uses both pickers; can open with a skin already selected — also from the shop's skin details for admins).

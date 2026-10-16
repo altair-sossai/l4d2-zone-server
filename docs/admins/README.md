@@ -1,48 +1,50 @@
-# Guia de Comandos para Admins
+# Admin Commands Guide
 
-Guia rápido dos comandos de admin do servidor. Os primeiros comandos são os mais usados no dia a dia; quanto mais para o fim, menos você vai precisar deles.
+🌐 **English** | [Português](README.pt.md) | [Español](README.es.md)
 
-> Os comandos que qualquer jogador pode usar estão no [Guia de Comandos para Jogadores](../players/README.pt.md).
+A quick guide to the server's admin commands. The first commands are the ones used most day to day; the further down you go, the less you will need them.
+
+> The commands any player can use are in the [Player Commands Guide](../players/README.md).
 
 ---
 
-## Como usar os comandos
+## How to use commands
 
-| Forma | Exemplo | Observação |
+| Form | Example | Note |
 |---|---|---|
-| Chat com `!` | `!swap Miosha` | O comando aparece no chat para todos |
-| Chat com `/` | `/swap Miosha` | O comando fica **silencioso**, só você vê a resposta |
-| Console (`~`) | `sm_swap Miosha` | Troque o `!` por `sm_` |
+| Chat with `!` | `!swap Miosha` | Everyone sees the command in the chat |
+| Chat with `/` | `/swap Miosha` | The command is **silent**, only you see the reply |
+| Console (`~`) | `sm_swap Miosha` | Replace the `!` with `sm_` |
 
-**O que significam `< >` e `[ ]`**
+**What `< >` and `[ ]` mean**
 
-Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali. **Não digite os símbolos**, troque tudo pelo valor:
+In this guide, `< >` and `[ ]` only show what you should type there. **Do not type the symbols**, replace everything with the value:
 
-| No guia | Significa | Você digita |
+| In the guide | Means | You type |
 |---|---|---|
-| `!swapto <time> <jogador>` | `< >` = obrigatório | `!swapto 2 vorkyss` |
-| `!hp [quantidade]` | `[ ]` = opcional, pode deixar sem | `!hp` ou `!hp 50` |
-| `!ban <alvo> <minutos> [motivo]` | os dois juntos | `!ban #12 60` ou `!ban #12 60 flood no chat` |
+| `!swapto <team> <player>` | `< >` = required | `!swapto 2 vorkyss` |
+| `!hp [amount]` | `[ ]` = optional, you can leave it out | `!hp` or `!hp 50` |
+| `!ban <target> <minutes> [reason]` | both together | `!ban #12 60` or `!ban #12 60 chat flood` |
 
-❌ Errado: `!swapto <2> <vorkyss>`
+❌ Wrong: `!swapto <2> <vorkyss>`
 
-✅ Certo: `!swapto 2 vorkyss`
+✅ Right: `!swapto 2 vorkyss`
 
-**Nome com espaço:** coloque o nome entre aspas `" "`. Sem aspas, o jogo entende cada palavra como uma parte separada do comando.
+**Names with spaces:** put the name in quotes `" "`. Without quotes, the game reads each word as a separate part of the command.
 
-❌ Errado: `!swapto 2 (LoD) Adeilson`
+❌ Wrong: `!swapto 2 (LoD) Adeilson`
 
-✅ Certo: `!swapto 2 "(LoD) Adeilson"`
+✅ Right: `!swapto 2 "(LoD) Adeilson"`
 
-**Como escolher o alvo (`<alvo>`)**
+**How to pick the target (`<target>`)**
 
-- **Parte do nome:** `!swap mio` funciona se só um jogador tiver "mio" no nome.
-- **`#userid`:** é o jeito mais seguro quando o nome tem caracteres estranhos ou é parecido com outro (veja abaixo como descobrir o número).
-- **Grupos:** `@all` (todos), `@humans` (só humanos), `@bots` (só bots), `@me` (você mesmo), `@aim` (quem está na sua mira).
+- **Part of the name:** `!swap mio` works if only one player has "mio" in their name.
+- **`#userid`:** the safest way when the name has odd characters or looks like someone else's (see below how to find the number).
+- **Groups:** `@all` (everyone), `@humans` (humans only), `@bots` (bots only), `@me` (yourself), `@aim` (whoever is in your crosshair).
 
-**Como descobrir o `#userid`**
+**How to find the `#userid`**
 
-Abra o console (`~`) e digite `status`. Vai aparecer algo assim (colunas do fim da linha omitidas):
+Open the console (`~`) and type `status`. You will see something like this (the last columns are left out):
 
 ```
 ] status
@@ -57,318 +59,320 @@ players : 4 humans, 0 bots (8 max)
 #  23 "Finn ™" STEAM_1:1:44444444 02:10 52 0 active
 ```
 
-O **primeiro número** de cada linha é o `userid`. No exemplo, o nome `♏` é difícil de digitar, então é só usar o número dele:
+The **first number** on each line is the `userid`. In the example, the name `♏` is hard to type, so just use its number:
 
 ```
 !swap #21
 !swapto 1 #21
 ```
 
-Funciona em qualquer comando que pede `<alvo>` (kick, ban, mute, swap etc.).
+This works in any command that asks for a `<target>` (kick, ban, mute, swap etc.).
 
-> O `userid` muda toda vez que o jogador reconecta. Se ele sair e voltar, rode `status` de novo.
+> The `userid` changes every time the player reconnects. If they leave and come back, run `status` again.
 
-> 💡 Na dúvida, abra o menu com **`!admin`**. Quase tudo que está aqui (kick, ban, mute, trocar mapa, trocar de time) também dá para fazer por ele, sem digitar nada.
+> 💡 When in doubt, open the menu with **`!admin`**. Almost everything here (kick, ban, mute, change map, change teams) can also be done from it, without typing anything.
 
 ---
 
-## Menu de admin
+## Admin menu
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!admin` | Abre o menu de admin (jogadores, votações, mapas, comandos do servidor) |
+| `!admin` | Opens the admin menu (players, votes, maps, server commands) |
 
-## Config da partida (ZoneMod)
+## Match config (ZoneMod)
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!forcematch <config> [mapa]` / `!fm <config> [mapa]` | Carrega a config competitiva. Se passar um mapa, a config já carrega nele. **Use `!fm zonemod` sempre que o servidor estiver sem config** |
-| `!resetmatch` | Desliga a config atual e volta o servidor ao modo padrão |
-| `!forcechangematch <config> [mapa]` / `!fchmatch <config> [mapa]` | Troca para outra config sem precisar desligar a atual |
+| `!forcematch <config> [map]` / `!fm <config> [map]` | Loads the competitive config. If you pass a map, the config loads straight on it. **Use `!fm zonemod` whenever the server has no config loaded** |
+| `!resetmatch` | Turns the current config off and puts the server back in the default mode |
+| `!forcechangematch <config> [map]` / `!fchmatch <config> [map]` | Switches to another config without turning the current one off first |
 
-Exemplos:
+Examples:
 
 ```
-!fm zonemod               -> carrega o ZoneMod no mapa atual
-!fm zonemod c2m1_highway  -> carrega o ZoneMod já em Dark Carnival
-!fchmatch zm3v3           -> troca para o ZoneMod 3v3
+!fm zonemod               -> loads ZoneMod on the current map
+!fm zonemod c2m1_highway  -> loads ZoneMod straight on Dark Carnival
+!fchmatch zm3v3           -> switches to ZoneMod 3v3
 ```
 
-Configs mais usadas: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`.
+Most used configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`.
 
-## Ready-up e pausa
+## Ready-up and pause
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!forcestart` / `!fs` | Começa o round sem esperar todo mundo dar `!ready`. Com o jogo pausado, também despausa |
-| `!forcepause` | Pausa o jogo. **Só um admin consegue despausar** uma pausa feita assim |
-| `!forceunpause` | Despausa na hora, sem esperar os times darem ready |
+| `!forcestart` / `!fs` | Starts the round without waiting for everyone to `!ready`. With the game paused, it also unpauses |
+| `!forcepause` | Pauses the game. **Only an admin can unpause** a pause made this way |
+| `!forceunpause` | Unpauses without waiting for the teams to ready up (starts the countdown for the game to resume) |
 
-> Use `!forcepause` quando precisar resolver algo (troca de jogador, alguém travado, discussão). Os jogadores não conseguem despausar até você usar `!forceunpause`.
+> Use `!forcepause` when you need to sort something out (player replacement, someone stuck, an argument). Players cannot unpause until you use `!forceunpause`.
 
-## Times
+## Teams
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!swap <jogador1> [jogador2] ...` | Manda os jogadores listados para o time oposto |
-| `!swapto <time> <jogador1> [jogador2] ...` | Manda os jogadores para um time específico: `1` = spectator, `2` = survivors, `3` = infected |
-| `!swapto force <time> <jogador>` | Igual ao anterior, mas força a troca mesmo se o time estiver cheio |
-| `!swapteams` | Inverte os dois times inteiros (survivors ↔ infected) |
-| `!fixbots` | Cria os bots de survivor que estiverem faltando (quando o time fica com menos de 4) |
+| `!swap <player1> [player2] ...` | Moves the listed players to the opposite team |
+| `!swapto <team> <player1> [player2] ...` | Moves the players to a specific team: `1` = spectator, `2` = survivors, `3` = infected |
+| `!swapto force <team> <player1> [player2] ...` | Same as above, but forces the move even if the team is full |
+| `!swapteams` | Swaps the two whole teams (survivors ↔ infected) |
+| `!fixbots` | Sets the number of survivor bots to the config's team size (e.g. 4 in 4v4), creating the missing ones |
 
-Exemplos:
+Examples:
 
 ```
-!swapto 1 Zenk            -> manda Zenk para spectator
-!swapto 2 Guigo Vegueta   -> manda os dois para survivors
-!swap #12                 -> manda o jogador #12 para o time oposto
+!swapto 1 Zenk            -> moves Zenk to spectator
+!swapto 2 Guigo Vegueta   -> moves both to survivors
+!swap #12                 -> moves player #12 to the opposite team
 ```
 
 ## Mix
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!mix` | Começa o mix **na hora**, sem votação. Os dois capitães são escolhidos por votação dos jogadores |
-| `!mix <capitão1>` | Começa o mix na hora com `capitão1` como capitão dos survivors. O segundo capitão é escolhido por votação |
-| `!mix <capitão1> <capitão2>` | Começa o mix na hora com os dois capitães definidos: `capitão1` nos survivors e `capitão2` nos infected |
-| `!stopmix` | Cancela o mix em andamento (por exemplo, se um capitão saiu ou travou a escolha) |
+| `!mix` | Starts the mix **right away**, without a vote. Both captains are chosen by a player vote |
+| `!mix <captain1>` | Starts the mix right away with `captain1` as the survivors' captain. The second captain is chosen by a vote |
+| `!mix <captain1> <captain2>` | Starts the mix right away with both captains set: `captain1` on survivors and `captain2` on infected |
+| `!stopmix` | Cancels the mix in progress (for example, if a captain left or is stalling the picks) |
 
-Exemplos:
+Examples:
 
 ```
-!mix                            -> começa o mix e os jogadores votam nos capitães
-!mix vorkyss                    -> vorkyss é capitão, o outro sai por votação
-!mix vorkyss Feeh               -> vorkyss e Feeh são os capitães
-!mix "(LoD) Adeilson" Feeh      -> use aspas quando o nome tiver espaço ou símbolos
+!mix                            -> starts the mix and the players vote for the captains
+!mix vorkyss                    -> vorkyss is a captain, the other one comes from a vote
+!mix vorkyss Feeh               -> vorkyss and Feeh are the captains
+!mix "(LoD) Adeilson" Feeh      -> use quotes when the name has spaces or symbols
 ```
 
-> - Os capitães precisam estar **jogando** (em survivors ou infected), não em spectator.
-> - Pode usar o nome completo ou só o começo do nome.
-> - Os dois times precisam estar **cheios** e o mix só pode começar no **início de um jogo novo** (placar 0 x 0).
-> - Não existe mix em 1v1.
-> - Se alguém sair do servidor durante o mix, o mix é cancelado. Na primeira vez a pessoa só leva um aviso; se sair de novo, é **banida por 30 minutos**.
+> - The captains must be **playing** (on survivors or infected), not in spectator.
+> - You can use the full name or just the start of it.
+> - Both teams must be **full**, and the mix can only start at the **beginning of a new game** (score 0 x 0), before the first round starts.
+> - There is no mix in 1v1.
+> - If someone leaves the server during the mix, the mix is cancelled. The first time the player only gets a warning; if they leave again, they are **banned for 60 minutes**.
 
-## Moderação: kick, ban e mute
+## Moderation: kick, ban and mute
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!kick <alvo> [motivo]` | Expulsa o jogador do servidor |
-| `!ban <alvo> <minutos> [motivo]` | Bane um jogador que **está no servidor**. `0` = permanente |
-| `!addban <minutos> <SteamID> [motivo]` | Bane um jogador que **já saiu** do servidor, usando a SteamID |
-| `!unban <SteamID>` | Remove o ban |
-| `!mute <alvo>` / `!unmute <alvo>` | Bloqueia ou libera a **voz** do jogador |
-| `!gag <alvo>` / `!ungag <alvo>` | Bloqueia ou libera o **chat de texto** do jogador |
-| `!silence <alvo>` / `!unsilence <alvo>` | Bloqueia ou libera **voz e chat** ao mesmo tempo |
+| `!kick <target> [reason]` | Kicks the player from the server |
+| `!ban <target> <minutes> [reason]` | Bans a player who **is on the server**. `0` = permanent |
+| `!addban <minutes> <SteamID> [reason]` | Bans a player who **has already left** the server, using their SteamID |
+| `!unban <SteamID>` | Removes the ban |
+| `!mute <target>` / `!unmute <target>` | Blocks or allows the player's **voice** |
+| `!gag <target>` / `!ungag <target>` | Blocks or allows the player's **text chat** |
+| `!silence <target>` / `!unsilence <target>` | Blocks or allows **voice and chat** at the same time |
 
-Exemplos:
+Examples:
 
 ```
-!ban #12 60 xingando no chat
-!ban #7 0 trapaça
-!addban 1440 STEAM_1:0:12345678 saiu antes do ban
+!ban #12 60 insulting in chat
+!ban #7 0 cheating
+!addban 1440 STEAM_1:0:12345678 left before the ban
 !unban STEAM_1:0:12345678
 ```
 
-> ⚠️ Mute, gag e silence duram **até o jogador sair do servidor**. Se o problema continuar, use kick ou ban.
+> ⚠️ Mute, gag and silence last **until the player leaves the server**. If the problem continues, use kick or ban.
 >
-> ⚠️ Nos motivos de ban, escreva **só o motivo**. Nunca coloque IP ou dados pessoais do jogador.
+> ⚠️ In ban reasons, write **only the reason**. Never put the player's IP or personal data.
 
-## Mapa
+## Map
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!map <mapa>` | Troca o mapa na hora. Ex.: `!map c2m1_highway` |
+| `!map <map>` | Changes the map right away. E.g. `!map c2m1_highway` |
 
 ---
 
-## Tank e Witch
+## Tank and Witch
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!givetank <jogador>` | Define quem vai ser o próximo Tank. O jogador precisa estar no time **infected** |
-| `!tankshuffle` | Sorteia de novo quem vai ser o Tank |
-| `!ftank <porcentagem>` | Força a porcentagem de spawn do Tank. **Só funciona durante o ready-up** |
-| `!fwitch <porcentagem>` | Força a porcentagem de spawn da Witch. **Só funciona durante o ready-up** |
+| `!givetank <player>` | Sets who will be the next Tank. The player must be on the **infected** team |
+| `!tankshuffle` | Picks the Tank again at random |
+| `!ftank <percentage>` | Forces the Tank spawn percentage. **Only works during the ready-up** and does not work on maps where the Tank has a fixed spawn |
+| `!fwitch <percentage>` | Forces the Witch spawn percentage. **Only works during the ready-up** and does not work on maps where the Witch has a fixed spawn |
 
-> Os jogadores também podem pedir isso por votação com `!voteboss <tank> <witch>`. O `!ftank`/`!fwitch` pula a votação.
+> Players can also ask for this through a vote with `!voteboss <tank> <witch>`. `!ftank`/`!fwitch` skips the vote.
 
-## Placar e campanha
+## Score and campaign
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!setscores <survivors> <infected>` | Abre uma votação para ajustar o placar. Admin pode iniciar mesmo estando de spectator |
-| `!setnextcampaign` | Abre um menu para escolher a(s) próxima(s) campanha(s) da rotação, ou limpar a lista |
+| `!setscores <survivors> <infected>` | Changes the score **right away**, without a vote (when a player uses it, a vote is started). **Only works during the ready-up**, before the round starts. `<survivors>` is the score of the team that is on survivors now |
+| `!setnextcampaign` | Opens a menu to choose the next campaign(s) of the rotation, or clear the list |
 
-> Útil quando o servidor caiu no meio da partida e vocês precisam voltar com o placar certo.
+> Useful when the server crashed in the middle of a match and you need to come back with the right score.
 
-## Ajudas durante a partida
+## Help during the match
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!hp [quantidade]` | Recupera a vida de todos os survivors vivos (padrão: 100) |
-| `!give_starting_items` | Entrega de novo os itens iniciais para os survivors |
+| `!hp [amount]` | Adds the amount (1 to 100, default: 100) to the health of every living survivor, without going over 100, and picks up anyone who is incapacitated |
 
-## Spectators e casters
+## Spectators and casters
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!caster <jogador>` | Registra o jogador como caster (narrador) |
-| `!notcasting <jogador>` | Tira o jogador da lista de casters |
-| `!resetcasters` | Limpa todos os casters registrados |
-| `!kickspecs` | Expulsa os spectators **na hora**, sem votação (casters e admins não são expulsos) |
-| `!broadcast` | Liga/desliga o modo "falar com todos": enquanto ligado, **todo mundo ouve sua voz**, inclusive os dois times |
+| `!caster <player>` | Registers the player as a caster (commentator) |
+| `!notcasting <player>` | Removes the player from the caster list |
+| `!resetcasters` | Clears every registered caster |
+| `!kickspecs` | Kicks the spectators **right away**, without a vote (casters and admins are not kicked) |
+| `!broadcast` | Turns "talk to everyone" mode on/off: while on, **everyone hears your voice**, including both teams |
 
-> Use `!broadcast` para dar um aviso rápido por voz aos dois times. Lembre de desligar depois.
+> Use `!broadcast` to give both teams a quick voice notice. Remember to turn it off afterwards.
 
-## Moderação geral
+## General moderation
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!slay <alvo>` | Mata o jogador |
-| `!rename <alvo> <novo nome>` | Troca o nome do jogador |
-| `!who` | Mostra os jogadores conectados e quem é admin |
-| `!votekick <alvo>` | Abre votação para expulsar o jogador |
-| `!voteban <alvo>` | Abre votação para banir o jogador |
-| `!votemap <mapa>` | Abre votação para trocar de mapa |
+| `!slay <target>` | Kills the player |
+| `!rename <target> <new name>` | Changes the player's name |
+| `!who` | Shows the connected players and who is an admin |
+| `!votekick <target>` | Starts a vote to kick the player |
+| `!voteban <target>` | Starts a vote to ban the player |
+| `!votemap <map>` | Starts a vote to change the map |
 
-## Mensagens de admin
+## Admin messages
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!say <mensagem>` | Mensagem para todos no chat, com destaque de admin |
-| `!csay <mensagem>` | Mensagem no **centro da tela** de todos |
-| `!hsay <mensagem>` | Mensagem na caixa de dica (hint) de todos |
-| `!psay <alvo> <mensagem>` | Mensagem privada para um jogador |
-| `!chat <mensagem>` | Mensagem que **só os admins** veem |
+| `!say <message>` | Message to everyone in the chat, highlighted as an admin message |
+| `!csay <message>` | Message in the **center of everyone's screen** |
+| `!hsay <message>` | Message in everyone's hint box |
+| `!psay <target> <message>` | Private message to a player |
+| `!chat <message>` | Message that **only admins** see |
 
-> Atalho: no chat do time (`say_team`), comece a mensagem com `@` para falar só com os admins. Ex.: `@alguém pode ajudar aqui?`
+> Shortcut: in team chat (`say_team`), start the message with `@` to talk only to the admins. E.g. `@can someone help here?`
 
-## Servidor
+## Server
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!slots <número>` | Muda a quantidade de vagas do servidor **na hora**, sem votação. Ex.: `!slots 10` |
-| `!killlobbyres` | Remove a reserva de lobby do servidor (libera a entrada de quem não veio pelo lobby) |
+| `!slots <number>` | Changes the number of server slots **right away**, without a vote (maximum 30). E.g. `!slots 10` |
+| `!killlobbyres` | Removes the server's lobby reservation (lets in players who did not come through the lobby) |
 
-## Skins de armas
+## Weapon skins
 
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!skin status` | Mostra se as skins estão ligadas |
-| `!skin on` / `!skin off` | Liga ou desliga as skins para todos. **Continua valendo depois da troca de mapa**, até outro admin mudar |
-| `!skin test <id> [arma]` | Testa em você, até o mapa trocar, qualquer skin que já está na lista de downloads do mapa, sem precisar comprar nem de ready-up |
-| `!skin test default [arma]` | Tira a skin de teste |
+| `!skin on` / `!skin off` | Turns the skins on or off for everyone. **It stays that way after the map changes**, until another admin changes it or the server restarts |
+| `!skin test <id>` | Tries the skin on yourself until the map changes, without buying it, being a survivor or being in the ready-up. Only works with skins that are already on the map's download list |
+| `!skin test default [weapon]` | Removes the test skin |
 
-`[arma]`: `smg`, `mac`, `mp5`, `pump`, `chrome`, `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf` ou `pan`. Sem ela, usa a arma da sua mão.
+`[weapon]`: `smg`, `mac`, `mp5`, `pump`, `chrome`, `magnum` (or `deagle`), `axe`, `katana`, `machete`, `bat`, `cricket`, `guitar`, `crowbar`, `golf` or `pan`. Without it, the weapon in your hand is used. `!skin test <id>` does not need it: the skin already defines the weapon.
 
-Exemplos:
+Examples:
 
 ```
-!skin off              -> desliga as skins para todos
-!skin test hellsing-gold      -> testa a skin hellsing-gold
-!skin test default smg        -> tira a skin de teste da SMG
+!skin off                     -> turns the skins off for everyone
+!skin test hellsing-gold      -> tries the hellsing-gold skin
+!skin test default smg        -> removes the test skin from the SMG
 ```
 
-> Os comandos de skin dos jogadores (`!skin`, `!skin next`, `!skin prev`, `!skin default`) estão no [Guia de Comandos para Jogadores](../players/README.pt.md#skins-de-armas). `!skin on/off` e `!skin test` só funcionam para admins com acesso **root**.
+> The players' skin commands (`!skin`, `!skin <id>`, `!skin next`, `!skin prev`, `!skin default`, `!skin status`) are in the [Player Commands Guide](../players/README.md#weapon-skins). `!skin on/off` and `!skin test` only work for admins with **root** access.
 
-### Loja de skins (site)
+### Skin shop (site)
 
-Os jogadores compram as skins em [l4d2.com.br/skins](https://l4d2.com.br/skins) com estrelas (1 estrela por MVP de dano em SI ou de comuns em partidas competitivas, desde o início do ranking). Só os arquivos das skins que pelo menos um jogador comprou entram na lista de downloads, a partir da troca de mapa seguinte à compra.
+Players buy skins at [l4d2.com.br/skins](https://l4d2.com.br/skins) with stars (1 star per SI damage MVP or common infected MVP in competitive matches, since the ranking started). Only the files of skins that at least one player bought go on the download list, starting from the map change after the purchase.
 
-Admins (`ServerAdmins` do site) têm o botão **Administrar loja** na página de skins, ou acessam [l4d2.com.br/skins/admin](https://l4d2.com.br/skins/admin):
+Purchases last until the end of the ranking season: at every ranking reset (every 2 months) they are **refunded automatically** and the stars go back to the players. Skins given as gifts are kept.
 
-| O que fazer | Como |
+Site admins have the **Admin** menu at the top of [l4d2.com.br](https://l4d2.com.br):
+
+| What to do | How |
 |---|---|
-| Mudar o preço de uma skin | Em **Preços**, troque o valor e clique em **Salvar**. Vale só para as próximas compras; quem já comprou não é afetado. **Restaurar** volta ao preço padrão do catálogo |
-| Dar uma skin de presente | Em **Dar skin de presente**, informe o Steam ID do jogador (qualquer formato ou o link do perfil), escolha a skin e clique em **Dar de presente**. A skin fica equipada para o jogador e não gasta estrelas |
-| Estornar uma compra | Em **Compras**, clique em **Estornar** na linha da compra. As estrelas pagas voltam para o jogador, a skin sai da conta dele e, se estava equipada, a arma volta para a padrão |
+| Change a skin's price | **Admin → Skin prices**: click the skin, change the value and click **Save**. It only applies to new purchases; whoever already bought it is not affected. **Reset to default** goes back to the catalog price |
+| Give a skin as a gift | **Admin → Skin purchases → Give a skin** (or **Give as a gift** on the skin, in Skin prices): pick the player and the skin. The skin is equipped for the player and costs no stars |
+| Refund a purchase | **Admin → Skin purchases**: click the purchase, then **Refund purchase** and **Confirm refund**. The stars paid go back to the player, the skin leaves their account and, if it was equipped, the weapon goes back to the default one |
+| Refund everything | **Admin → Skin purchases → Refund everything**: tick the confirmation and click **Refund everything**. It refunds every purchase and every gift of every player, and it cannot be undone. If some items fail, run it again |
+| Ban a player from the site chat | **Admin → Chat Bans → Add ban**: the player can no longer send messages to the server through the site chat |
 
-> As estrelas sempre vêm do ranking (API): o admin não altera o saldo de ninguém, só dá presente ou estorna compras.
+> Stars always come from the ranking: admins do not change anyone's balance, they only give gifts or refund purchases. More details in [Skins operations → Common tasks](../weapon-skins/06-operations.md#common-tasks).
 
-### Modo de teste: todas as skins
+### Test mode: every skin
 
-Para conferir no jogo skins que ninguém comprou ainda:
+To check skins in game that nobody has bought yet:
 
 1. `!cvar weapon_skins_preview_all 1`
-2. Troque de mapa, com `!fm zonemod` ou `!map <mapa>`. Os arquivos de todas as skins entram na lista de downloads no carregamento do mapa.
-3. Saia e entre de novo no servidor, para baixar os arquivos. Se aparecer ERROR, feche e abra o jogo.
-4. Pegue a arma e use `!skin next` / `!skin prev` para passar por todas as skins dela, ou `!skin <id>`. Para admins root, compra, time e ready-up são ignorados.
-5. No fim: `!cvar weapon_skins_preview_all 0` e troque de mapa. Volta a ser baixado só o que foi comprado.
+2. Change the map, with `!fm zonemod` or `!map <map>`. The files of every skin go on the download list when the map loads.
+3. Leave and rejoin the server to download the files. If you see ERROR, close and reopen the game.
+4. Pick up the weapon and use `!skin next` / `!skin prev` to go through all of its skins, or `!skin <id>`. For root admins, purchase, team and ready-up are ignored.
+5. When done: `!cvar weapon_skins_preview_all 0` and change the map. Only what was bought is downloaded again.
 
-> ⚠️ Enquanto o modo de teste estiver ligado, **todo jogador que entrar baixa todas as skins** (cerca de 250 MB). Use com o servidor vazio e desligue logo depois.
-
----
-
-## Comandos avançados
-
-| Comando | O que faz |
-|---|---|
-| `!cvar <cvar> [valor]` | Mostra ou altera uma cvar do servidor |
-| `!rcon <comando>` | Executa um comando direto no console do servidor |
-| `!exec <arquivo>` | Executa um arquivo `.cfg` do servidor |
-| `!reloadadmins` | Recarrega a lista de admins (depois de alguém ser adicionado) |
-| `!listcampaigns` | Lista no console todas as campanhas instaladas |
-| `!refreshcampaigns` | Atualiza a lista de campanhas do `!votecamp` |
-| `!add_caster_id <SteamID>` | Adiciona a SteamID à lista de quem pode se registrar sozinho como caster (`!cast`) |
-| `!remove_caster_id <SteamID>` | Remove a SteamID dessa lista |
-| `!printcasters` | Mostra a lista de SteamIDs de casters |
-| `statsreset` | **Só pelo console.** Zera as estatísticas da partida atual (`!stats`, `!mvp`) |
-
-> ⚠️ Cuidado com `!cvar`, `!rcon` e `!exec`: dá para quebrar a config da partida. Se algo ficar estranho, `!resetmatch` e depois `!forcematch zonemod` resolve.
+> ⚠️ While test mode is on, **every player who joins downloads every skin** (about 300 MB). Use it with the server empty and turn it off right after.
 
 ---
 
-## Testes e debug (não use em partida)
+## Advanced commands
 
-Estes comandos existem, mas servem para **testes, debug ou diversão**. Usar em partida valendo estraga o jogo.
-
-### Comandos de diversão e testes
-
-| Comando | O que faz |
+| Command | What it does |
 |---|---|
-| `!cchelp` | Lista todos os comandos de testes disponíveis |
-| `!godmode <alvo>` | Deixa o jogador imortal |
-| `!teleport <alvo>` | Teleporta o jogador para onde você está mirando |
-| `!revive <alvo>` | Levanta um survivor caído |
-| `!sethpplayer <alvo> <vida>` | Define a vida do jogador |
-| `!speedplayer <alvo> <velocidade>` | Muda a velocidade do jogador |
-| `!panic` | Força um evento de horda |
-| `!slap`, `!burn`, `!freeze`, `!beacon`, `!noclip`, `!timebomb` | Comandos de diversão: tapa, fogo, congelar, sinalizar, atravessar paredes, bomba |
+| `!cvar <cvar> [value]` | Shows or changes a server cvar |
+| `!rcon <command>` | Runs a command straight in the server console |
+| `!execcfg <file>` | Runs a `.cfg` file from the server's `cfg/` folder |
+| `!reloadadmins` | Reloads the admin list (after someone is added) |
+| `!listcampaigns` | Lists every installed campaign in the console |
+| `!refreshcampaigns` | Refreshes the campaign list of `!votecamp` |
+| `!add_caster_id <SteamID>` | Adds the SteamID to the list of who can register themselves as a caster (`!cast`) |
+| `!remove_caster_id <SteamID>` | Removes the SteamID from that list |
+| `!printcasters` | Shows the list of caster SteamIDs |
+| `statsreset` | **Console only.** Resets the current match stats (`!stats`, `!mvp`) |
 
-### Manutenção e debug
-
-| Comando | O que faz |
-|---|---|
-| `!crash` | **Derruba o servidor** para ele reiniciar. Todos são desconectados. Só use se o servidor estiver quebrado e ninguém estiver jogando |
-| `!early_victory_debug` | Mostra os valores internos da vitória antecipada |
-| `!tank_witch_debug_info` | Mostra informações internas de spawn do Tank e da Witch |
+> ⚠️ Be careful with `!cvar`, `!rcon` and `!execcfg`: they can break the match config. If something looks wrong, `!resetmatch` and then `!forcematch zonemod` fixes it.
 
 ---
 
-## Situações comuns
+## Tests and debug (do not use in a match)
 
-**Servidor sem config / jogo em modo padrão**
+These commands exist, but they are for **tests, debugging or fun**. Using them in a real match ruins the game.
+
+### Fun and test commands
+
+| Command | What it does |
+|---|---|
+| `!cchelp` | Lists every available test command |
+| `!godmode <target>` | Makes the player immortal |
+| `!teleport <target>` | Teleports the player to where you are aiming |
+| `!revive <target>` | Picks up an incapacitated survivor |
+| `!sethpplayer <target> <health>` | Sets the player's health |
+| `!speedplayer <target> <speed>` | Changes the player's speed |
+| `!panic` | Forces a horde event |
+| `!slap`, `!burn`, `!freeze`, `!beacon`, `!noclip`, `!timebomb` | Fun commands: slap, fire, freeze, beacon, walk through walls, bomb |
+
+### Maintenance and debug
+
+| Command | What it does |
+|---|---|
+| `!crash` | **Crashes the server** so it restarts. Everyone is disconnected. Only use it if the server is broken and nobody is playing |
+| `!early_victory_debug` | Shows the early victory internal values |
+| `!tank_witch_debug_info` | Shows internal Tank and Witch spawn information |
+
+---
+
+## Common situations
+
+**Server without a config / game in default mode**
 1. `!forcematch zonemod`
 
-**Jogador caiu no meio do round**
+**A player dropped in the middle of the round**
 1. `!forcepause`
-2. Espere ele voltar, ou traga alguém da fila com `!swapto <time> <jogador>`
+2. Wait for them to come back, or bring someone from the queue with `!swapto <team> <player>`
 3. `!forceunpause`
 
-**Times desbalanceados ou jogador no time errado**
-1. `!swapto 1 <jogador>` para mandar para spectator
-2. `!swapto 2 <jogador>` ou `!swapto 3 <jogador>` para colocar no time certo
-3. Se faltar survivor, `!fixbots`
+**Unbalanced teams or a player on the wrong team**
+1. `!swapto 1 <player>` to move them to spectator
+2. `!swapto 2 <player>` or `!swapto 3 <player>` to put them on the right team
+3. If a survivor is missing, `!fixbots`
 
-**Mix travado (capitão saiu ou não escolhe)**
+**Stuck mix (a captain left or is not picking)**
 1. `!stopmix`
-2. Comece outro com `!mix`, ou já defina os capitães com `!mix <capitão1> <capitão2>`
+2. Start another one with `!mix`, or set the captains right away with `!mix <captain1> <captain2>`
 
-**Servidor caiu e a partida voltou zerada**
-1. `!forcematch zonemod`
-2. `!setscores <survivors> <infected>` com o placar de antes e peça para os jogadores votarem **sim**
+**The server crashed and the match came back with no score**
+1. `!forcematch zonemod <map>` to come back on the map you were playing
+2. Still in the ready-up, `!setscores <survivors> <infected>` with the previous score. As an admin, the score changes right away
 
-**Jogador tóxico**
-1. `!gag` / `!mute` / `!silence` para parar na hora
-2. Se continuar: `!kick <alvo> <motivo>`
-3. Se for grave ou reincidente: `!ban <alvo> <minutos> <motivo>`
+**Toxic player**
+1. `!gag` / `!mute` / `!silence` to stop it right away
+2. If it continues: `!kick <target> <reason>`
+3. If it is serious or repeated: `!ban <target> <minutes> <reason>`

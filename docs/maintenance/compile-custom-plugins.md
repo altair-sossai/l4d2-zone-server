@@ -1,21 +1,24 @@
 # Compiling the custom plugins
 
+🌐 **English** | [Português](compile-custom-plugins.pt.md) | [Español](compile-custom-plugins.es.md)
+
 This document explains how to compile the custom SourceMod plugins in this
-repository using `ps/compile-custom-plugins.ps1`.
+repository using [`ps/compile-custom-plugins.ps1`](../../ps/compile-custom-plugins.ps1).
 
 ## What the script does
 
 The script compiles the custom `.sp` source files into `.smx` plugins using the
 **SourcePawn compiler committed in this repository** — not one installed on your
-machine. This keeps builds reproducible: anyone (or the CI) gets the exact same
-result regardless of what is installed locally.
+machine. This keeps builds reproducible: anyone gets the exact same result regardless
+of what is installed locally.
 
 - **Compiler:** `addons/sourcemod/scripting/sourcemod/spcomp.exe`
   (SourceMod `1.12.0.7230`, matching the includes and the SourceMod running on
   the server).
-- **Sources:** `addons/sourcemod/scripting/*.sp`
+- **Sources:** the `.sp` files in the script's build list, all in
+  `addons/sourcemod/scripting/` (see [Plugins in the build list](#plugins-in-the-build-list)).
 - **Output:** `addons/sourcemod/plugins/...` (each plugin goes to its mapped
-  subfolder — e.g. `optional/`, `fixes/`, or the plugins root).
+  subfolder — `optional/` or the plugins root).
 - **Include paths** are passed explicitly:
   - `addons/sourcemod/scripting/include` (custom includes)
   - `addons/sourcemod/scripting/sourcemod/include` (standard SourceMod includes)
@@ -25,13 +28,15 @@ error at the end.
 
 ## Requirements
 
+- **Windows** — the script runs `spcomp.exe`.
 - **PowerShell 5.1+** (Windows PowerShell or PowerShell 7 / `pwsh`).
 - Nothing else — the compiler and all includes are already in the repository.
 
 ## How to run all plugins
 
 To compile every plugin in the build list, run the script with no arguments.
-It can be run from anywhere — paths are resolved relative to the script.
+It can be run from anywhere — paths are resolved relative to the script (the
+examples below run it from the repository root).
 
 ```powershell
 ./ps/compile-custom-plugins.ps1
@@ -122,6 +127,12 @@ Pick a line below, copy it, and run it:
 
 # l4d2_lerp_advisor
 ./ps/compile-custom-plugins.ps1 l4d2_lerp_advisor
+
+# l4d2_weapon_skins
+./ps/compile-custom-plugins.ps1 l4d2_weapon_skins
+
+# slots_vote
+./ps/compile-custom-plugins.ps1 slots_vote
 ```
 
 ## Notes
@@ -132,6 +143,11 @@ Pick a line below, copy it, and run it:
 - Deployment (Azure pipeline) does **not** compile — it ships the committed
   `.smx` files. So remember to commit the recompiled `.smx` for your change to
   reach the server.
+- The GitHub Actions workflow [Check all plugins](../../.github/workflows/check_plugins.yml)
+  does not use this script: on pushes and pull requests to `master` that change
+  `.sp`/`.inc` files, it compiles every `.sp` in `addons/sourcemod/scripting/`
+  with the upstream compiler (SourceMod 1.12 and 1.13) only to check that they
+  build. It does not commit any `.smx`.
 
 ## Plugins in the build list
 
@@ -164,9 +180,11 @@ Copy any name from this list to compile it individually.
 | `l4d2_campaign_vote` | `optional/l4d2_campaign_vote.smx` |
 | `l4d2_forced_names` | `optional/l4d2_forced_names.smx` |
 | `l4d2_lerp_advisor` | `optional/l4d2_lerp_advisor.smx` |
+| `l4d2_weapon_skins` | `l4d2_weapon_skins.smx` |
+| `slots_vote` | `optional/slots_vote.smx` |
 
 ### All names on one line (for quick copy-paste)
 
 ```
-l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_playstats_sync l4d2_ranking l4d2_show_patent_icon l4d2_no_skip_getup_animation l4d2_jockey_no_deadstops l4d2_gameinfo_sync l4d2_admin_hp l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands l4d2_campaign_vote l4d2_forced_names l4d2_lerp_advisor
+l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_playstats_sync l4d2_ranking l4d2_show_patent_icon l4d2_no_skip_getup_animation l4d2_jockey_no_deadstops l4d2_gameinfo_sync l4d2_admin_hp l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands l4d2_campaign_vote l4d2_forced_names l4d2_lerp_advisor l4d2_weapon_skins slots_vote
 ```
