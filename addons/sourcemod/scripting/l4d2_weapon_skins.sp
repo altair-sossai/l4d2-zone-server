@@ -59,7 +59,7 @@ public Plugin myinfo =
 	name = "L4D2 Weapon Skins",
 	author = "Altair Sossai",
 	description = "Lets players use the custom weapon skins they bought in the skin shop, downloaded through FastDL",
-	version = "3.0.1",
+	version = "3.1.0",
 	url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -91,7 +91,9 @@ char g_sWeaponAliases[][][] =
 	{ "cricket", "weapon_melee_cricket_bat" },
 	{ "guitar", "weapon_melee_electric_guitar" },
 	{ "pan", "weapon_melee_frying_pan" },
-	{ "golf", "weapon_melee_golfclub" }
+	{ "golf", "weapon_melee_golfclub" },
+	{ "magnum", "weapon_pistol_magnum" },
+	{ "deagle", "weapon_pistol_magnum" }
 };
 
 char g_sWeaponNames[][][] =
@@ -101,6 +103,7 @@ char g_sWeaponNames[][][] =
 	{ "weapon_smg_mp5", "MP5" },
 	{ "weapon_pumpshotgun", "Pump Shotgun" },
 	{ "weapon_shotgun_chrome", "Chrome Shotgun" },
+	{ "weapon_pistol_magnum", "Magnum" },
 	{ "weapon_melee_baseball_bat", "Baseball Bat" },
 	{ "weapon_melee_cricket_bat", "Cricket Bat" },
 	{ "weapon_melee_crowbar", "Crowbar" },
@@ -229,7 +232,7 @@ Action OnWeaponSpawnUse(int entity, int activator, int caller, UseType type, flo
 		return Plugin_Continue;
 	}
 
-	int weapon = GetPlayerWeaponSlot(activator, PRIMARY_SLOT);
+	int weapon = GetPlayerWeaponSlot(activator, GetSpawnSlot(entity));
 	int skinIndex = GetWeaponSkin(activator, weapon);
 	if (skinIndex == -1)
 	{
@@ -250,13 +253,26 @@ void OnWeaponSpawnUsePost(int entity, int activator, int caller, UseType type, f
 		return;
 	}
 
-	int weapon = GetPlayerWeaponSlot(activator, PRIMARY_SLOT);
+	int weapon = GetPlayerWeaponSlot(activator, GetSpawnSlot(entity));
 	if (weapon == -1)
 	{
 		return;
 	}
 
 	RefreshWorldModel(activator, weapon);
+}
+
+int GetSpawnSlot(int entity)
+{
+	char classname[64];
+	GetEntityClassname(entity, classname, sizeof(classname));
+
+	if (strncmp(classname, "weapon_pistol", 13) == 0 || strncmp(classname, "weapon_melee", 12) == 0)
+	{
+		return SECONDARY_SLOT;
+	}
+
+	return PRIMARY_SLOT;
 }
 
 public void OnAllPluginsLoaded()

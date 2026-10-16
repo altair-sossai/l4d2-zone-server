@@ -62,7 +62,7 @@
     }
     "NoWeapon"
     {
-        "en"    "Hold the weapon or say which one, e.g. {olive}!skin next smg{default} (smg, mac, mp5, pump, chrome, axe, katana, machete, bat, cricket, guitar, crowbar, golf, pan)."
+        "en"    "Hold the weapon or say which one, e.g. {olive}!skin next smg{default} (smg, mac, mp5, pump, chrome, magnum, axe, katana, machete, bat, cricket, guitar, crowbar, golf, pan)."
     }
     "OnlyDuringReadyUp"
     {
