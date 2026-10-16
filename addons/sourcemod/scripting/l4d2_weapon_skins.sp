@@ -59,7 +59,7 @@ public Plugin myinfo =
 	name = "L4D2 Weapon Skins",
 	author = "Altair Sossai",
 	description = "Lets players use the custom weapon skins they bought in the skin shop, downloaded through FastDL",
-	version = "3.0.0",
+	version = "3.0.1",
 	url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -1441,7 +1441,7 @@ void OnAllowDownloadQueried(QueryCookie cookie, int client, ConVarQueryResult re
 
 	if (g_iAllowDownload[client] == 0)
 	{
-		KickWithoutDownloads(client);
+		KickWithoutDownloads(client, cvarName, cvarValue, "cl_allowdownload 1");
 	}
 
 	RefreshWorldModelsState();
@@ -1458,7 +1458,7 @@ void OnDownloadFilterQueried(QueryCookie cookie, int client, ConVarQueryResult r
 
 	if (g_iDownloadFilter[client] == 0)
 	{
-		KickWithoutDownloads(client);
+		KickWithoutDownloads(client, cvarName, cvarValue, "cl_downloadfilter all");
 	}
 
 	RefreshWorldModelsState();
@@ -1487,14 +1487,15 @@ bool HasClientWithoutSkins()
 	return false;
 }
 
-void KickWithoutDownloads(int client)
+void KickWithoutDownloads(int client, const char[] cvarName, const char[] cvarValue, const char[] fix)
 {
 	if (!g_hKickNoDownloads.BoolValue || !IsEnabled() || IsClientInKickQueue(client))
 	{
 		return;
 	}
 
-	KickClient(client, "%T", "KickNoDownloads", client);
+	LogMessage("Kicked %L because %s is \"%s\"", client, cvarName, cvarValue);
+	KickClient(client, "%T", "KickNoDownloads", client, cvarName, cvarValue, fix);
 }
 
 void RefreshWorldModelsState()

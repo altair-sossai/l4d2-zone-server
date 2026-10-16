@@ -94,7 +94,7 @@
     }
     "KickNoDownloads"
     {
-        "es"    "Este servidor requiere descargas activadas. Actívalas en Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo. Luego reconéctate."
+        "es"    "Este servidor requiere descargas, pero tu juego tiene {1} {2}. Abre la consola y escribe: {3} - luego reconéctate. Si sigue pasando, revisa {1} en tu autoexec.cfg o config.cfg."
     }
     "SkinNotOwned"
     {

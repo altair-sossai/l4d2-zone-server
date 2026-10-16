@@ -94,7 +94,8 @@
     }
     "KickNoDownloads"
     {
-        "en"    "This server requires downloads turned on. Turn them on in Options > Multiplayer > Custom Server Content > Allow All. Then reconnect."
+        "#format"   "{1:s},{2:s},{3:s}"
+        "en"    "This server requires downloads, but your game has {1} {2}. Open the console and type: {3} - then reconnect. If it keeps happening, check {1} in your autoexec.cfg or config.cfg."
     }
     "SkinNotOwned"
     {
