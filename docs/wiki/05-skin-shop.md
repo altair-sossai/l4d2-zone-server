@@ -132,6 +132,7 @@ Integration tests (run against Azurite) cover all of this, including 20 parallel
 - **Equip / unequip** — checks ownership (or that the weapon exists) and upserts/deletes the `Equipped_<weapon>` row.
 - **Gift** (admin) — adds a purchase with `Price = 0`, `Gift = true`, the admin's id and name, and equips it. Stars are not touched.
 - **Refund** (admin) — in one transaction: deletes the purchase, subtracts its price from `Spent` and removes the equipment row if that skin was equipped. Retries on ETag conflicts.
+- **Season refund** (automatic) — skins are bought per ranking season (two months, in UTC: Jan–Feb, Mar–Apr, …). The `SkinSeasonRefundBackgroundService` runs when the site starts and every 10 minutes and calls `RefundSeasonAsync(SkinSeason.Current.Start)`: every purchase that is **not a gift** and was made before the current season started is refunded one by one with the same rules as an admin refund (the purchase is checked again right before deleting it, so a skin bought again in the new season is never touched). Stars spent come back; gifts stay forever. It is idempotent, so a missed run (site down at midnight) is caught up on the next run. The shop shows the season end date and the days left, and the purchase confirmation says until when the skin lasts.
 
 ## Endpoints
 

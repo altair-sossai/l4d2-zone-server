@@ -132,6 +132,7 @@ Testes de integração (rodando contra o Azurite) cobrem tudo isso, incluindo 20
 - **Equipar / desequipar** — confere se o jogador tem a skin (ou se a arma existe) e faz upsert/delete da linha `Equipped_<weapon>`.
 - **Presente** (admin) — adiciona uma compra com `Price = 0`, `Gift = true`, o id e o nome do admin, e equipa a skin. As estrelas não são alteradas.
 - **Reembolso** (admin) — numa transação: apaga a compra, subtrai o preço de `Spent` e remove a linha de equipamento se aquela skin estava equipada. Tenta de novo em caso de conflito de ETag.
+- **Estorno da temporada** (automático) — as skins são compradas por temporada do ranking (dois meses, em UTC: jan–fev, mar–abr, …). O `SkinSeasonRefundBackgroundService` roda quando o site sobe e a cada 10 minutos e chama `RefundSeasonAsync(SkinSeason.Current.Start)`: toda compra que **não é presente** e foi feita antes do início da temporada atual é estornada uma por uma, com as mesmas regras do estorno do admin (a compra é conferida de novo logo antes de ser apagada, então uma skin comprada de novo na temporada nova nunca é afetada). As estrelas gastas voltam; os presentes ficam para sempre. Como é idempotente, uma execução perdida (site fora do ar à meia-noite) é recuperada na próxima. A loja mostra a data de fim da temporada e quantos dias faltam, e a confirmação da compra diz até quando a skin vale.
 
 ## Endpoints
 
