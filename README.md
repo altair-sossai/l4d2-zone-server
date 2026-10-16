@@ -131,5 +131,9 @@ See **[docs/plugins/README.md](docs/plugins/README.md)** for what each one does,
 * Derpduck
 * Mart
 
+> **Weapon Skins:**
+
+* Every weapon skin was made by a Steam Workshop author. See the [list of skins, authors and Workshop links](https://github.com/altair-sossai/l4d2-zone-server-assets#weapon-skin-credits).
+
 > [!NOTE]
 > If your work is being used and I forgot to credit you, don't hesitate to contact me on Discord (user: `sirplease`)
