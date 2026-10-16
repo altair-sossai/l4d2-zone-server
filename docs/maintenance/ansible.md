@@ -52,7 +52,7 @@ sudo apt update && sudo apt install -y ansible sshpass
 
 ## Configuration
 
-Edit [`inventory.ini`](inventory.ini) with the server IP, user and password:
+Edit [`inventory.ini`](../../ansible/inventory.ini) with the server IP, user and password:
 
 ```ini
 [l4d2]

@@ -1,7 +1,7 @@
 # <img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/es.svg" width="40"/> Left 4 Dead 2 — Solución para el Error de Reintento de Conexión UDP
 
-- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/us.svg" width="20"/> README in English](./L4D2_CONNECT_FIX.en.md)
-- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/br.svg" width="20"/> README em Português](./L4D2_CONNECT_FIX.pt.md)
+- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/us.svg" width="20"/> README in English](README.md)
+- [<img src="https://cdn.jsdelivr.net/gh/hjnilsson/country-flags/svg/br.svg" width="20"/> README em Português](README.pt.md)
 
 Si recibes el siguiente error al intentar conectarte al servidor:
 
@@ -11,7 +11,7 @@ Sending UDP connect to public IP 181.214.221.198:27015
 ```
 
 <p align="center">
-  <img src="/tutorials/assets/connection-failed.jpg?raw=true" alt="Fallo de conexión tras 30 intentos"/>
+  <img src="assets/connection-failed.jpg" alt="Fallo de conexión tras 30 intentos"/>
 </p>
 
 Sigue estos pasos para solucionarlo:
@@ -22,7 +22,7 @@ Sigue estos pasos para solucionarlo:
 2. **Abre Steam**, haz clic derecho en **Left 4 Dead 2** en tu Biblioteca y selecciona **Propiedades**.
 
 <p align="center">
-  <img src="/tutorials/assets/l4d2-properties.png?raw=true" alt="Propiedades de Left 4 Dead 2"/>
+  <img src="assets/l4d2-properties.png" alt="Propiedades de Left 4 Dead 2"/>
 </p>
 
 3. En **Opciones de lanzamiento**, añade el siguiente parámetro:
@@ -32,7 +32,7 @@ Sigue estos pasos para solucionarlo:
    ```
 
 <p align="center">
-  <img src="/tutorials/assets/l4d2-launch-options.png?raw=true" alt="Opciones de lanzamiento de Left 4 Dead 2"/>
+  <img src="assets/l4d2-launch-options.png" alt="Opciones de lanzamiento de Left 4 Dead 2"/>
 </p>
 
 * `27666` puede ser cualquier número **dentro del rango 27005–27032**.

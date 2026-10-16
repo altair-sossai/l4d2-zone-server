@@ -44,6 +44,7 @@ In its current state it allows anyone to host their own up to date competitive L
 
 This server ships with several custom plugins (queue, ranking, stats sync, early victory, and more).
 See **[docs/plugins/README.md](docs/plugins/README.md)** for what each one does, its objective, ConVars/commands, and how to configure it.
+All the server documentation (player and admin guides, tutorials, changelogs, wiki) is indexed in **[docs/README.md](docs/README.md)**.
 
 ---
 

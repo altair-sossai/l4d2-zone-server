@@ -1,5 +1,13 @@
 trigger:
-  - master
+  branches:
+    include:
+      - master
+  paths:
+    exclude:
+      - docs
+      - "**/*.md"
+      - LICENSE
+      - .github
 
 pr: none
 
