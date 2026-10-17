@@ -90,7 +90,27 @@ foreach ($skin in $skins)                      # skins of this weapon, in cfg or
 & $wr 76 $b.Count           # file length
 ```
 
-> ⚠️ **El índice de la family es la posición de la skin dentro de su arma en `weapon_skins.cfg`.** Agregar, quitar o reordenar skins de un arma obliga a reconstruir los modelos combinados de esa arma y a actualizar los valores de `"skin"` en el cfg.
+> ⚠️ **El índice de la family es la posición de la skin dentro de su arma en `weapon_skins.cfg`** (más las families originales de las armas de fuego, ver abajo). Agregar, quitar o reordenar skins de un arma obliga a reconstruir los modelos combinados de esa arma y a actualizar los valores de `"skin"` en el cfg.
+
+### Families originales de las armas de fuego
+
+Los modelos combinados (`v.mdl` y `w.mdl`) de las seis armas de fuego (SMG, MAC-10, MP5, escopeta, chrome y Magnum) empiezan con las **families del modelo original** y recién después vienen las skins:
+
+| Arma | `stock_skins` | Primera family de skin |
+|---|---|---|
+| SMG, MAC-10, escopeta, chrome | 2 (normal y desgastada) | 2 |
+| MP5 | 1 | 1 |
+| Magnum | 3 | 3 |
+
+Esas families apuntan a las texturas del modelo original (sus nombres y las carpetas de búsqueda de materiales se agregan al final de la tabla de texturas), así que la family `0` de un modelo combinado se ve idéntica al arma original. Eso es lo que permite usar siempre el modelo combinado en primera persona: un arma sin skin mantiene su `m_nSkin` original, y el cliente del anti-cheat puede apuntar el juego al modelo combinado y terminar con el parpadeo en los cambios de animación (ver [Plugin del juego](03-game-plugin.es.md)).
+
+Las agrega [`scripts/add-stock-families.js`](https://github.com/altair-sossai/l4d2-zone-server-assets/blob/main/scripts/add-stock-families.js) del repositorio de assets: lee los modelos originales de los VPK del juego (primero `update/`) y reescribe los modelos combinados de mano y de mundo de cada arma de fuego. Ejecútalo después de reconstruir los modelos combinados de un arma de fuego; un modelo que ya las tiene se omite:
+
+```bash
+node scripts/add-stock-families.js "<carpeta de Left 4 Dead 2>" <zone-server>/addons/sourcemod/configs/weapon_skins.cfg
+```
+
+En un arma de fuego, el valor de `"skin"` de una skin es entonces `stock_skins` + su posición dentro del arma. Las armas cuerpo a cuerpo no tienen families originales.
 
 ## El cfg que lo une todo
 
@@ -108,6 +128,7 @@ foreach ($skin in $skins)                      # skins of this weapon, in cfg or
 			"default_view_model"	"models/v_models/v_silenced_smg.mdl"
 			"default_world_model"	"models/w_models/weapons/w_smg_a.mdl"
 			"models"				"models/l4d2br/weapons/smg_silenced"
+			"stock_skins"			"2"
 		}
 		...
 	}
@@ -116,7 +137,7 @@ foreach ($skin in $skins)                      # skins of this weapon, in cfg or
 		"dark-matter" // https://steamcommunity.com/sharedfiles/filedetails/?id=3377651383
 		{
 			"weapon"		"weapon_smg_silenced"
-			"skin"		"1"
+			"skin"		"3"
 			"materials"	"materials/models/l4d2br/weapons/smg_silenced_3377651383"
 		}
 		...
@@ -124,7 +145,7 @@ foreach ($skin in $skins)                      # skins of this weapon, in cfg or
 }
 ```
 
-- `Weapons` — los modelos combinados, los modelos originales que se restauran y la carpeta de modelos enviada por FastDL.
+- `Weapons` — los modelos combinados, los modelos originales que se restauran, la carpeta de modelos enviada por FastDL y, en las armas de fuego, `stock_skins` (cantidad de families originales al inicio de los modelos combinados).
 - `Skins` — el id de la skin (el mismo id que usan el sitio y `!skin <id>`), su arma, el índice de la family y la carpeta de materiales.
 
 ## Entrega: servidor de juego + FastDL
@@ -146,7 +167,7 @@ Todas las skins fueron hechas por la comunidad de Left 4 Dead 2 y publicadas en 
 1. Elige un addon de la workshop **solo de textura** y confirma que es para el modelo original de una de las 15 armas. Los addons que reemplazan el modelo del arma, o que están hechos para el modelo personalizado de otro addon, no encajan en el modelo combinado.
 2. Lee la descripción del addon en la Workshop: si el autor pide no redistribuir ni volver a subir su trabajo, **no lo agregues** (los encargos, marcados con "[COMMS]", suelen pedirlo). Cinco skins se quitaron del catálogo por este motivo.
 3. Extrae, reubica y optimiza sus materiales en `materials/models/l4d2br/weapons/<weapon>_<workshopId>/`: como máximo 1024 px, DXT1/DXT5 en lugar de formatos sin compresión, mipmaps y una sola copia de cada textura idéntica.
-4. Agrega la skin a `weapon_skins.cfg` (id, arma, materiales) y **reconstruye los modelos combinados** de esa arma; define los índices de family en `"skin"`.
+4. Agrega la skin a `weapon_skins.cfg` (id, arma, materiales) y **reconstruye los modelos combinados** de esa arma (en un arma de fuego, ejecuta `scripts/add-stock-families.js` después); define los índices de family en `"skin"` (`stock_skins` + posición en un arma de fuego).
 5. Agrega la skin al catálogo del sitio `skins.json` (id, arma, rareza, precio, títulos/descripciones en en/pt/es) y su miniatura `wwwroot/imgs/skins/<id>.jpg`.
 6. Agrega la skin a la tabla de créditos de su arma en el README de los assets (skin, autor, enlace de la Workshop), actualiza la cantidad en el título del arma y la lista de autores.
 7. Vuelve a generar el manifiesto de assets del servidor del anti-cheat (ver abajo) y sube la versión del cliente.

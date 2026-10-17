@@ -20,8 +20,6 @@
 #define REFRESH_INTERVAL 120.0
 #define LOCAL_CHANGE_GRACE 15.0
 #define OBS_MODE_IN_EYE 4
-#define IDLE_HOLD_MARGIN 5.0
-#define IDLE_HOLD_TIME 10.0
 #define PRIMARY_SLOT 0
 #define SECONDARY_SLOT 1
 #define TEAM_SURVIVOR 2
@@ -38,6 +36,7 @@ enum struct WeaponModels
 	int worldModelIndex;
 	int defaultViewModelIndex;
 	int defaultWorldModelIndex;
+	int stockSkins;
 	bool ready;
 }
 
@@ -61,7 +60,7 @@ public Plugin myinfo =
 	name = "L4D2 Weapon Skins",
 	author = "Altair Sossai",
 	description = "Lets players use the custom weapon skins they bought in the skin shop, downloaded through FastDL",
-	version = "3.2.0",
+	version = "3.3.0",
 	url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -138,6 +137,9 @@ bool
 
 int g_iActiveWeaponRef[MAXPLAYERS + 1] = { INVALID_ENT_REFERENCE, ... };
 int g_iActiveSkin[MAXPLAYERS + 1] = { -1, ... };
+int g_iActiveViewModel[MAXPLAYERS + 1] = { -1, ... };
+int g_iActiveDefaultViewModel[MAXPLAYERS + 1] = { -1, ... };
+int g_iActiveStockFamily[MAXPLAYERS + 1] = { -1, ... };
 
 int g_iWeaponRef[MAX_WEAPON_ENTITIES] = { INVALID_ENT_REFERENCE, ... };
 int g_iWeaponSkin[MAX_WEAPON_ENTITIES] = { -1, ... };
@@ -1369,7 +1371,7 @@ void ApplyChoiceToWeapon(int client, const char[] weaponClass)
 		WeaponSkin previous;
 		g_hSkins.GetArray(previousSkin, previous);
 		RestoreWorldModel(weapon, previous);
-		RestoreViewModel(client, previous);
+		RestoreViewModel(client, previous.viewModelIndex, previous.defaultViewModelIndex);
 	}
 
 	TrackWeapon(weapon);
@@ -1379,6 +1381,7 @@ void ApplyChoiceToWeapon(int client, const char[] weaponClass)
 	{
 		g_iActiveWeaponRef[client] = g_iWeaponRef[weapon];
 		g_iActiveSkin[client] = skinIndex;
+		RefreshActiveViewModel(client, weapon);
 	}
 
 	if (skinIndex == -1)
@@ -1395,6 +1398,8 @@ public void OnClientPutInServer(int client)
 {
 	g_iActiveWeaponRef[client] = INVALID_ENT_REFERENCE;
 	g_iActiveSkin[client] = -1;
+	g_iActiveViewModel[client] = -1;
+	g_iActiveStockFamily[client] = -1;
 
 	SDKHook(client, SDKHook_WeaponEquipPost, OnWeaponEquipPost);
 	SDKHook(client, SDKHook_WeaponDrop, OnWeaponDrop);
@@ -1431,6 +1436,8 @@ public void OnClientDisconnect(int client)
 {
 	g_iActiveWeaponRef[client] = INVALID_ENT_REFERENCE;
 	g_iActiveSkin[client] = -1;
+	g_iActiveViewModel[client] = -1;
+	g_iActiveStockFamily[client] = -1;
 }
 
 public void OnClientDisconnect_Post(int client)
@@ -1655,6 +1662,7 @@ void LoadWeaponModels(KeyValues kv)
 		kv.GetString("default_view_model", models.defaultViewModel, sizeof(models.defaultViewModel));
 		kv.GetString("default_world_model", models.defaultWorldModel, sizeof(models.defaultWorldModel));
 		kv.GetString("models", models.models, sizeof(models.models));
+		models.stockSkins = kv.GetNum("stock_skins", 0);
 
 		models.ready = PrepareWeaponModels(models);
 		g_hWeaponModelsByClass.SetValue(models.weapon, g_hWeaponModels.PushArray(models));
@@ -1892,31 +1900,84 @@ void OnPostThinkPost(int client)
 	{
 		g_iActiveWeaponRef[client] = weaponRef;
 		g_iActiveSkin[client] = GetWeaponSkin(client, weapon);
+		RefreshActiveViewModel(client, weapon);
 	}
 
-	if (g_iActiveSkin[client] == -1)
+	if (g_iActiveSkin[client] != -1)
+	{
+		WeaponSkin skin;
+		g_hSkins.GetArray(g_iActiveSkin[client], skin);
+
+		ApplyWorldModel(weapon, skin);
+
+		if (CanShowViewModel(client))
+		{
+			ApplyViewModel(client, skin.viewModelIndex, skin.family);
+			return;
+		}
+	}
+
+	if (g_iActiveViewModel[client] == -1)
 	{
 		return;
 	}
 
-	WeaponSkin skin;
-	g_hSkins.GetArray(g_iActiveSkin[client], skin);
-
-	ApplyWorldModel(weapon, skin);
-
-	if (CanShowViewModel(client))
+	if (g_iActiveStockFamily[client] != -1 && CanUseCombinedViewModel(client))
 	{
-		ApplyViewModel(client, skin);
-		HoldWeaponIdle(client, weapon);
+		ApplyViewModel(client, g_iActiveViewModel[client], g_iActiveStockFamily[client]);
 		return;
 	}
 
-	RestoreViewModel(client, skin);
+	RestoreViewModel(client, g_iActiveViewModel[client], g_iActiveDefaultViewModel[client]);
+}
+
+void RefreshActiveViewModel(int client, int weapon)
+{
+	g_iActiveViewModel[client] = -1;
+	g_iActiveStockFamily[client] = -1;
+
+	if (weapon <= MaxClients || !IsValidEntity(weapon))
+	{
+		return;
+	}
+
+	char key[64];
+	GetWeaponKey(weapon, key, sizeof(key));
+
+	int modelsIndex;
+	if (!g_hWeaponModelsByClass.GetValue(key, modelsIndex))
+	{
+		return;
+	}
+
+	WeaponModels models;
+	g_hWeaponModels.GetArray(modelsIndex, models);
+
+	if (!models.ready)
+	{
+		return;
+	}
+
+	g_iActiveViewModel[client] = models.viewModelIndex;
+	g_iActiveDefaultViewModel[client] = models.defaultViewModelIndex;
+
+	if (models.stockSkins <= 0)
+	{
+		return;
+	}
+
+	int original = GetOriginalSkin(weapon);
+	g_iActiveStockFamily[client] = original >= 0 && original < models.stockSkins ? original : 0;
 }
 
 bool CanShowViewModel(int client)
 {
-	if (!IsEnabled() || !CanClientSeeSkins(client))
+	return IsEnabled() && CanUseCombinedViewModel(client);
+}
+
+bool CanUseCombinedViewModel(int client)
+{
+	if (!CanClientSeeSkins(client))
 	{
 		return false;
 	}
@@ -2053,7 +2114,7 @@ int FindReadySkin(const char[] name)
 	return skin.ready ? skinIndex : -1;
 }
 
-void ApplyViewModel(int client, WeaponSkin skin)
+void ApplyViewModel(int client, int modelIndex, int family)
 {
 	int viewModel = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
 	if (viewModel <= MaxClients || !IsValidEntity(viewModel))
@@ -2061,34 +2122,18 @@ void ApplyViewModel(int client, WeaponSkin skin)
 		return;
 	}
 
-	if (GetEntProp(viewModel, Prop_Send, "m_nModelIndex") != skin.viewModelIndex)
+	if (GetEntProp(viewModel, Prop_Send, "m_nModelIndex") != modelIndex)
 	{
-		SetEntProp(viewModel, Prop_Send, "m_nModelIndex", skin.viewModelIndex);
+		SetEntProp(viewModel, Prop_Send, "m_nModelIndex", modelIndex);
 	}
 
-	if (GetEntProp(viewModel, Prop_Send, "m_nSkin") != skin.family)
+	if (GetEntProp(viewModel, Prop_Send, "m_nSkin") != family)
 	{
-		SetEntProp(viewModel, Prop_Send, "m_nSkin", skin.family);
+		SetEntProp(viewModel, Prop_Send, "m_nSkin", family);
 	}
 }
 
-void HoldWeaponIdle(int client, int weapon)
-{
-	if (IsFakeClient(client))
-	{
-		return;
-	}
-
-	float time = GetGameTime();
-	if (GetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle") >= time + IDLE_HOLD_MARGIN)
-	{
-		return;
-	}
-
-	SetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle", time + IDLE_HOLD_TIME);
-}
-
-void RestoreViewModel(int client, WeaponSkin skin)
+void RestoreViewModel(int client, int modelIndex, int defaultModelIndex)
 {
 	int viewModel = GetEntPropEnt(client, Prop_Send, "m_hViewModel");
 	if (viewModel <= MaxClients || !IsValidEntity(viewModel))
@@ -2096,12 +2141,12 @@ void RestoreViewModel(int client, WeaponSkin skin)
 		return;
 	}
 
-	if (GetEntProp(viewModel, Prop_Send, "m_nModelIndex") != skin.viewModelIndex)
+	if (GetEntProp(viewModel, Prop_Send, "m_nModelIndex") != modelIndex)
 	{
 		return;
 	}
 
-	SetEntProp(viewModel, Prop_Send, "m_nModelIndex", skin.defaultViewModelIndex);
+	SetEntProp(viewModel, Prop_Send, "m_nModelIndex", defaultModelIndex);
 	SetEntProp(viewModel, Prop_Send, "m_nSkin", GetOriginalSkin(GetEntPropEnt(client, Prop_Send, "m_hActiveWeapon")));
 }
 

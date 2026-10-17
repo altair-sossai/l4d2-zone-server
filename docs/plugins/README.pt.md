@@ -469,7 +469,7 @@ Os comandos sugeridos (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 
 
 ## l4d2_weapon_skins
 
-**Fonte:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) · **Versão:** 3.2.0
+**Fonte:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) · **Versão:** 3.3.0
 
 > A documentação completa do sistema de skins (assets, funcionamento interno do plugin, estrelas, loja de skins e operação) está na [wiki de Skins de Armas e Loja de Skins](../weapon-skins/README.pt.md). Esta seção é um resumo.
 
@@ -481,6 +481,7 @@ Os comandos sugeridos (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 
 - **Reembolso por temporada:** skins compradas duram uma temporada do ranking. A cada reset do ranking (a cada 2 meses) as compras são reembolsadas automaticamente e as estrelas gastas voltam; skins recebidas de presente são mantidas.
 - **Jogadores sem downloads:** quando `weapon_skins_kick_no_downloads` é `1` (e as skins estão ligadas), um jogador cujo jogo tem `cl_allowdownload` diferente de `1` ou `cl_downloadfilter` diferente de `all`/`nosounds` é expulso. A mensagem de expulsão diz qual configuração está errada e o valor dela, dá o comando de console que corrige (`cl_allowdownload 1` ou `cl_downloadfilter all`) e sugere conferir o `autoexec.cfg`/`config.cfg`; cada expulsão é registrada no log. Quando é `0`, esses jogadores ficam e as skins vistas em terceira pessoa voltam ao padrão para todos enquanto eles estão no servidor, então ninguém vê um modelo de ERROR.
 - **Limpeza de pilhas de armas:** toda vez que uma arma primária é largada, o plugin conta as armas primárias largadas por jogadores dentro de `weapon_skins_pile_radius` e remove as mais antigas acima de `weapon_skins_pile_max` (por exemplo, quando jogadores trocam de arma sem parar nos spawns infinitos de um saferoom). Spawns de armas, armas colocadas pelo mapa, armas secundárias, itens e armas na mão nunca são removidos.
+- **Primeira pessoa sem pisca:** nas seis armas de fogo o modelo de primeira pessoa é sempre o modelo combinado, com a family da skin ou, sem skin, a family original da arma (as families originais vêm primeiro nos modelos combinados, veja `stock_skins` no cfg). O cliente do anti-cheat aponta o jogo para o mesmo modelo enquanto o jogador está no servidor, então a arma original deixa de piscar por cima da skin a cada tiro, recarga e troca de arma. Detalhes na [wiki](../weapon-skins/03-game-plugin.pt.md).
 
 Este plugin é carregado de `plugins/` (carregamento automático), não de `optional/`, então os arquivos já estão na tabela de downloads quando os jogadores conectam pela primeira vez.
 

@@ -469,7 +469,7 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 
 ## l4d2_weapon_skins
 
-**Source:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) · **Version:** 3.2.0
+**Source:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) · **Version:** 3.3.0
 
 > The full documentation of the skin system (assets, plugin internals, stars, skin shop and operations) is in the [Weapon Skins & Skin Shop wiki](../weapon-skins/README.md). This section is a summary.
 
@@ -481,6 +481,7 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 - **Season refund:** purchased skins last one ranking season. At every ranking reset (every 2 months) purchases are refunded automatically and the stars spent come back; skins received as gifts are kept.
 - **Players without downloads:** when `weapon_skins_kick_no_downloads` is `1` (and the skins are on), a player whose game has `cl_allowdownload` other than `1` or `cl_downloadfilter` other than `all`/`nosounds` is kicked. The kick message names the wrong setting and its value, gives the console command that fixes it (`cl_allowdownload 1` or `cl_downloadfilter all`) and suggests checking `autoexec.cfg`/`config.cfg`; each kick is logged. When it is `0`, those players stay and the skins seen in third person go back to the default for everyone while they are in the server, so no one ever sees an ERROR model.
 - **Weapon pile cleanup:** every time a primary weapon is dropped, the plugin counts the primary weapons dropped by players within `weapon_skins_pile_radius` and removes the oldest ones above `weapon_skins_pile_max` (for example, when players swap weapons over and over at the infinite spawns of a safe room). Weapon spawns, weapons placed by the map, secondary weapons, items and held weapons are never removed.
+- **First person without flicker:** for the six firearms the first-person model is always the combined model, with the skin's family or, without a skin, the weapon's original family (the original families come first in the combined models, see `stock_skins` in the cfg). The anti-cheat client points the game at the same model while the player is on the server, so the stock weapon no longer blinks over the skin on every shot, reload and weapon switch. Details in the [wiki](../weapon-skins/03-game-plugin.md).
 
 This plugin loads from `plugins/` (auto-load), not `optional/`, so the files are in the downloads table when players first connect.
 

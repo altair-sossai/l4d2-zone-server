@@ -2,7 +2,7 @@
 
 🌐 [English](03-game-plugin.md) | [Português](03-game-plugin.pt.md) | **Español** · [Inicio de la wiki](README.es.md)
 
-**Código:** [`addons/sourcemod/scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) (v3.2.0) · **Config:** [`addons/sourcemod/configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg) · **Traducciones:** `addons/sourcemod/translations/{,pt/,es/}l4d2_weapon_skins.phrases.txt`
+**Código:** [`addons/sourcemod/scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) (v3.3.0) · **Config:** [`addons/sourcemod/configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg) · **Traducciones:** `addons/sourcemod/translations/{,pt/,es/}l4d2_weapon_skins.phrases.txt`
 
 El plugin se carga desde `plugins/` (carga automática), no desde `optional/`, así que ya está funcionando en el lobby y los archivos de las skins ya están en la tabla de descargas cuando los jugadores se conectan por primera vez.
 
@@ -118,8 +118,8 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 ```
 
 - **Modelo de mundo** (lo que ven los demás y el arma en el suelo): se aplica al equipar, al recoger el arma y 0,1 s después de soltarla (el motor reinicia el modelo cuando se suelta el arma). Cuando un jugador toma un arma de un spawn (`weapon_*_spawn`), el arma en el slot del arma del spawn (pistolas y cuerpo a cuerpo: secundario; el resto: principal) vuelve al modelo de mundo original antes del uso y recibe la skin de nuevo justo después.
-- **Modelo de vista** (primera persona): la entidad `m_hViewModel` del jugador recibe el modelo de vista combinado y la family en `OnPostThinkPost`, en cada frame, solo mientras el arma activa tiene skin.
-- **Sin parpadeo en primera persona**: el cliente predice las animaciones del arma y, cada vez que una se reinicia, dibuja por un instante el modelo de vista original hasta que llega la actualización del servidor; con ping, el jugador ve el arma original parpadear sobre la skin. La animación de idle se reinicia más o menos una vez por segundo, así que, mientras el arma activa de un jugador humano muestra una skin, el plugin mantiene el `m_flTimeWeaponIdle` del arma al menos 5 s en el futuro (`HoldWeaponIdle`). La animación de idle nunca se reinicia y ese parpadeo desaparece; la secuencia de idle sigue en bucle por sí sola. Todavía puede aparecer un parpadeo corto al empezar a disparar, porque esa animación también se predice.
+- **Modelo de vista** (primera persona): la entidad `m_hViewModel` del jugador recibe el modelo de vista combinado y la family en `OnPostThinkPost`, en cada frame. En las seis armas de fuego (`stock_skins` en el cfg) esto ocurre **incluso sin skin**, con la family original del arma (`m_nSkin`), que se ve idéntica al arma original; las armas cuerpo a cuerpo solo lo reciben mientras tienen skin.
+- **Sin parpadeo en primera persona**: el cliente predice las animaciones del arma y, cada vez que una empieza, vuelve a poner el modelo de vista escrito en el script del arma, con el `m_nSkin` del arma como family. Sin ayuda, el arma original parpadea sobre la skin durante aproximadamente un ping en cada disparo, recarga y cambio de arma. El cliente del anti-cheat apunta el script de las seis armas de fuego al modelo combinado mientras el jugador está en el servidor, así la predicción usa el mismo modelo, y las families originales al inicio del modelo combinado mantienen el arma sin skin con su aspecto original. Las armas cuerpo a cuerpo todavía parpadean: los datos de su script no guardan la ruta que usa la predicción.
 - **Restauración**: cuando un arma pierde su skin, se restauran el modelo original y el `m_nSkin` original del arma.
 
 ### ¿Qué skin recibe un arma?
