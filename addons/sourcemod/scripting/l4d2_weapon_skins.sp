@@ -20,6 +20,8 @@
 #define REFRESH_INTERVAL 120.0
 #define LOCAL_CHANGE_GRACE 15.0
 #define OBS_MODE_IN_EYE 4
+#define IDLE_HOLD_MARGIN 5.0
+#define IDLE_HOLD_TIME 10.0
 #define PRIMARY_SLOT 0
 #define SECONDARY_SLOT 1
 #define TEAM_SURVIVOR 2
@@ -59,7 +61,7 @@ public Plugin myinfo =
 	name = "L4D2 Weapon Skins",
 	author = "Altair Sossai",
 	description = "Lets players use the custom weapon skins they bought in the skin shop, downloaded through FastDL",
-	version = "3.1.0",
+	version = "3.2.0",
 	url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -1905,6 +1907,7 @@ void OnPostThinkPost(int client)
 	if (CanShowViewModel(client))
 	{
 		ApplyViewModel(client, skin);
+		HoldWeaponIdle(client, weapon);
 		return;
 	}
 
@@ -2067,6 +2070,22 @@ void ApplyViewModel(int client, WeaponSkin skin)
 	{
 		SetEntProp(viewModel, Prop_Send, "m_nSkin", skin.family);
 	}
+}
+
+void HoldWeaponIdle(int client, int weapon)
+{
+	if (IsFakeClient(client))
+	{
+		return;
+	}
+
+	float time = GetGameTime();
+	if (GetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle") >= time + IDLE_HOLD_MARGIN)
+	{
+		return;
+	}
+
+	SetEntPropFloat(weapon, Prop_Send, "m_flTimeWeaponIdle", time + IDLE_HOLD_TIME);
 }
 
 void RestoreViewModel(int client, WeaponSkin skin)

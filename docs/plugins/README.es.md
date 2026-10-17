@@ -469,7 +469,7 @@ Los comandos sugeridos (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 
 ## l4d2_weapon_skins
 
-**Fuente:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) · **Versión:** 3.1.0
+**Fuente:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) · **Versión:** 3.2.0
 
 > La documentación completa del sistema de skins (assets, funcionamiento interno del plugin, estrellas, tienda de skins y operación) está en la [wiki de Skins de Armas y Tienda de Skins](../weapon-skins/README.es.md). Esta sección es un resumen.
 

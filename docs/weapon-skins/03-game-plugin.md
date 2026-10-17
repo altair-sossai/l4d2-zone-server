@@ -2,7 +2,7 @@
 
 🌐 **English** | [Português](03-game-plugin.pt.md) | [Español](03-game-plugin.es.md) · [Wiki home](README.md)
 
-**Source:** [`addons/sourcemod/scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) (v3.1.0) · **Config:** [`addons/sourcemod/configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg) · **Translations:** `addons/sourcemod/translations/{,pt/,es/}l4d2_weapon_skins.phrases.txt`
+**Source:** [`addons/sourcemod/scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) (v3.2.0) · **Config:** [`addons/sourcemod/configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg) · **Translations:** `addons/sourcemod/translations/{,pt/,es/}l4d2_weapon_skins.phrases.txt`
 
 The plugin loads from `plugins/` (auto-load), not `optional/`, so it is already running in the lobby and the skin files are in the downloads table when players first connect.
 
@@ -119,6 +119,7 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 
 - **World model** (what others see, and the weapon on the ground): set on equip, on pick-up, and 0.1 s after a drop (the engine resets the model when the weapon is dropped). When a player takes a weapon from a spawn (`weapon_*_spawn`), the weapon in the slot of the spawned weapon (pistols and melee: secondary; everything else: primary) gets the stock world model back before the use and its skin again right after it.
 - **View model** (first person): the player's `m_hViewModel` entity gets the combined view model and the family in `OnPostThinkPost`, every frame, only while the active weapon has a skin.
+- **No flicker in first person**: the client predicts the weapon animations and, whenever one restarts, briefly draws the stock view model until the server update arrives, so a player with ping sees the stock weapon blink over the skin. The idle animation restarts about once a second, so while the active weapon of a human player shows a skin the plugin keeps the weapon's `m_flTimeWeaponIdle` at least 5 s in the future (`HoldWeaponIdle`). The idle animation never restarts and that blink is gone; the idle sequence itself loops on its own. A short blink can still show at the start of firing, since that animation is predicted too.
 - **Restoring**: when a weapon loses its skin, the stock model and the weapon's original `m_nSkin` are put back.
 
 ### Which skin does a weapon get?
