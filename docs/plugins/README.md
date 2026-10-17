@@ -368,9 +368,9 @@ The plugin reads this file with the `KeyValues` API (not `exec`), on plugin star
 
 ## l4d2_playstats_sync
 
-**Source:** [`scripting/l4d2_playstats_sync.sp`](../../addons/sourcemod/scripting/l4d2_playstats_sync.sp) · **Version:** 1.0.0
+**Source:** [`scripting/l4d2_playstats_sync.sp`](../../addons/sourcemod/scripting/l4d2_playstats_sync.sp) · **Version:** 1.1.0
 
-**What it does** — Bridges the `l4d2_playstats.smx` plugin to the external PlayStats API. 10 seconds after each round starts, it uploads every stats log file that plugin wrote to `addons/sourcemod/logs/` to `POST {playstats_url}/api/statistics`, with the access token in the `Authorization` header. Files the API marks as processed are deleted, and after each successful upload it asks the ranking site (`{ranking_url}/api/cache/clear`) to clear its cache.
+**What it does** — Bridges the `l4d2_playstats.smx` plugin to the external PlayStats API. 10 seconds after each round starts, it uploads every stats log file that plugin wrote to `addons/sourcemod/logs/` to `POST {playstats_url}/api/statistics`, with the access token in the `Authorization` header. Files the API marks as processed are deleted, and after each successful upload it asks the site (`{l4d2_web_url}/api/cache/clear`, with `l4d2_web_secret` in the `Authorization` header) to clear its ranking cache. Both ConVars are created by `l4d2_gameinfo_sync` and `l4d2_weapon_skins`; when either is empty the cache is not cleared and the site refreshes it within an hour.
 
 **Objective** — Persist per-match player statistics to the central stats service so rankings/patents stay up to date.
 
