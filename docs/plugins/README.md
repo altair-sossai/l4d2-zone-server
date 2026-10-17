@@ -346,9 +346,9 @@ The plugin reads this file with the `KeyValues` API (not `exec`), on plugin star
 
 ## l4d2_show_patent_icon
 
-**Source:** [`scripting/l4d2_show_patent_icon.sp`](../../addons/sourcemod/scripting/l4d2_show_patent_icon.sp) · **Version:** 1.0.0
+**Source:** [`scripting/l4d2_show_patent_icon.sp`](../../addons/sourcemod/scripting/l4d2_show_patent_icon.sp) · **Version:** 1.1.0
 
-**What it does** — During the ready-up of a new game (score 0–0), shows each playing player's rank/"patent" icon as a sprite above their head. Levels come from `GET {patent_icon_api_url}/api/players/patents`, refreshed on map start and when a new game starts. The sprites (`materials/sprites/patent_<level>_v<version>.vmt/.vtf`, levels 1 to `patent_icon_max_level`) are added to the downloads table. Survivors don't see the infected players' icons, and every icon is removed when the round goes live.
+**What it does** — During the ready-up of a new game (score 0–0), shows each playing player's rank/"patent" icon as a sprite above their head. Levels come from `GET {l4d2_web_url}/api/players/patents`, refreshed on map start and when a new game starts. `l4d2_web_url` is created by `l4d2_gameinfo_sync` and `l4d2_weapon_skins` and set in `cfg/server.cfg`; while it does not exist or is empty, the levels are not loaded. The sprites (`materials/sprites/patent_<level>_v<version>.vmt/.vtf`, levels 1 to `patent_icon_max_level`) are added to the downloads table. Survivors don't see the infected players' icons, and every icon is removed when the round goes live.
 
 **Objective** — Show competitive standing visually in-game, so a player's rank is recognizable at a glance.
 
@@ -356,13 +356,12 @@ The plugin reads this file with the `KeyValues` API (not `exec`), on plugin star
 
 | ConVar | Default | Description |
 |--------|---------|-------------|
-| `patent_icon_api_url` | `""` | Site URL that serves the patent levels (`PROTECTED`) |
 | `patent_icon_version` | `1` | Icon asset version (`PROTECTED`) |
 | `patent_icon_max_level` | `15` | Maximum patent level (`PROTECTED`) |
 
 **Commands** — None.
 
-**How to configure** — Set all three ConVars in `shared_cvars.cfg` (none of them is a secret; `zonemod` uses icon version `2`).
+**How to configure** — Set both ConVars in `shared_cvars.cfg` (neither is a secret; `zonemod` uses icon version `2`). The site URL comes from `l4d2_web_url`.
 
 ---
 

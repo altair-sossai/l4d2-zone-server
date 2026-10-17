@@ -346,9 +346,9 @@ El plugin lee este archivo con la API `KeyValues` (no con `exec`), al iniciarse 
 
 ## l4d2_show_patent_icon
 
-**Fuente:** [`scripting/l4d2_show_patent_icon.sp`](../../addons/sourcemod/scripting/l4d2_show_patent_icon.sp) · **Versión:** 1.0.0
+**Fuente:** [`scripting/l4d2_show_patent_icon.sp`](../../addons/sourcemod/scripting/l4d2_show_patent_icon.sp) · **Versión:** 1.1.0
 
-**Qué hace** — Durante el ready-up de un juego nuevo (marcador 0–0), muestra el ícono de rango de cada jugador que está jugando como un sprite sobre su cabeza. Los niveles vienen de `GET {patent_icon_api_url}/api/players/patents`, que se actualiza al iniciar el mapa y cuando empieza un juego nuevo. Los sprites (`materials/sprites/patent_<level>_v<version>.vmt/.vtf`, niveles del 1 a `patent_icon_max_level`) se añaden a la tabla de descargas. Los supervivientes no ven los íconos de los jugadores infectados, y todos los íconos se quitan cuando la ronda empieza.
+**Qué hace** — Durante el ready-up de un juego nuevo (marcador 0–0), muestra el ícono de rango de cada jugador que está jugando como un sprite sobre su cabeza. Los niveles vienen de `GET {l4d2_web_url}/api/players/patents`, que se actualiza al iniciar el mapa y cuando empieza un juego nuevo. `l4d2_web_url` la crean `l4d2_gameinfo_sync` y `l4d2_weapon_skins` y se define en `cfg/server.cfg`; mientras no exista o esté vacía, los niveles no se cargan. Los sprites (`materials/sprites/patent_<level>_v<version>.vmt/.vtf`, niveles del 1 a `patent_icon_max_level`) se añaden a la tabla de descargas. Los supervivientes no ven los íconos de los jugadores infectados, y todos los íconos se quitan cuando la ronda empieza.
 
 **Objetivo** — Mostrar la posición competitiva de forma visual en el juego, para que el rango de un jugador se reconozca de un vistazo.
 
@@ -356,13 +356,12 @@ El plugin lee este archivo con la API `KeyValues` (no con `exec`), al iniciarse 
 
 | ConVar | Predeterminado | Descripción |
 |--------|---------|-------------|
-| `patent_icon_api_url` | `""` | URL del sitio que proporciona los niveles de rango (`PROTECTED`) |
 | `patent_icon_version` | `1` | Versión de los archivos de íconos (`PROTECTED`) |
 | `patent_icon_max_level` | `15` | Nivel máximo de rango (`PROTECTED`) |
 
 **Comandos** — Ninguno.
 
-**Cómo configurar** — Define las tres ConVars en `shared_cvars.cfg` (ninguna es un secreto; `zonemod` usa la versión de íconos `2`).
+**Cómo configurar** — Define las dos ConVars en `shared_cvars.cfg` (ninguna es un secreto; `zonemod` usa la versión de íconos `2`). La URL del sitio viene de `l4d2_web_url`.
 
 ---
 

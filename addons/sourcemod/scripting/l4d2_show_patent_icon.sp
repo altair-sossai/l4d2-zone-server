@@ -17,12 +17,11 @@ public Plugin myinfo =
     name        = "L4D2 - Show Patent Icon",
     author      = "Altair Sossai",
     description = "Show the patent icon of the players",
-    version     = "1.0.0",
+    version     = "1.1.0",
     url         = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
 ConVar
-    hApiUrl,
     hIconVersion,
     hMaxLevel;
 
@@ -35,7 +34,6 @@ StringMap PlayersPatent;
 
 public void OnPluginStart()
 {
-    hApiUrl = CreateConVar("patent_icon_api_url", "", "Play Stats web URL", FCVAR_PROTECTED);
     hIconVersion = CreateConVar("patent_icon_version", "1", "Version of the patent icon", FCVAR_PROTECTED);
     hMaxLevel = CreateConVar("patent_icon_max_level", "15", "Max level of the patent", FCVAR_PROTECTED);
 
@@ -188,11 +186,18 @@ Action OnSetIconTransmit(int entity, int client)
 
 void RefreshPlayersPatent()
 {
-    char apiUrl[100];
-    GetConVarString(hApiUrl, apiUrl, sizeof(apiUrl));
+    ConVar webUrl = FindConVar("l4d2_web_url");
+    if (webUrl == null)
+        return;
 
-    char endpoint[128];
-    FormatEx(endpoint, sizeof(endpoint), "%s/api/players/patents", apiUrl);
+    char url[255];
+    webUrl.GetString(url, sizeof(url));
+
+    if (url[0] == '\0')
+        return;
+
+    char endpoint[300];
+    FormatEx(endpoint, sizeof(endpoint), "%s/api/players/patents", url);
 
     HTTPRequest request = new HTTPRequest(endpoint);
 
