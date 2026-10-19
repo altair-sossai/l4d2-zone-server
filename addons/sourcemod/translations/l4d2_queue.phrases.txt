@@ -16,7 +16,7 @@
     "SlotLost"
     {
         "#format"    "{1:N}"
-        "en"         "{blue}{1}{default} has claimed your slot because they were ahead of you in the queue."
+        "en"         "{blue}{1}{default} has priority and claimed your slot."
     }
     "SlotAllAhead"
     {

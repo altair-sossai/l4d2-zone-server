@@ -16,7 +16,7 @@
     "SlotLost"
     {
         "#format"    "{1:N}"
-        "pt"         "{blue}{1}{default} assumiu a sua vaga por estar à frente de você na fila."
+        "pt"         "{blue}{1}{default} tem prioridade e assumiu a sua vaga."
     }
     "SlotAllAhead"
     {
