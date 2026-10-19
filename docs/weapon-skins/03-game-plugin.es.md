@@ -11,7 +11,7 @@ El plugin se carga desde `plugins/` (carga automática), no desde `optional/`, a
 | Variable | Contenido |
 |---|---|
 | `g_hSkins` / `g_hSkinsByName` | Skins de `weapon_skins.cfg` (structs `WeaponSkin`) y un mapa id → índice |
-| `g_hWeaponModels` | Modelos combinados/originales por arma y sus índices de precache |
+| `g_hWeaponModels` / `g_hWeaponModelsByClass` | Modelos combinados/originales por arma, sus índices de precache y el `stock_skins` (structs `WeaponModels`), y un mapa clave del arma → índice |
 | `g_hPurchasedSkins` | Ids de las skins compradas por al menos un jugador (de `/api/skins`) |
 | `g_hOwnedSkins` | Claves `"<steamid64>:<skin>"` de cada skin comprada (de `/api/players/skins`) |
 | `g_hPlayerChoices` | Skin equipada por `"<steamid64>:<weapon>"` |
@@ -118,7 +118,7 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 ```
 
 - **Modelo de mundo** (lo que ven los demás y el arma en el suelo): se aplica al equipar, al recoger el arma y 0,1 s después de soltarla (el motor reinicia el modelo cuando se suelta el arma). Cuando un jugador toma un arma de un spawn (`weapon_*_spawn`), el arma en el slot del arma del spawn (pistolas y cuerpo a cuerpo: secundario; el resto: principal) vuelve al modelo de mundo original antes del uso y recibe la skin de nuevo justo después.
-- **Modelo de vista** (primera persona): la entidad `m_hViewModel` del jugador recibe el modelo de vista combinado y la family en `OnPostThinkPost`, en cada frame. En toda arma con `stock_skins` en el cfg (las seis armas de fuego y las nueve armas cuerpo a cuerpo con skins) esto ocurre **incluso sin skin**, con la family original del arma (`m_nSkin`), que se ve idéntica al arma original.
+- **Modelo de vista** (primera persona): la entidad `m_hViewModel` del jugador recibe el modelo de vista combinado y la family en `OnPostThinkPost`, en cada frame. En toda arma con `stock_skins` en el cfg (las seis armas de fuego y las nueve armas cuerpo a cuerpo con skins) esto ocurre **incluso sin skin** (e incluso con las skins apagadas), con la family original del arma (el `m_nSkin` que tenía al registrarse, o `0` si pasa de `stock_skins`), que se ve idéntica al arma original. El modelo de vista original solo vuelve para un jugador sin descargas, o mientras un jugador sin descargas observa a ese jugador en primera persona.
 - **Sin parpadeo en primera persona**: el cliente predice las animaciones del arma y, cada vez que una empieza, vuelve a poner el modelo de vista que informa el arma (el script del arma en un arma de fuego, el registro de melee en un arma cuerpo a cuerpo), con el `m_nSkin` del arma como family. Sin ayuda, el arma original parpadea sobre la skin durante aproximadamente un ping en cada disparo, golpe, recarga y cambio de arma. El cliente del anti-cheat apunta esas rutas de las seis armas de fuego y de las nueve armas cuerpo a cuerpo al modelo combinado mientras el jugador está en el servidor, así la predicción usa el mismo modelo, y las families originales al inicio del modelo combinado mantienen el arma sin skin con su aspecto original.
 - **Restauración**: cuando un arma pierde su skin, se restauran el modelo original y el `m_nSkin` original del arma.
 
@@ -155,7 +155,7 @@ Un jugador con `cl_allowdownload 0` (o con `cl_downloadfilter` distinto de `all`
   [l4d2_weapon_skins.smx] Kicked Player<12><STEAM_1:0:12345><> because cl_allowdownload is "0"
   ```
 
-- `0` → el jugador se queda y **los modelos de mundo vuelven al original para todos** mientras ese jugador esté en el servidor (los modelos de vista siguen apareciendo para quienes pueden verlos, salvo para quien lo esté observando en primera persona).
+- `0` → el jugador se queda y **los modelos de mundo vuelven al original para todos** mientras ese jugador esté en el servidor. Los modelos de vista siguen con la skin para quienes tienen descargas, salvo para el jugador que él observe en primera persona como espectador: ese vuelve al modelo de vista original mientras es observado.
 
 > La opción del menú del juego *Opciones > Multijugador > Contenido de servidor personalizado > Permitir todo* solo cambia `cl_downloadfilter`. `cl_allowdownload` no tiene opción en el menú: solo se puede cambiar en la consola o en un archivo de configuración. Por eso un jugador que eligió "Permitir todo" en el menú todavía puede ser expulsado, y por eso el mensaje incluye el comando de consola exacto.
 
@@ -168,12 +168,14 @@ Cambiar de arma una y otra vez en los spawns infinitos del refugio puede acumula
 | Comando | Quién | Qué hace |
 |---|---|---|
 | `!skin` / `!skins` | todos | Ayuda y el enlace de la tienda |
-| `!skin <id>` | todos | Usa una de tus skins (solo durante el ready-up, como superviviente) |
+| `!skin <id>` | todos | Usa una de tus skins |
 | `!skin next` / `!skin prev` `[arma]` | todos | Recorre tus skins del arma; después de la última, vuelve a la predeterminada |
 | `!skin default [arma]` | todos | Vuelve a la skin predeterminada |
 | `!skin status` | todos | Skins activadas/desactivadas, tus estrellas y cuántas skins tienes |
 | `!skin on` / `!skin off` | root | Activa/desactiva las skins para todos (se mantiene tras los cambios de mapa) |
 | `!skin test <id\|default> [arma]` | root | Prueba una skin en ti hasta que cambie el mapa |
+
+`!skin <id>`, `next`, `prev` y `default` solo funcionan como superviviente y durante el ready-up (con `weapon_skins_preview_all 1`, los admins root pueden cambiar en cualquier momento). Sin `[arma]`, se usa el arma en la mano (o, si no tiene skins, la primaria y después la secundaria).
 
 `[arma]` acepta `smg` (o `uzi`), `mac` (o `mac10`, `mac-10`, `silenced`), `mp5`, `pump`, `chrome`, `magnum` (o `deagle`), `axe` (o `fireaxe`), `bat`, `cricket`, `guitar`, `golf`, `pan`, cualquier otro nombre de script de arma cuerpo a cuerpo (`katana`, `machete`, `crowbar`) y las claves completas (`weapon_smg`, `weapon_melee_katana`, …).
 

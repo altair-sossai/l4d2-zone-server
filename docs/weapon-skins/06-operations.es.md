@@ -26,6 +26,8 @@
 | `SecretKey` | Secreto compartido que comprueba `[RequiredSecretKey]` (servidor de juego → sitio) |
 | `ServerAdmins` | Lista de SteamID64 de los admins (separados por `;`) |
 | `SteamApiKey` | Steam Web API (nombres y avatares) |
+| `ServerDns` | Dirección del servidor de juego que muestra el sitio (página del servidor) |
+| `SkinShotsUrl` (opcional) | Dónde están las fotos de las skins; por defecto, el contenedor `assets/skin-shots` de la cuenta `l4d2playstats` |
 
 ### API (app settings de Azure Functions)
 
@@ -36,8 +38,8 @@
 | Repositorio | Disparador | Qué pasa |
 |---|---|---|
 | l4d2-zone-server | push a `master` (los cambios solo en `docs/` o en archivos `*.md` no lo disparan) | `addons/`, `cfg/`, `bash/`, `scripts/` se empaquetan y se extraen en la carpeta del juego. `server_secrets.cfg` no se toca |
-| l4d2-zone-server-assets | push a `main` | `models/` y `materials/` van a la carpeta del juego y al blob de FastDL; `fastdl/` y `assets/` van a blobs |
-| l4d2-playstats-api | push a `main` | Build, pruebas y el artefacto de build `function`, que se publica en la app de Azure Functions |
+| l4d2-zone-server-assets | push a `main` | `models/` y `materials/` van a la carpeta del juego y al blob de FastDL; `fastdl/` y `assets/` (incluidas las fotos de las skins en `assets/skin-shots/`) van a blobs. Solo los archivos nuevos o cambiados van a los blobs, y no se borra nada |
+| l4d2-playstats-api | push a `main` | Build, pruebas y el artefacto de build `function`. El pipeline del repositorio no publica nada: la app de Azure Functions se publica fuera de él, a partir de ese artefacto |
 | l4d2-playstats-web | push a `main` | Publicación self-contained, copiada al servidor web y reiniciada en la sesión `screen` `l4d2-playstats-web` |
 | l4d2-anti-cheat-client | push a `main` | Build, pruebas y un paquete firmado del cliente subido al blob storage; los jugadores reciben la versión nueva (con el nuevo manifiesto de assets del servidor) cuando cambia el número de versión |
 
@@ -50,7 +52,7 @@
 Agregar, quitar o cambiar una skin cambia los modelos combinados y los archivos de las skins. Sigue este orden:
 
 1. **Cliente del anti-cheat** — publica el cliente nuevo (nuevo manifiesto de assets del servidor + subida de versión) y asegúrate de que ya esté disponible para los jugadores.
-2. **Assets** — haz push del repositorio de assets (carpeta del juego + FastDL).
+2. **Assets** — haz push del repositorio de assets (carpeta del juego + FastDL + fotos de las skins).
 3. **Sitio** — haz push del catálogo (`skins.json`) y de las miniaturas.
 4. **Zone-server** — haz push de `weapon_skins.cfg` (índices de family).
 5. **Reinicia el servidor de juego mientras está vacío** (ver abajo).

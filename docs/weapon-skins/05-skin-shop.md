@@ -6,15 +6,17 @@
 
 ## Catalog: `skins.json`
 
-The catalog is an embedded resource (`L4D2PlayStats.Core/Skins/Data/skins.json`), versioned with the code. The file is an object with a `skins` array, sorted by rarity, then price, so it is easy to read. One entry:
+The catalog is an embedded resource (`L4D2PlayStats.Core/Skins/Data/skins.json`), versioned with the code. The file is an object with a `skins` array, sorted by rarity, then price (highest first), so it is easy to read; the shop sorts again on screen (price, weapon, title). One entry:
 
 ```json
 {
   "id": "dark-matter",
   "weapon": "weapon_smg_silenced",
   "rarity": "legendary",
-  "price": 700,
+  "price": 625,
   "workshopId": "3377651383",
+  "shots": 2,
+  "author": { "name": "BATTLE NO.1", "communityId": "76561199147992281" },
   "title": { "en": "MAC-10 Dark Matter", "pt": "MAC-10 Dark Matter", "es": "MAC-10 Dark Matter" },
   "description": { "en": "...", "pt": "...", "es": "..." },
   "originalTitle": "MAC-10 DARK MATTER",
@@ -25,6 +27,8 @@ The catalog is an embedded resource (`L4D2PlayStats.Core/Skins/Data/skins.json`)
 - `id` is the same id used in `weapon_skins.cfg` and by `!skin <id>`.
 - The thumbnail is `wwwroot/imgs/skins/<id>.jpg`.
 - `workshopId` links the skin to its original Workshop page (the *View on Workshop* button).
+- `shots` turns on the in-game photos of the skin: with `0` the shop shows only the thumbnail; with `1` or more it loads the photos from `<SkinShotsUrl>/<id>/` (the photos live in `assets/skin-shots/<id>/` in the assets repository). The number is also the cache version of the photos: they are served with a one-year cache, so redoing the photos of a skin means raising its `shots`.
+- `author` is the Workshop author of the skin (name and SteamID64), shown on the cards, in the details and in the **Authors** tab.
 
 ### Rarities and prices
 
@@ -32,13 +36,13 @@ Every skin was reviewed by looking at its images and given a rarity and an indiv
 
 | Rarity | Skins | Price range (stars) |
 |---|---|---|
-| Legendary | 9 | 520–700 |
-| Epic | 30 | 300–450 |
-| Rare | 58 | 150–240 |
-| Uncommon | 54 | 70–130 |
-| Common | 45 | 30–60 |
+| Legendary | 9 | 470–630 |
+| Epic | 28 | 270–400 |
+| Rare | 58 | 135–210 |
+| Uncommon | 56 | 65–110 |
+| Common | 45 | 25–50 |
 
-The 196 skins of the catalog cost **34,500 stars** together (default prices) — more than all the stars of every player together when the shop opened — so owning every skin in one season is meant to be close to impossible.
+The 196 skins of the catalog cost **30,590 stars** together (default prices) — more than all the stars of every player together when the shop opened (about 24,750) — so owning every skin in one season is meant to be close to impossible. In the shop, the header of each rarity shows how many skins it has and the price range computed from the current prices.
 
 ### Price overrides
 
@@ -54,7 +58,7 @@ public record Skin
 }
 ```
 
-Saving the default price again (or "Reset to default") deletes the override. Purchases store the price actually paid, so changing a price never affects past purchases (and a refund always gives back what was paid).
+The row stores `Price`, `UpdatedByCommunityId` and `UpdatedAtUtc`. Saving the default price again (or "Reset to default") deletes the override. Purchases store the price actually paid, so changing a price never affects past purchases (and a refund always gives back what was paid).
 
 ## Storage: the `SkinShop` table
 
@@ -73,6 +77,8 @@ The **balance** is always computed, never stored:
 ```csharp
 public int Balance => Math.Max(0, Stars - Spent);   // Stars come from the API
 ```
+
+**Memory cache:** the list of every purchase and every equipped skin stays 5 minutes in memory and is cleared after every transaction. It backs `/api/skins`, `/api/players/skins`, the admin purchases page and the season refund. Price overrides (`SkinPrices`) stay 12 hours in memory, and that cache is cleared when a price is saved or reset.
 
 ## The purchase transaction
 
@@ -142,11 +148,12 @@ During development these cases were covered by integration tests run against Azu
 
 | Method | Route | Who |
 |---|---|---|
+| GET | `/api/shop/wallet` | logged-in player (cookie only) — `{balance, stars, spent}`, or 503 when the stars cannot be loaded; used by the stars counter in the navbar |
 | POST | `/api/shop/skins/{skinId}/buy` | logged-in player |
 | POST | `/api/shop/skins/{skinId}/equip` | logged-in player |
 | POST | `/api/shop/weapons/{weapon}/unequip` | logged-in player |
-| POST | `/api/shop/skins/{skinId}/price` `{price}` | admin (1–100,000; `null` resets) |
-| POST | `/api/shop/gift` `{communityId, skinId}` | admin (any Steam ID format or profile link) |
+| POST | `/api/shop/skins/{skinId}/price` `{price}` | admin (1–100,000; `null` resets) — `{price, defaultPrice, custom}` |
+| POST | `/api/shop/gift` `{communityId, skinId}` | admin (`STEAM_x:y:z`, `[U:1:x]`, SteamID64 or a `steamcommunity.com/profiles/<id>` link; `/id/<name>` links are not accepted) |
 | POST | `/api/shop/refund` `{communityId, skinId}` | admin |
 | POST | `/api/shop/refund-all` | admin — refunds every purchase and gift: `{purchases, gifts, stars, players, failed}` |
 | GET | `/api/admin/players` | admin — players for the player picker |
@@ -157,24 +164,29 @@ During development these cases were covered by integration tests run against Azu
 |---|---|---|
 | GET | `/api/skins` | none — skins bought by at least one player: `[{id, weapon}]` |
 | GET | `/api/players/skins` | none — `[{communityId, skins:[…], equipped:[{weapon, skin}]}]` |
-| GET | `/api/players/{communityId}/wallet` | none — `{mvpSiDamage, mvpCommon, stars, spent, balance}` |
+| GET | `/api/players/{communityId}/wallet` | none — `{mvpSiDamage, mvpCommon, stars, spent, balance}`, or 503 when the API is down |
 | POST | `/api/players/{communityId}/skins/equip` `{weapon, skin}` | `Authorization: <SecretKey>` (`skin` empty = default) |
 
 ## Pages
 
 ### Shop — `/skins`
 
-- Hero with the three steps (earn stars, buy and equip, switch in game), the player's balance (`X stars to spend`, with MVPs earned and stars spent) and the **"How do I use my skins in game?"** button, which opens a table with every command.
-- A **"Skins per season"** banner: bought skins last until the ranking reset, every two months; it shows the last day of the current season and the days left, and says that at the reset every purchase is refunded automatically and the stars come back, while gifts are kept forever.
-- A credits line: every skin was made by the community on the Steam Workshop; the *View on Workshop* button of each skin opens the original work.
-- Tabs **Shop** (grouped by rarity, colored) and **My skins**; filters by weapon, rarity and "only the ones I can buy".
-- Cards show the price and the state: *Buy for N*, *N stars to go*, *Owned → Equip*, *Equipped → Back to default*.
-- The purchase confirmation shows the skin and the price, says that it is equipped on the weapon right away and shows up from the next map change, says until when the skin lasts (the last day of the season, then it is refunded automatically) and ends with *"Purchases cannot be undone before the ranking reset."*
+- Hero with the season (*"Season ends on {date} · N days left"*), the player's balance (*N stars available*, *"You earned X ⭐ as MVP and have spent Y ⭐ on skins."* and the SI damage and common MVPs) and two buttons:
+  - **"How it works"** opens a panel with the three steps (earn stars, buy and equip, switch in game), the **"Skins per season"** notice (bought skins last until the ranking reset, every two months; at the reset every purchase is refunded automatically and the stars come back, while gifts are kept forever) and the credits: every skin was made by the community on the Steam Workshop, each skin shows its author with a link to their Steam profile, and the **Authors** tab credits all of them;
+  - **"How do I use my skins in game?"** opens a table with every command.
+- Tabs **Shop** (grouped by rarity, colored, each rarity with its skin count and price range), **My skins** (only when logged in) and **Authors** (every author, with a link to their Steam profile and how many skins each one has); filters by weapon, rarity and "Only the ones I can buy" (when the balance loaded).
+- Cards show the photo (with `shots`, the photos cycle on hover), the author, the price and the state: *Buy for N ⭐*, *N ⭐ to go*, *Owned → Equip*, *Equipped → Back to default*; logged out, *Sign in with Steam*.
+- The details of a skin have a gallery with the six photos (zoom, drag and arrows), the author with a link to their Steam profile, the original Workshop title and description, the *View on Workshop* button, the `!skin <id>` command with a copy button (for owners) and the *"Are you the author of this skin?"* notice, which explains that the skin is removed at the author's request and gives the contacts (Steam and GitHub). The `#skin-<id>` and `#mine` links open a skin or the My skins tab.
+- The purchase confirmation shows the skin and the price, *"Your balance goes from X ⭐ to Y ⭐."*, says that it is equipped on the weapon right away and shows up from the next map change, says until when the skin lasts (the last day of the season, then it is refunded automatically) and ends with *"Purchases cannot be undone before the ranking reset."*
 - Every action shows a clear message; purchases and equips always remind that the skin **shows up from the next map change**.
+
+### Navbar
+
+When logged in, the navbar shows the player's balance next to the menu (*N stars available*, tooltip *"Your stars to buy skins"*), read from `GET /api/shop/wallet` and kept in `sessionStorage`.
 
 ### Player profile — `/player/{id}`
 
-A **Stars** row shows the balance, the stars earned and the stars spent, and a **Skins** panel lists the skins the player owns, marking the equipped ones. When two players are compared (`/player/{id}/{otherId}`), both are shown side by side following the page pattern: the first player in white, the second in yellow.
+The **Skins** panel shows the balance in its header (*N stars available · X earned, Y spent*) and lists the skins the player owns, marking the equipped ones. When two players are compared (`/player/{id}/{otherId}`), both are shown side by side following the page pattern: the first player in white, the second in yellow.
 
 ### Admin (navbar menu "Admin", only for `ServerAdmins`)
 
@@ -191,7 +203,7 @@ Reusable pieces (`Views/Shared`): `_Pagination` + `PagedListModel<T>`, `_PlayerP
 - Shop and admin POSTs require the login cookie **and** an antiforgery token (`RequestVerificationToken` header).
 - Admin endpoints use `[AdminAuthorize]` (the user's SteamID64 must be in `ServerAdmins`).
 - The plugin's write endpoint uses `[RequiredSecretKey]`, which compares the `Authorization` header with the site's `SecretKey`.
-- Table queries use `TableClient.CreateQueryFilter` (parameterized); ids in routes are validated (`{communityId:long}`, catalog lookups) before being used in keys.
+- Table queries use `TableClient.CreateQueryFilter` (parameterized); ids in routes are validated (`{communityId:long}`, catalog lookups) before being used in keys. Gift and refund take the `communityId` in the body and parse it with `SteamIdentifiers.TryParse`; refund uses the received `skinId` to read the purchase even when the skin is no longer in the catalog (admins only, and a point read).
 
 ## Localization
 

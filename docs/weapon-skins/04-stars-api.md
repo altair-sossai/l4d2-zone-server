@@ -6,10 +6,12 @@
 
 ## What a star is
 
-**1 star = 1 MVP.** For every half of a map (each team's survivor turn), the statistics file names two MVPs:
+**1 star = 1 MVP.** For every half of a map (each team's survivor turn), the L4D2PlayStats library works out two MVPs from the survivors in the statistics file:
 
 - **SI damage MVP** — the survivor who dealt the most damage to special infected;
 - **Common MVP** — the survivor who killed the most common infected.
+
+If nobody dealt SI damage (or nobody killed commons), the first player of the file still gets the MVP.
 
 A player's stars are the sum of all their MVPs, over the whole history, using **the same rules as the ranking**:
 
@@ -39,7 +41,7 @@ public async Task<List<PlayerStars>> StarsAsync(string serverId)
 {
     var closed = await ClosedStarsAsync(serverId);   // blob, rebuilt once per period
     var current = await CurrentStarsAsync(serverId); // memory cache, 1 h, cleared on upload
-    ... // sum both per player, sorted by stars
+    ... // sum both per player, sorted by stars, then by communityId
 }
 ```
 
@@ -83,7 +85,7 @@ public IAsyncEnumerable<Statistics> GetStatisticsBeforeAsync(string serverId, Da
 | Method | Route | Returns |
 |---|---|---|
 | GET | `/api/stars/{serverId}` | Every player with stars: `[{communityId, mvpSiDamage, mvpCommon, stars}]` |
-| GET | `/api/stars/{serverId}/{communityId}` | One player (zeros if the player has none) |
+| GET | `/api/stars/{serverId}/{communityId:long}` | One player (zeros if the player has none) |
 
 Both are read-only and anonymous, like the ranking endpoints.
 
@@ -93,6 +95,6 @@ When the feature was built, the totals were checked against the stored all-time 
 
 ## Things to keep in mind
 
-- Stars only grow in normal use. If the statistics were ever fixed (for example, a score correction) a player's stars could drop; the shop then shows a balance of 0 and blocks purchases, but a drop in stars never removes owned skins.
+- Stars only grow in normal use. If the statistics were ever fixed (for example, a score correction) a player's stars could drop; the shop then shows a balance of 0 and blocks purchases, but a drop in stars never removes owned skins. A fix only changes the stars right away if it is in the current period: the `closed_yyyyMM.json` of a closed period is reused as is, so a fix to an older file only shows up when the next period's blob is built.
 - Stars are all-time and are **not** reset with the ranking. What the ranking reset does is refund the skins bought in the season that ended, so the stars spent on them can be spent again (see [Skin shop → Equip, gift, refund](05-skin-shop.md#equip-gift-refund)).
 - A new MVP may take up to 1 hour to show if the Functions app runs more than one instance (each instance has its own cache).

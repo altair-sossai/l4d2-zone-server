@@ -6,10 +6,12 @@
 
 ## O que é uma estrela
 
-**1 estrela = 1 MVP.** Para cada metade de um mapa (o turno de sobrevivente de cada time), o arquivo de estatísticas indica dois MVPs:
+**1 estrela = 1 MVP.** Para cada metade de um mapa (o turno de sobrevivente de cada time), a biblioteca L4D2PlayStats calcula dois MVPs a partir dos sobreviventes do arquivo de estatísticas:
 
 - **MVP de dano em SI** — o sobrevivente que causou mais dano nos infectados especiais;
 - **MVP de comuns** — o sobrevivente que matou mais infectados comuns.
+
+Se ninguém causou dano em SI (ou ninguém matou comuns), o primeiro jogador do arquivo fica com o MVP mesmo assim.
 
 As estrelas de um jogador são a soma de todos os seus MVPs, em todo o histórico, usando **as mesmas regras do ranking**:
 
@@ -39,7 +41,7 @@ public async Task<List<PlayerStars>> StarsAsync(string serverId)
 {
     var closed = await ClosedStarsAsync(serverId);   // blob, refeito uma vez por período
     var current = await CurrentStarsAsync(serverId); // cache em memória, 1 h, limpo no upload
-    ... // soma os dois por jogador, ordenado por estrelas
+    ... // soma os dois por jogador, ordenado por estrelas e depois por communityId
 }
 ```
 
@@ -83,7 +85,7 @@ public IAsyncEnumerable<Statistics> GetStatisticsBeforeAsync(string serverId, Da
 | Método | Rota | Retorna |
 |---|---|---|
 | GET | `/api/stars/{serverId}` | Todos os jogadores com estrelas: `[{communityId, mvpSiDamage, mvpCommon, stars}]` |
-| GET | `/api/stars/{serverId}/{communityId}` | Um jogador (zeros se o jogador não tiver nenhuma) |
+| GET | `/api/stars/{serverId}/{communityId:long}` | Um jogador (zeros se o jogador não tiver nenhuma) |
 
 Os dois são só de leitura e anônimos, como os endpoints do ranking.
 
@@ -93,6 +95,6 @@ Quando a funcionalidade foi feita, os totais foram conferidos com o ranking de t
 
 ## Pontos de atenção
 
-- No uso normal as estrelas só aumentam. Se as estatísticas forem corrigidas algum dia (por exemplo, uma correção de pontuação), as estrelas de um jogador podem cair; a loja então mostra saldo 0 e bloqueia compras, mas uma queda nas estrelas nunca remove as skins que ele já tem.
+- No uso normal as estrelas só aumentam. Se as estatísticas forem corrigidas algum dia (por exemplo, uma correção de pontuação), as estrelas de um jogador podem cair; a loja então mostra saldo 0 e bloqueia compras, mas uma queda nas estrelas nunca remove as skins que ele já tem. Uma correção só muda as estrelas na hora se for do período atual: o `closed_yyyyMM.json` de um período já fechado é reaproveitado como está, então a correção de um arquivo mais antigo só aparece quando o blob do próximo período for gerado.
 - As estrelas são de todo o histórico e **não** zeram com o ranking. O que o reset do ranking faz é estornar as skins compradas na temporada que terminou, para que as estrelas gastas nelas possam ser gastas de novo (veja [Loja de skins → Equipar, presentear, estornar](05-skin-shop.pt.md#equipar-presentear-estornar)).
 - Um MVP novo pode levar até 1 hora para aparecer se o app de Functions rodar em mais de uma instância (cada instância tem seu próprio cache).

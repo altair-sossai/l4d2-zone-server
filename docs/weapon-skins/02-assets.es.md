@@ -45,7 +45,7 @@ $bumpmap "models/l4d2br/weapons/smg_silenced_3377651383/smg_a_nrm"
 }
 ```
 
-Cada ruta de material apunta dentro de la carpeta de la propia skin, así las skins nunca sobrescriben archivos originales ni se pisan entre sí.
+Toda textura que trae el addon queda en la carpeta de la propia skin. Las texturas que el addon no cambia (por ejemplo el `$phongexponenttexture` o la textura de la versión desgastada) siguen apuntando a las texturas originales del juego, que los jugadores ya tienen. Así las skins nunca sobrescriben archivos originales ni se pisan entre sí.
 
 ## Modelos combinados y skin families
 
@@ -53,16 +53,30 @@ Un `.mdl` de Source tiene una **tabla de texturas** y una **tabla de skin famili
 
 El modelo combinado de un arma es el **modelo original** con esas dos tablas reconstruidas:
 
-- la tabla de texturas lista las texturas de **todas las skins** del arma (`<carpeta>/<textura>`), con la ruta de búsqueda de materiales `models\l4d2br\weapons\`;
-- la family `i` apunta todos los slots de material a las texturas de la skin `i`.
+- la tabla de texturas lista las texturas de **todas las skins** del arma (`<carpeta>/<textura>`), con la ruta de búsqueda de materiales `models\l4d2br\weapons\`, y al final las texturas originales del arma;
+- las primeras families son las **originales** del arma (`stock_skins`, ver [abajo](#families-originales-de-las-armas)), y la family `stock_skins + i` apunta todos los slots de material a las texturas de la skin `i`.
+
+Un ejemplo real: el `v.mdl` de la MAC-10 tiene 2 slots de material, 62 texturas y 32 families (2 originales + 30 skins):
+
+| Family | Slot 0 | Slot 1 | Qué es |
+|---|---|---|---|
+| 0 | `models/v_models/weapons/smg/smg_A` | `smg_a_worn` | MAC-10 original |
+| 1 | `smg_a_worn` | `smg_a_worn` | MAC-10 original desgastada |
+| 2 | `smg_silenced_2926162402/smg_a` | `smg_silenced_2926162402/smg_a_worn` | printstream-mac |
+| 3 | `smg_silenced_3377651383/smg_a` | `smg_silenced_3377651383/smg_a_worn` | dark-matter |
+| 4 | `smg_silenced_1883809532/smg_a` | `smg_silenced_1883809532/smg_a_worn` | urban |
+| … | | | |
 
 ```mermaid
 flowchart LR
-    M["v.mdl (MAC-10)"] --> F0["family 0 → texturas de printstream-mac"]
-    M --> F1["family 1 → texturas de dark-matter"]
-    M --> F2["family 2 → texturas de urban"]
+    M["v.mdl (MAC-10)"] --> S0["family 0 → MAC-10 original"]
+    M --> S1["family 1 → MAC-10 original desgastada"]
+    M --> F2["family 2 → texturas de printstream-mac"]
+    M --> F3["family 3 → texturas de dark-matter"]
     M --> FN["family N → …"]
 ```
+
+Cambiar la skin de un arma es solo cambiar su `m_nSkin`: el modelo sigue siendo el mismo.
 
 Los archivos de geometría (`.vvd`, `.dx90.vtx`) se copian del modelo original sin cambios. Los pasos de la construcción son:
 
@@ -90,6 +104,8 @@ foreach ($skin in $skins)                      # skins of this weapon, in cfg or
 & $wr 76 $b.Count           # file length
 ```
 
+Este paso genera solo las families de las skins. Las families originales se agregan después, al comienzo de la tabla, con `scripts/add-stock-families.js` (ver abajo).
+
 > ⚠️ **El índice de la family es la posición de la skin dentro de su arma en `weapon_skins.cfg`** (más las families originales del arma, ver abajo). Agregar, quitar o reordenar skins de un arma obliga a reconstruir los modelos combinados de esa arma y a actualizar los valores de `"skin"` en el cfg.
 
 ### Families originales de las armas
@@ -106,13 +122,13 @@ Los modelos combinados (`v.mdl` y `w.mdl`) de toda arma con skins (las seis arma
 
 Esas families apuntan a las texturas del modelo original (sus nombres y las carpetas de búsqueda de materiales se agregan al final de la tabla de texturas), así que la family `0` de un modelo combinado se ve idéntica al arma original. Eso es lo que permite usar siempre el modelo combinado en primera persona: un arma sin skin mantiene su `m_nSkin` original, y el cliente del anti-cheat puede apuntar el juego al modelo combinado y terminar con el parpadeo en los cambios de animación (ver [Plugin del juego](03-game-plugin.es.md)).
 
-Las agrega [`scripts/add-stock-families.js`](https://github.com/altair-sossai/l4d2-zone-server-assets/blob/main/scripts/add-stock-families.js) del repositorio de assets: lee los modelos originales de los VPK del juego (primero `update/`) y reescribe los modelos combinados de mano y de mundo de cada arma. Ejecútalo después de reconstruir los modelos combinados de un arma; un modelo que ya las tiene se omite:
+Las agrega [`scripts/add-stock-families.js`](https://github.com/altair-sossai/l4d2-zone-server-assets/blob/main/scripts/add-stock-families.js) del repositorio de assets: lee los modelos originales de los VPK del juego (primero `update/`) y reescribe los modelos combinados de mano y de mundo de cada arma. Ejecútalo después de reconstruir los modelos combinados de un arma; un modelo que ya las tiene se omite, y con `check` al final el script solo muestra lo que cambiaría:
 
 ```bash
-node scripts/add-stock-families.js "<carpeta de Left 4 Dead 2>" <zone-server>/addons/sourcemod/configs/weapon_skins.cfg
+node scripts/add-stock-families.js "<carpeta de Left 4 Dead 2>" <zone-server>/addons/sourcemod/configs/weapon_skins.cfg [check]
 ```
 
-El valor de `"skin"` de una skin es entonces `stock_skins` + su posición dentro del arma.
+El valor de `"skin"` de una skin es entonces `stock_skins` + su posición dentro del arma (empezando en 0). En la MAC-10 (`stock_skins` 2): printstream-mac, la primera, es `2`; dark-matter, la segunda, es `3`.
 
 ## El cfg que lo une todo
 
@@ -156,7 +172,9 @@ El pipeline del repositorio de assets (`azure-pipelines.yml`, se ejecuta en cada
 
 1. empaqueta `models/` y `materials/` en archivos `.tar.gz`;
 2. los sube por SSH y los extrae en la carpeta del juego (`left4dead2/models`, `left4dead2/materials`) — el servidor necesita los archivos porque el plugin hace precache de los modelos y lista los archivos en la tabla de descargas;
-3. sube a la cuenta de storage `l4d2playstats`: `models/` y `materials/` al contenedor `fastdl` (en `models/` y `materials/`), `fastdl/` a la raíz del contenedor `fastdl` y `assets/` al contenedor `assets`.
+3. sincroniza con la cuenta de storage `l4d2playstats` usando `scripts/sync-blob.sh`, que sube solo los archivos nuevos o cambiados: `models/` y `materials/` al contenedor `fastdl` (en `models/` y `materials/`), `fastdl/` a la raíz del contenedor `fastdl`, y `assets/skin-shots/` (las fotos de las skins en la tienda, con caché de un año) y el resto de `assets/` al contenedor `assets`.
+
+La copia al servidor envía todos los archivos en cada ejecución. Ningún paso borra nada: un archivo quitado del repositorio también hay que quitarlo a mano de la carpeta del juego y del storage.
 
 Los clientes descargan desde `sv_downloadurl` (el contenedor `fastdl`). Los archivos se sirven **sin comprimir** (sin `.bz2`).
 
@@ -170,8 +188,8 @@ Todas las skins fueron hechas por la comunidad de Left 4 Dead 2 y publicadas en 
 2. Lee la descripción del addon en la Workshop: si el autor pide no redistribuir ni volver a subir su trabajo, **no lo agregues** (los encargos, marcados con "[COMMS]", suelen pedirlo). Cinco skins se quitaron del catálogo por este motivo.
 3. Extrae, reubica y optimiza sus materiales en `materials/models/l4d2br/weapons/<weapon>_<workshopId>/`: como máximo 1024 px, DXT1/DXT5 en lugar de formatos sin compresión, mipmaps y una sola copia de cada textura idéntica.
 4. Agrega la skin a `weapon_skins.cfg` (id, arma, materiales) y **reconstruye los modelos combinados** de esa arma (y ejecuta `scripts/add-stock-families.js` después); define los índices de family en `"skin"` (`stock_skins` + posición).
-5. Agrega la skin al catálogo del sitio `skins.json` (id, arma, rareza, precio, títulos/descripciones en en/pt/es) y su miniatura `wwwroot/imgs/skins/<id>.jpg`.
-6. Agrega la skin a la tabla de créditos de su arma en el README de los assets (skin, autor, enlace de la Workshop), actualiza la cantidad en el título del arma y la lista de autores.
+5. Agrega la skin al catálogo del sitio `skins.json` (id, arma, rareza, precio, `workshopId`, `shots`, `author`, títulos/descripciones en en/pt/es) y su miniatura `wwwroot/imgs/skins/<id>.jpg`. Ver [Tienda de skins → Catálogo](05-skin-shop.es.md#catálogo-skinsjson).
+6. En el repositorio de assets, agrega las fotos en `assets/skin-shots/<id>/` (30 archivos: seis fotos en AVIF y WebP, en tamaño completo, `-thumb` y, en las fotos 1, 5 y 6, `-card`; ver el README de los assets) y la skin a la tabla de créditos de su arma (skin, autor, enlace de la Workshop), actualizando la cantidad en el título del arma y la lista de autores.
 7. Vuelve a generar el manifiesto de assets del servidor del anti-cheat (ver abajo) y sube la versión del cliente.
 8. Despliega en este orden: cliente del anti-cheat → assets → sitio → zone-server, y luego reinicia el servidor de juego mientras está vacío. Consulta [Operación → Cuando cambian los modelos combinados](06-operations.es.md#cuando-cambian-los-modelos-combinados).
 
@@ -179,7 +197,7 @@ Todas las skins fueron hechas por la comunidad de Left 4 Dead 2 y publicadas en 
 
 ## Manifiesto del anti-cheat
 
-El cliente del anti-cheat verifica los archivos de skin enviados por el servidor contra un manifiesto (`Manifest/server-assets-manifest.json` en el repositorio l4d2-anti-cheat-client). Cada vez que se agregan o cambian archivos de skin, vuelve a generarlo a partir de un checkout del repositorio de assets y publica una nueva versión del cliente:
+El cliente del anti-cheat verifica los archivos que el servidor envía por FastDL (skins, decals, sprites: todo lo que se publica desde `fastdl/`, `models/` y `materials/` del repositorio de assets) contra un manifiesto (`Manifest/server-assets-manifest.json` en el repositorio l4d2-anti-cheat-client). Cada vez que se agregan o cambian archivos de skin, vuelve a generarlo a partir de un checkout del repositorio de assets y publica una nueva versión del cliente:
 
 ```bash
 dotnet run --project tools/L4D2AntiCheat.ManifestGenerator -- server-assets <path-to-l4d2-zone-server-assets>

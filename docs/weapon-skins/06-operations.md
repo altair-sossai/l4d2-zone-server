@@ -26,6 +26,8 @@
 | `SecretKey` | Shared secret checked by `[RequiredSecretKey]` (game server → site) |
 | `ServerAdmins` | SteamID64 list of admins (`;`-separated) |
 | `SteamApiKey` | Steam Web API (names and avatars) |
+| `ServerDns` | Address of the game server shown on the site (server page) |
+| `SkinShotsUrl` (optional) | Where the skin photos live; defaults to the `assets/skin-shots` container of the `l4d2playstats` account |
 
 ### API (Azure Functions app settings)
 
@@ -36,8 +38,8 @@
 | Repository | Trigger | What happens |
 |---|---|---|
 | l4d2-zone-server | push to `master` (changes only to `docs/` or `*.md` files do not trigger it) | `addons/`, `cfg/`, `bash/`, `scripts/` are packed and extracted into the game folder. `server_secrets.cfg` is not touched |
-| l4d2-zone-server-assets | push to `main` | `models/` and `materials/` go to the game folder and to the FastDL blob; `fastdl/` and `assets/` go to blobs |
-| l4d2-playstats-api | push to `main` | Build, tests and the `function` build artifact that is published to the Azure Functions app |
+| l4d2-zone-server-assets | push to `main` | `models/` and `materials/` go to the game folder and to the FastDL blob; `fastdl/` and `assets/` (including the skin photos in `assets/skin-shots/`) go to blobs. Only new or changed files go to the blobs, and nothing is deleted |
+| l4d2-playstats-api | push to `main` | Build, tests and the `function` build artifact. The repository pipeline does not publish anything: the Azure Functions app is published outside it, from that artifact |
 | l4d2-playstats-web | push to `main` | Self-contained publish, copied to the web host and restarted in the `l4d2-playstats-web` screen session |
 | l4d2-anti-cheat-client | push to `main` | Build, tests and a signed client package uploaded to blob storage; players get the new version (with the new server assets manifest) when the version number changes |
 
@@ -50,7 +52,7 @@
 Adding, removing or changing a skin changes the combined models and the skin files. Follow this order:
 
 1. **Anti-cheat client** — publish the new client (new server assets manifest + version bump) and make sure it is available to players.
-2. **Assets** — push the assets repository (game folder + FastDL).
+2. **Assets** — push the assets repository (game folder + FastDL + skin photos).
 3. **Site** — push the catalog (`skins.json`) and the thumbnails.
 4. **Zone-server** — push `weapon_skins.cfg` (family indexes).
 5. **Restart the game server while it is empty** (see below).

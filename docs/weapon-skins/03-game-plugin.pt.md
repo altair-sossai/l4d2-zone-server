@@ -11,7 +11,7 @@ O plugin é carregado de `plugins/` (carga automática), não de `optional/`, en
 | Variável | Conteúdo |
 |---|---|
 | `g_hSkins` / `g_hSkinsByName` | Skins do `weapon_skins.cfg` (structs `WeaponSkin`) e um mapa id → índice |
-| `g_hWeaponModels` | Modelos combinados/originais por arma e seus índices de precache |
+| `g_hWeaponModels` / `g_hWeaponModelsByClass` | Modelos combinados/originais por arma, seus índices de precache e o `stock_skins` (structs `WeaponModels`), e um mapa chave da arma → índice |
 | `g_hPurchasedSkins` | Ids das skins compradas por pelo menos um jogador (de `/api/skins`) |
 | `g_hOwnedSkins` | Chaves `"<steamid64>:<skin>"` de todas as skins compradas (de `/api/players/skins`) |
 | `g_hPlayerChoices` | Skin equipada por `"<steamid64>:<weapon>"` |
@@ -118,7 +118,7 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 ```
 
 - **Modelo de mundo** (o que os outros veem, e a arma no chão): aplicado ao equipar, ao pegar a arma e 0,1 s depois de largar (o engine reseta o modelo quando a arma é largada). Quando um jogador pega uma arma de um spawn (`weapon_*_spawn`), a arma no slot da arma do spawn (pistolas e armas brancas: secundário; o resto: primário) volta ao modelo de mundo original antes do uso e recebe a skin de novo logo depois.
-- **Modelo de visão** (primeira pessoa): a entidade `m_hViewModel` do jogador recebe o modelo de visão combinado e a family no `OnPostThinkPost`, a cada frame. Em toda arma com `stock_skins` no cfg (as seis armas de fogo e as nove armas brancas com skin) isso acontece **mesmo sem skin**, com a family original da arma (`m_nSkin`), que fica idêntica à arma original.
+- **Modelo de visão** (primeira pessoa): a entidade `m_hViewModel` do jogador recebe o modelo de visão combinado e a family no `OnPostThinkPost`, a cada frame. Em toda arma com `stock_skins` no cfg (as seis armas de fogo e as nove armas brancas com skin) isso acontece **mesmo sem skin** (e mesmo com as skins desligadas), com a family original da arma (o `m_nSkin` que ela tinha ao ser registrada, ou `0` se ele passar de `stock_skins`), que fica idêntica à arma original. O modelo de visão original só volta para um jogador sem downloads, ou quando um jogador sem downloads está assistindo esse jogador em primeira pessoa.
 - **Sem pisca em primeira pessoa**: o cliente prevê as animações da arma e, toda vez que uma começa, recoloca o modelo de visão que a arma informa (o script da arma numa arma de fogo, o cadastro de melee numa arma branca), com o `m_nSkin` da arma como family. Sem ajuda, a arma original pisca por cima da skin por cerca de um ping a cada tiro, golpe, recarga e troca de arma. O cliente do anti-cheat aponta esses caminhos das seis armas de fogo e das nove armas brancas para o modelo combinado enquanto o jogador está no servidor, então a previsão usa o mesmo modelo, e as families originais no começo do modelo combinado mantêm a arma sem skin com a cara original.
 - **Restaurando**: quando uma arma perde a skin, o modelo original e o `m_nSkin` original da arma voltam.
 
@@ -155,7 +155,7 @@ Um jogador com `cl_allowdownload 0` (ou com `cl_downloadfilter` diferente de `al
   [l4d2_weapon_skins.smx] Kicked Player<12><STEAM_1:0:12345><> because cl_allowdownload is "0"
   ```
 
-- `0` → o jogador fica e **os modelos de mundo voltam ao original para todo mundo** enquanto ele estiver no servidor (os modelos de visão continuam aparecendo para quem consegue ver, menos para quem estiver assistindo esse jogador em primeira pessoa).
+- `0` → o jogador fica e **os modelos de mundo voltam ao original para todo mundo** enquanto ele estiver no servidor. Os modelos de visão continuam com a skin para quem tem downloads, menos para o jogador que ele estiver assistindo em primeira pessoa como espectador: esse volta ao modelo de visão original enquanto é assistido.
 
 > A opção do menu do jogo *Opções > Multijogador > Conteúdo personalizado do servidor > Permitir tudo* só altera o `cl_downloadfilter`. O `cl_allowdownload` não tem opção no menu: só pode ser alterado no console ou num arquivo de config. Por isso um jogador que escolheu "Permitir tudo" no menu ainda pode ser expulso, e por isso a mensagem traz o comando de console exato.
 
@@ -168,12 +168,14 @@ Trocar de arma várias vezes nos spawns infinitos do safe room pode acumular arm
 | Comando | Quem | O que faz |
 |---|---|---|
 | `!skin` / `!skins` | todos | Ajuda e o link da loja |
-| `!skin <id>` | todos | Usa uma das suas skins (só durante o ready-up, como sobrevivente) |
+| `!skin <id>` | todos | Usa uma das suas skins |
 | `!skin next` / `!skin prev` `[arma]` | todos | Passa pelas suas skins da arma; depois da última, volta para a padrão |
 | `!skin default [arma]` | todos | Volta para a skin padrão |
 | `!skin status` | todos | Skins ligadas/desligadas, suas estrelas e quantas skins você tem |
 | `!skin on` / `!skin off` | root | Liga/desliga as skins para todos (continua valendo após trocar de mapa) |
 | `!skin test <id\|default> [arma]` | root | Testa uma skin em você até o mapa trocar |
+
+`!skin <id>`, `next`, `prev` e `default` só funcionam como sobrevivente e durante o ready-up (com o `weapon_skins_preview_all 1`, os admins root podem trocar a qualquer momento). Sem `[arma]`, vale a arma na mão (ou, se ela não tiver skins, a primária e depois a secundária).
 
 `[arma]` aceita `smg` (ou `uzi`), `mac` (ou `mac10`, `mac-10`, `silenced`), `mp5`, `pump`, `chrome`, `magnum` (ou `deagle`), `axe` (ou `fireaxe`), `bat`, `cricket`, `guitar`, `golf`, `pan`, qualquer outro nome de script de arma branca (`katana`, `machete`, `crowbar`) e as chaves completas (`weapon_smg`, `weapon_melee_katana`, …).
 

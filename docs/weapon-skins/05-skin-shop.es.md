@@ -6,15 +6,17 @@
 
 ## Catálogo: `skins.json`
 
-El catálogo es un recurso embebido (`L4D2PlayStats.Core/Skins/Data/skins.json`), versionado junto con el código. El archivo es un objeto con un array `skins`, ordenado por rareza y luego por precio, para que sea fácil de leer. Una entrada:
+El catálogo es un recurso embebido (`L4D2PlayStats.Core/Skins/Data/skins.json`), versionado junto con el código. El archivo es un objeto con un array `skins`, ordenado por rareza y luego por precio (de mayor a menor), para que sea fácil de leer; la tienda vuelve a ordenar en pantalla (precio, arma, título). Una entrada:
 
 ```json
 {
   "id": "dark-matter",
   "weapon": "weapon_smg_silenced",
   "rarity": "legendary",
-  "price": 700,
+  "price": 625,
   "workshopId": "3377651383",
+  "shots": 2,
+  "author": { "name": "BATTLE NO.1", "communityId": "76561199147992281" },
   "title": { "en": "MAC-10 Dark Matter", "pt": "MAC-10 Dark Matter", "es": "MAC-10 Dark Matter" },
   "description": { "en": "...", "pt": "...", "es": "..." },
   "originalTitle": "MAC-10 DARK MATTER",
@@ -25,6 +27,8 @@ El catálogo es un recurso embebido (`L4D2PlayStats.Core/Skins/Data/skins.json`)
 - `id` es el mismo id que se usa en `weapon_skins.cfg` y en `!skin <id>`.
 - La miniatura es `wwwroot/imgs/skins/<id>.jpg`.
 - `workshopId` enlaza la skin con su página original en la Workshop (el botón *Ver en el Workshop*).
+- `shots` activa las fotos de la skin en el juego: con `0` la tienda muestra solo la miniatura; con `1` o más carga las fotos de `<SkinShotsUrl>/<id>/` (las fotos están en `assets/skin-shots/<id>/` en el repositorio de assets). El número también es la versión de las fotos en la caché: como se sirven con caché de un año, rehacer las fotos de una skin obliga a subir su `shots`.
+- `author` es el autor de la skin en la Workshop (nombre y SteamID64), que se muestra en las tarjetas, en los detalles y en la pestaña **Autores**.
 
 ### Rarezas y precios
 
@@ -32,13 +36,13 @@ Cada skin se revisó mirando sus imágenes y recibió una rareza y un precio ind
 
 | Rareza | Skins | Rango de precio (estrellas) |
 |---|---|---|
-| Legendaria | 9 | 520–700 |
-| Épica | 30 | 300–450 |
-| Rara | 58 | 150–240 |
-| Poco común | 54 | 70–130 |
-| Común | 45 | 30–60 |
+| Legendaria | 9 | 470–630 |
+| Épica | 28 | 270–400 |
+| Rara | 58 | 135–210 |
+| Poco común | 56 | 65–110 |
+| Común | 45 | 25–50 |
 
-Las 196 skins del catálogo cuestan en total **34.500 estrellas** (precios predeterminados) — más que todas las estrellas de todos los jugadores juntos cuando abrió la tienda — así que tener todas las skins en una temporada está pensado para ser casi imposible.
+Las 196 skins del catálogo cuestan en total **30.590 estrellas** (precios predeterminados) — más que todas las estrellas de todos los jugadores juntos cuando abrió la tienda (unas 24.750) — así que tener todas las skins en una temporada está pensado para ser casi imposible. En la tienda, el encabezado de cada rareza muestra cuántas skins tiene y el rango de precios calculado con los precios actuales.
 
 ### Precios modificados
 
@@ -54,7 +58,7 @@ public record Skin
 }
 ```
 
-Guardar de nuevo el precio predeterminado (o "Restaurar predeterminado") borra el cambio. Las compras guardan el precio realmente pagado, así que cambiar un precio nunca afecta a las compras anteriores (y un reembolso siempre devuelve lo que se pagó).
+La fila guarda `Price`, `UpdatedByCommunityId` y `UpdatedAtUtc`. Guardar de nuevo el precio predeterminado (o "Restaurar predeterminado") borra el cambio. Las compras guardan el precio realmente pagado, así que cambiar un precio nunca afecta a las compras anteriores (y un reembolso siempre devuelve lo que se pagó).
 
 ## Almacenamiento: la tabla `SkinShop`
 
@@ -73,6 +77,8 @@ El **saldo** siempre se calcula, nunca se guarda:
 ```csharp
 public int Balance => Math.Max(0, Stars - Spent);   // Stars come from the API
 ```
+
+**Caché en memoria:** la lista de todas las compras y de todas las skins equipadas queda 5 minutos en memoria y se limpia después de cada transacción. Alimenta `/api/skins`, `/api/players/skins`, la página de compras del admin y el reembolso de la temporada. Los precios cambiados (`SkinPrices`) quedan 12 horas en memoria, y esa caché se limpia cuando se guarda o se restaura un precio.
 
 ## La transacción de compra
 
@@ -142,11 +148,12 @@ Durante el desarrollo estos casos se cubrieron con pruebas de integración ejecu
 
 | Método | Ruta | Quién |
 |---|---|---|
+| GET | `/api/shop/wallet` | jugador con sesión iniciada (solo la cookie) — `{balance, stars, spent}`, o 503 si no se pueden cargar las estrellas; lo usa el contador de estrellas de la barra de navegación |
 | POST | `/api/shop/skins/{skinId}/buy` | jugador con sesión iniciada |
 | POST | `/api/shop/skins/{skinId}/equip` | jugador con sesión iniciada |
 | POST | `/api/shop/weapons/{weapon}/unequip` | jugador con sesión iniciada |
-| POST | `/api/shop/skins/{skinId}/price` `{price}` | admin (1–100.000; `null` restaura) |
-| POST | `/api/shop/gift` `{communityId, skinId}` | admin (cualquier formato de Steam ID o enlace de perfil) |
+| POST | `/api/shop/skins/{skinId}/price` `{price}` | admin (1–100.000; `null` restaura) — `{price, defaultPrice, custom}` |
+| POST | `/api/shop/gift` `{communityId, skinId}` | admin (`STEAM_x:y:z`, `[U:1:x]`, SteamID64 o un enlace `steamcommunity.com/profiles/<id>`; los enlaces `/id/<nombre>` no se aceptan) |
 | POST | `/api/shop/refund` `{communityId, skinId}` | admin |
 | POST | `/api/shop/refund-all` | admin — reembolsa todas las compras y regalos: `{purchases, gifts, stars, players, failed}` |
 | GET | `/api/admin/players` | admin — jugadores para el selector de jugadores |
@@ -157,24 +164,29 @@ Durante el desarrollo estos casos se cubrieron con pruebas de integración ejecu
 |---|---|---|
 | GET | `/api/skins` | ninguna — skins compradas por al menos un jugador: `[{id, weapon}]` |
 | GET | `/api/players/skins` | ninguna — `[{communityId, skins:[…], equipped:[{weapon, skin}]}]` |
-| GET | `/api/players/{communityId}/wallet` | ninguna — `{mvpSiDamage, mvpCommon, stars, spent, balance}` |
+| GET | `/api/players/{communityId}/wallet` | ninguna — `{mvpSiDamage, mvpCommon, stars, spent, balance}`, o 503 si la API está caída |
 | POST | `/api/players/{communityId}/skins/equip` `{weapon, skin}` | `Authorization: <SecretKey>` (`skin` vacío = predeterminada) |
 
 ## Páginas
 
 ### Tienda — `/skins`
 
-- Portada con los tres pasos (gana estrellas, compra y equipa, cambia en el juego), el saldo del jugador (`X estrellas para gastar`, con los MVPs ganados y las estrellas gastadas) y el botón **"¿Cómo uso mis skins en el juego?"**, que abre una tabla con todos los comandos.
-- Un aviso **"Skins por temporada"**: las skins compradas duran hasta el reinicio del ranking, cada dos meses; muestra el último día de la temporada actual y los días restantes, y explica que en el reinicio toda compra se reembolsa automáticamente y las estrellas vuelven, mientras que los regalos se conservan para siempre.
-- Una línea de créditos: todas las skins fueron hechas por la comunidad en la Steam Workshop; el botón *Ver en el Workshop* de cada skin abre el trabajo original.
-- Pestañas **Tienda** (agrupada por rareza, con colores) y **Mis skins**; filtros por arma, rareza y "solo las que puedo comprar".
-- Las tarjetas muestran el precio y el estado: *Comprar por N*, *Faltan N*, *Comprada → Equipar*, *Equipada → Volver a la predeterminada*.
-- La confirmación de compra muestra la skin y el precio, dice que se equipa en el arma al momento y aparece a partir del próximo cambio de mapa, dice hasta cuándo dura la skin (el último día de la temporada; después se reembolsa automáticamente) y termina con *"La compra no se puede deshacer antes del reinicio del ranking."*
+- Portada con la temporada (*"La temporada termina el {fecha} · faltan N días"*), el saldo del jugador (*N estrellas disponibles*, *"Ganaste X ⭐ como MVP y ya gastaste Y ⭐ en skins."* y los MVPs de daño a SI y de comunes) y dos botones:
+  - **"Cómo funciona"** abre un panel con los tres pasos (gana estrellas, compra y equipa, cambia en el juego), el aviso **"Skins por temporada"** (las skins compradas duran hasta el reinicio del ranking, cada dos meses; en el reinicio toda compra se reembolsa automáticamente y las estrellas vuelven, mientras que los regalos se conservan para siempre) y los créditos: todas las skins fueron hechas por la comunidad en la Steam Workshop, cada skin muestra a su autor con un enlace a su perfil de Steam, y la pestaña **Autores** les da crédito a todos;
+  - **"¿Cómo uso mis skins en el juego?"** abre una tabla con todos los comandos.
+- Pestañas **Tienda** (agrupada por rareza, con colores, y cada rareza con su cantidad de skins y su rango de precios), **Mis skins** (solo con sesión iniciada) y **Autores** (todos los autores, con enlace a su perfil de Steam y cuántas skins tiene cada uno); filtros por arma, rareza y "Solo las que puedo comprar" (cuando el saldo cargó).
+- Las tarjetas muestran la foto (con `shots`, las fotos se alternan al pasar el mouse), el autor, el precio y el estado: *Comprar por N ⭐*, *Faltan N ⭐*, *Comprada → Equipar*, *Equipada → Volver a la predeterminada*; sin sesión, *Entrar con Steam*.
+- Los detalles de una skin tienen una galería con las seis fotos (zoom, arrastre y flechas), el autor con enlace a su perfil de Steam, el título y la descripción originales de la Workshop, el botón *Ver en el Workshop*, el comando `!skin <id>` con botón de copiar (para quien tiene la skin) y el aviso *"¿Eres el autor de esta skin?"*, que explica que la skin se quita a pedido del autor y da los contactos (Steam y GitHub). Los enlaces `#skin-<id>` y `#mine` abren una skin o la pestaña Mis skins.
+- La confirmación de compra muestra la skin y el precio, *"Tu saldo pasa de X ⭐ a Y ⭐."*, dice que se equipa en el arma al momento y aparece a partir del próximo cambio de mapa, dice hasta cuándo dura la skin (el último día de la temporada; después se reembolsa automáticamente) y termina con *"La compra no se puede deshacer antes del reinicio del ranking."*
 - Cada acción muestra un mensaje claro; las compras y los cambios siempre recuerdan que la skin **aparece a partir del próximo cambio de mapa**.
+
+### Barra de navegación
+
+Con sesión iniciada, la barra muestra el saldo del jugador junto al menú (*N estrellas disponibles*, ayuda *"Tus estrellas para comprar skins"*), leído de `GET /api/shop/wallet` y guardado en `sessionStorage`.
 
 ### Perfil del jugador — `/player/{id}`
 
-Una fila **Estrellas** muestra el saldo, las estrellas ganadas y las estrellas gastadas, y un panel **Skins** lista las skins del jugador, marcando las equipadas. Cuando se comparan dos jugadores (`/player/{id}/{otherId}`), ambos se muestran lado a lado siguiendo el patrón de la página: el primer jugador en blanco, el segundo en amarillo.
+El panel **Skins** muestra en su encabezado el saldo (*N estrellas disponibles · X ganadas, Y gastadas*) y lista las skins del jugador, marcando las equipadas. Cuando se comparan dos jugadores (`/player/{id}/{otherId}`), ambos se muestran lado a lado siguiendo el patrón de la página: el primer jugador en blanco, el segundo en amarillo.
 
 ### Admin (menú "Admin" de la barra de navegación, solo para `ServerAdmins`)
 
@@ -191,7 +203,7 @@ Piezas reutilizables (`Views/Shared`): `_Pagination` + `PagedListModel<T>`, `_Pl
 - Los POST de la tienda y de admin exigen la cookie de inicio de sesión **y** un token antiforgery (encabezado `RequestVerificationToken`).
 - Los endpoints de admin usan `[AdminAuthorize]` (el SteamID64 del usuario debe estar en `ServerAdmins`).
 - El endpoint de escritura del plugin usa `[RequiredSecretKey]`, que compara el encabezado `Authorization` con el `SecretKey` del sitio.
-- Las consultas a las tablas usan `TableClient.CreateQueryFilter` (parametrizado); los ids de las rutas se validan (`{communityId:long}`, búsqueda en el catálogo) antes de usarse en claves.
+- Las consultas a las tablas usan `TableClient.CreateQueryFilter` (parametrizado); los ids de las rutas se validan (`{communityId:long}`, búsqueda en el catálogo) antes de usarse en claves. Regalo y reembolso reciben el `communityId` en el cuerpo y lo convierten con `SteamIdentifiers.TryParse`; el reembolso usa el `skinId` recibido para leer la compra aunque la skin ya no esté en el catálogo (solo admins, y es una lectura puntual).
 
 ## Localización
 

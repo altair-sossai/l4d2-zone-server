@@ -45,7 +45,7 @@ $bumpmap "models/l4d2br/weapons/smg_silenced_3377651383/smg_a_nrm"
 }
 ```
 
-Every material path points inside the skin's own folder, so skins never overwrite stock files or each other.
+Every texture the addon brings lives in the skin's own folder. Textures the addon does not replace (for example the `$phongexponenttexture` or the texture of the worn variant) still point to the game's stock textures, which players already have. So skins never overwrite stock files or each other.
 
 ## Combined models and skin families
 
@@ -53,16 +53,30 @@ A Source `.mdl` has a **texture table** and a **skin family table**. Each family
 
 The combined model of a weapon is the **stock model** with those two tables rebuilt:
 
-- the texture table lists the textures of **every skin** of the weapon (`<folder>/<texture>`), with the material search path `models\l4d2br\weapons\`;
-- family `i` points every material slot to the textures of skin `i`.
+- the texture table lists the textures of **every skin** of the weapon (`<folder>/<texture>`), with the material search path `models\l4d2br\weapons\`, and the stock textures of the weapon at the end;
+- the first families are the **original** families of the weapon (`stock_skins`, see [below](#original-families-of-the-weapons)), and family `stock_skins + i` points every material slot to the textures of skin `i`.
+
+A real example: the MAC-10 `v.mdl` has 2 material slots, 62 textures and 32 families (2 original + 30 skins):
+
+| Family | Slot 0 | Slot 1 | What it is |
+|---|---|---|---|
+| 0 | `models/v_models/weapons/smg/smg_A` | `smg_a_worn` | Stock MAC-10 |
+| 1 | `smg_a_worn` | `smg_a_worn` | Stock worn MAC-10 |
+| 2 | `smg_silenced_2926162402/smg_a` | `smg_silenced_2926162402/smg_a_worn` | printstream-mac |
+| 3 | `smg_silenced_3377651383/smg_a` | `smg_silenced_3377651383/smg_a_worn` | dark-matter |
+| 4 | `smg_silenced_1883809532/smg_a` | `smg_silenced_1883809532/smg_a_worn` | urban |
+| … | | | |
 
 ```mermaid
 flowchart LR
-    M["v.mdl (MAC-10)"] --> F0["family 0 → printstream-mac textures"]
-    M --> F1["family 1 → dark-matter textures"]
-    M --> F2["family 2 → urban textures"]
+    M["v.mdl (MAC-10)"] --> S0["family 0 → stock MAC-10"]
+    M --> S1["family 1 → stock worn MAC-10"]
+    M --> F2["family 2 → printstream-mac textures"]
+    M --> F3["family 3 → dark-matter textures"]
     M --> FN["family N → …"]
 ```
+
+Changing the skin of a weapon only changes its `m_nSkin`: the model stays the same.
 
 Geometry files (`.vvd`, `.dx90.vtx`) are copied from the stock model unchanged. The build steps are:
 
@@ -90,6 +104,8 @@ foreach ($skin in $skins)                      # skins of this weapon, in cfg or
 & $wr 76 $b.Count           # file length
 ```
 
+This step builds only the skin families. The original families are added afterwards, at the start of the table, by `scripts/add-stock-families.js` (see below).
+
 > ⚠️ **The family index is the position of the skin inside its weapon in `weapon_skins.cfg`** (plus the original families of the weapon, see below). Adding, removing or reordering skins of a weapon means rebuilding that weapon's combined models and updating the `"skin"` values in the cfg.
 
 ### Original families of the weapons
@@ -106,13 +122,13 @@ The combined models (`v.mdl` and `w.mdl`) of every weapon with skins (the six fi
 
 Those families point to the textures of the stock model (their names and material search paths are appended to the texture table), so family `0` of a combined model looks exactly like the stock weapon. This is what lets first person always use the combined model: a weapon without a skin keeps its original `m_nSkin`, and the anti-cheat client can point the game at the combined model to stop the flicker on animation changes (see [Game plugin](03-game-plugin.md)).
 
-They are added by [`scripts/add-stock-families.js`](https://github.com/altair-sossai/l4d2-zone-server-assets/blob/main/scripts/add-stock-families.js) in the assets repository, which reads the stock models from the game VPKs (`update/` first) and rewrites the combined view and world models of every weapon. Run it after rebuilding the combined models of a weapon; a model that already has them is skipped:
+They are added by [`scripts/add-stock-families.js`](https://github.com/altair-sossai/l4d2-zone-server-assets/blob/main/scripts/add-stock-families.js) in the assets repository, which reads the stock models from the game VPKs (`update/` first) and rewrites the combined view and world models of every weapon. Run it after rebuilding the combined models of a weapon; a model that already has them is skipped, and with `check` at the end the script only prints what would change:
 
 ```bash
-node scripts/add-stock-families.js "<Left 4 Dead 2 folder>" <zone-server>/addons/sourcemod/configs/weapon_skins.cfg
+node scripts/add-stock-families.js "<Left 4 Dead 2 folder>" <zone-server>/addons/sourcemod/configs/weapon_skins.cfg [check]
 ```
 
-The `"skin"` value of a skin is therefore `stock_skins` + its position inside the weapon.
+The `"skin"` value of a skin is therefore `stock_skins` + its position inside the weapon (starting at 0). On the MAC-10 (`stock_skins` 2): printstream-mac, the first one, is `2`; dark-matter, the second one, is `3`.
 
 ## The cfg that ties it together
 
@@ -156,7 +172,9 @@ The assets repository pipeline (`azure-pipelines.yml`, runs on every push to `ma
 
 1. packs `models/` and `materials/` into `.tar.gz` files;
 2. uploads them over SSH and extracts them into the game folder (`left4dead2/models`, `left4dead2/materials`) — the server needs the files because the plugin precaches models and lists files in the downloads table;
-3. uploads to the `l4d2playstats` storage account: `models/` and `materials/` to the `fastdl` container (under `models/` and `materials/`), `fastdl/` to the root of the `fastdl` container and `assets/` to the `assets` container.
+3. syncs to the `l4d2playstats` storage account with `scripts/sync-blob.sh`, which uploads only new or changed files: `models/` and `materials/` to the `fastdl` container (under `models/` and `materials/`), `fastdl/` to the root of the `fastdl` container, and `assets/skin-shots/` (the skin photos of the shop, with a one-year cache) and the rest of `assets/` to the `assets` container.
+
+The copy to the server sends every file on every run. Neither step deletes anything: a file removed from the repository must also be removed by hand from the game folder and from the storage.
 
 Clients download from `sv_downloadurl` (the `fastdl` container). Files are served **uncompressed** (no `.bz2`).
 
@@ -170,8 +188,8 @@ Every skin was made by the Left 4 Dead 2 community and published on the Steam Wo
 2. Read the addon's Workshop description: if the author asks not to redistribute or re-upload the work, **do not add it** (commissioned items, marked "[COMMS]", usually ask this). Five skins were removed from the catalog for this reason.
 3. Extract, relocate and optimize its materials into `materials/models/l4d2br/weapons/<weapon>_<workshopId>/`: at most 1024 px, DXT1/DXT5 instead of uncompressed formats, mipmaps, and one copy of each identical texture.
 4. Add the skin to `weapon_skins.cfg` (id, weapon, materials) and **rebuild the combined models** of that weapon (then run `scripts/add-stock-families.js`); set the `"skin"` family indexes (`stock_skins` + position).
-5. Add the skin to the site catalog `skins.json` (id, weapon, rarity, price, titles/descriptions in en/pt/es) and its thumbnail `wwwroot/imgs/skins/<id>.jpg`.
-6. Add the skin to the credits table of its weapon in the assets README (skin, author, Workshop link), update the count in the weapon heading and the list of authors.
+5. Add the skin to the site catalog `skins.json` (id, weapon, rarity, price, `workshopId`, `shots`, `author`, titles/descriptions in en/pt/es) and its thumbnail `wwwroot/imgs/skins/<id>.jpg`. See [Skin shop → Catalog](05-skin-shop.md#catalog-skinsjson).
+6. In the assets repository, add the photos in `assets/skin-shots/<id>/` (30 files: six photos in AVIF and WebP, at full size, `-thumb` and, for photos 1, 5 and 6, `-card`; see the assets README) and the skin to the credits table of its weapon (skin, author, Workshop link), updating the count in the weapon heading and the list of authors.
 7. Regenerate the anti-cheat server assets manifest (see below) and bump the client version.
 8. Deploy in this order: anti-cheat client → assets → site → zone-server, then restart the game server while it is empty. See [Operations → When the combined models change](06-operations.md#when-the-combined-models-change).
 
@@ -179,7 +197,7 @@ Every skin was made by the Left 4 Dead 2 community and published on the Steam Wo
 
 ## Anti-cheat manifest
 
-The anti-cheat client verifies the skin files sent by the server against a manifest (`Manifest/server-assets-manifest.json` in the l4d2-anti-cheat-client repository). Whenever skin files are added or changed, regenerate it from a checkout of the assets repository and publish a new client version:
+The anti-cheat client verifies the files the server sends through FastDL (skins, decals, sprites: everything published from `fastdl/`, `models/` and `materials/` of the assets repository) against a manifest (`Manifest/server-assets-manifest.json` in the l4d2-anti-cheat-client repository). Whenever skin files are added or changed, regenerate it from a checkout of the assets repository and publish a new client version:
 
 ```bash
 dotnet run --project tools/L4D2AntiCheat.ManifestGenerator -- server-assets <path-to-l4d2-zone-server-assets>

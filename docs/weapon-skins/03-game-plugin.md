@@ -11,7 +11,7 @@ The plugin loads from `plugins/` (auto-load), not `optional/`, so it is already 
 | Variable | Content |
 |---|---|
 | `g_hSkins` / `g_hSkinsByName` | Skins from `weapon_skins.cfg` (`WeaponSkin` structs) and an id → index map |
-| `g_hWeaponModels` | Combined/stock models per weapon and their precache indexes |
+| `g_hWeaponModels` / `g_hWeaponModelsByClass` | Combined/stock models per weapon, their precache indexes and `stock_skins` (`WeaponModels` structs), and a weapon key → index map |
 | `g_hPurchasedSkins` | Skin ids bought by at least one player (from `/api/skins`) |
 | `g_hOwnedSkins` | Keys `"<steamid64>:<skin>"` for every owned skin (from `/api/players/skins`) |
 | `g_hPlayerChoices` | Equipped skin per `"<steamid64>:<weapon>"` |
@@ -118,7 +118,7 @@ void ApplyWorldModel(int weapon, WeaponSkin skin)
 ```
 
 - **World model** (what others see, and the weapon on the ground): set on equip, on pick-up, and 0.1 s after a drop (the engine resets the model when the weapon is dropped). When a player takes a weapon from a spawn (`weapon_*_spawn`), the weapon in the slot of the spawned weapon (pistols and melee: secondary; everything else: primary) gets the stock world model back before the use and its skin again right after it.
-- **View model** (first person): the player's `m_hViewModel` entity gets the combined view model and the family in `OnPostThinkPost`, every frame. For every weapon with `stock_skins` in the cfg (the six firearms and the nine melee weapons with skins) this happens **even without a skin**, with the weapon's original family (`m_nSkin`), which looks exactly like the stock weapon.
+- **View model** (first person): the player's `m_hViewModel` entity gets the combined view model and the family in `OnPostThinkPost`, every frame. For every weapon with `stock_skins` in the cfg (the six firearms and the nine melee weapons with skins) this happens **even without a skin** (and even with the skins turned off), with the weapon's original family (the `m_nSkin` it had when it was registered, or `0` if that is past `stock_skins`), which looks exactly like the stock weapon. The stock view model only comes back for a player without downloads, or while a player without downloads is spectating that player in first person.
 - **No flicker in first person**: the client predicts the weapon animations and, every time one starts, puts back the view model the weapon reports (the weapon script for a firearm, the melee weapon info for a melee weapon), with the weapon's `m_nSkin` as the family. Without help, the stock weapon blinks over the skin for about one round trip on every shot, swing, reload and weapon switch. The anti-cheat client points those paths of the six firearms and the nine melee weapons at the combined model while the player is on the server, so the prediction picks the same model, and the original families at the start of the combined model keep a weapon without a skin looking stock.
 - **Restoring**: when a weapon loses its skin, the stock model and the weapon's original `m_nSkin` are put back.
 
@@ -155,7 +155,7 @@ A player with `cl_allowdownload 0` (or `cl_downloadfilter` other than `all`/`nos
   [l4d2_weapon_skins.smx] Kicked Player<12><STEAM_1:0:12345><> because cl_allowdownload is "0"
   ```
 
-- `0` → the player stays and **world models go back to stock for everyone** while that player is in the server (view models still show for players who can see them, except to someone spectating them in first person).
+- `0` → the player stays and **world models go back to stock for everyone** while that player is in the server. View models keep the skin for players with downloads, except for the player they spectate in first person: that one goes back to the stock view model while being watched.
 
 > The game menu option *Options > Multiplayer > Custom Server Content > Allow All* only changes `cl_downloadfilter`. `cl_allowdownload` has no menu option: it can only be changed in the console or in a config file. That is why a player who picked "Allow all" in the menu can still be kicked, and why the message gives the exact console command.
 
@@ -168,12 +168,14 @@ Swapping weapons over and over at infinite safe-room spawns can pile up dropped 
 | Command | Who | What it does |
 |---|---|---|
 | `!skin` / `!skins` | all | Help and the shop link |
-| `!skin <id>` | all | Use one of your skins (only during ready-up, as a survivor) |
+| `!skin <id>` | all | Use one of your skins |
 | `!skin next` / `!skin prev` `[weapon]` | all | Cycle through your skins of the weapon; after the last one, back to default |
 | `!skin default [weapon]` | all | Back to the default skin |
 | `!skin status` | all | Skins on/off, your stars and how many skins you own |
 | `!skin on` / `!skin off` | root | Turn skins on/off for everyone (survives map changes) |
 | `!skin test <id\|default> [weapon]` | root | Try a skin on yourself until the map changes |
+
+`!skin <id>`, `next`, `prev` and `default` only work as a survivor and during ready-up (with `weapon_skins_preview_all 1`, root admins can change at any time). Without `[weapon]`, the weapon in hand is used (or, if it has no skins, the primary and then the secondary).
 
 `[weapon]` accepts `smg` (or `uzi`), `mac` (or `mac10`, `mac-10`, `silenced`), `mp5`, `pump`, `chrome`, `magnum` (or `deagle`), `axe` (or `fireaxe`), `bat`, `cricket`, `guitar`, `golf`, `pan`, any other melee script name (`katana`, `machete`, `crowbar`) and the full keys (`weapon_smg`, `weapon_melee_katana`, …).
 
