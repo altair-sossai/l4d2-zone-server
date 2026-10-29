@@ -48,6 +48,14 @@ every boot, after a 5-second delay:
 > firewall and can lock you out of the server. To restart only the game, use
 > [`stop.sh`](../../bash/stop.sh) `<port>` and `start.sh` `<port> <map>`.
 
+`iptables.sh` also logs the packets each limit drops (at most 6 lines per minute per connected player, 6 per minute for the other limits) to `/var/log/l4d2-firewall.log`, rotated weekly and kept for 8 weeks. A player who times out shows up there as `EST-DROP` lines with their IP and port:
+
+```bash
+sudo grep "EST-DROP" /var/log/l4d2-firewall.log
+```
+
+The same script raises the UDP receive buffers (`/etc/sysctl.d/90-l4d2-network.conf`); the game server picks them up on its next restart.
+
 ## Prerequisites (on the machine running Ansible)
 
 - **Ansible** and **sshpass** (required for password-based login).

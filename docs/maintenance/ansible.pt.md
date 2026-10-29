@@ -48,6 +48,14 @@ O [`bootstrap.sh`](../../bash/bootstrap.sh) define o fuso horário como `America
 > firewall e podem bloquear o seu acesso ao servidor. Para reiniciar só o jogo, use
 > [`stop.sh`](../../bash/stop.sh) `<port>` e `start.sh` `<port> <map>`.
 
+O `iptables.sh` também registra os pacotes que cada limite descarta (no máximo 6 linhas por minuto por jogador conectado, 6 por minuto para os outros limites) em `/var/log/l4d2-firewall.log`, rotacionado toda semana e guardado por 8 semanas. Um jogador que cai por timeout aparece lá em linhas `EST-DROP` com o IP e a porta dele:
+
+```bash
+sudo grep "EST-DROP" /var/log/l4d2-firewall.log
+```
+
+O mesmo script aumenta os buffers de recebimento UDP (`/etc/sysctl.d/90-l4d2-network.conf`); o servidor do jogo passa a usá-los na próxima reinicialização.
+
 ## Pré-requisitos (na máquina que executa o Ansible)
 
 - **Ansible** e **sshpass** (necessário para login com senha).

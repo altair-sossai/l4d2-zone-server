@@ -48,6 +48,14 @@ cada arranque, después de una espera de 5 segundos:
 > firewall y pueden dejarte sin acceso al servidor. Para reiniciar solo el juego, usa
 > [`stop.sh`](../../bash/stop.sh) `<port>` y `start.sh` `<port> <map>`.
 
+`iptables.sh` también registra los paquetes que descarta cada límite (como máximo 6 líneas por minuto por jugador conectado, 6 por minuto para los demás límites) en `/var/log/l4d2-firewall.log`, rotado cada semana y guardado durante 8 semanas. Un jugador que se cae por timeout aparece ahí en líneas `EST-DROP` con su IP y puerto:
+
+```bash
+sudo grep "EST-DROP" /var/log/l4d2-firewall.log
+```
+
+El mismo script aumenta los búferes de recepción UDP (`/etc/sysctl.d/90-l4d2-network.conf`); el servidor del juego los usa a partir de su próximo reinicio.
+
 ## Requisitos previos (en la máquina que ejecuta Ansible)
 
 - **Ansible** y **sshpass** (necesario para iniciar sesión con contraseña).
