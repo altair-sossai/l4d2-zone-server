@@ -30,6 +30,15 @@ LOG_PREFIX="L4D2FW"
 ############### Do not modify~! ####################
 ####################################################
 
+#### At boot the script already runs as root, and sudo looks up the host name on every call. Between the DROP policy
+#### and the ESTABLISHED rule the DNS replies are dropped, so each call waited 20 seconds and the script took 10 minutes,
+#### with the game server down and new SSH connections blocked. As root, the commands run directly.
+if [ "$(id -u)" -eq 0 ]; then
+    sudo() {
+        "$@"
+    }
+fi
+
 #### Packets per second allowed from each connected player (source IP + port).
 #### The original script allowed CMD_LIMIT + 10 (burst + 30), which dropped about 1.3% of the packets of connected
 #### players: clients go over cl_cmdrate when they resend reliable data, load a map or talk on voice, and losing those
