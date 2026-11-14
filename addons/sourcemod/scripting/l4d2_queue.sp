@@ -543,6 +543,8 @@ void ReorganizeQueue()
         }
     }
 
+    losers.Sort(Sort_Random, Sort_String);
+
     for (int i = 0; i < losers.Length; i++)
     {
         losers.GetString(i, steamId, sizeof(steamId));
