@@ -30,6 +30,35 @@ Handle g_hVote = null,
        g_hCheckTimer = null,
        g_hCountdownTimer = null;
 
+ConVar g_cvSurrenderEnabled, g_cvSurrenderChapter, g_cvSurrenderHalf,
+       g_cvSurrenderLiveDelay, g_cvSurrenderVoteDuration, g_cvSurrenderPercent,
+       g_cvSurrenderCooldown, g_cvSurrenderPoints, g_cvSurrenderForceDelay,
+       g_cvSurrenderSlayDelay;
+
+enum SurrenderPhase
+{
+    Surrender_None,
+    Surrender_WaitSlay,
+    Surrender_WaitSecondRound,
+    Surrender_WaitForceStart,
+    Surrender_WaitLive,
+    Surrender_WaitSecondSlay,
+    Surrender_WaitRoundEnd,
+    Surrender_WaitChange
+}
+
+SurrenderPhase g_SurrenderPhase = Surrender_None;
+Handle g_hSurrenderTimer = null;
+float g_flSurrenderDeadline;
+float g_flSecondRoundStarted;
+bool g_bSurrenderSecondHalf;
+
+bool g_bSurrenderVote = false, g_bEndingMatch = false, g_bApplyingScores = false;
+float g_flLiveSince = -1.0, g_flNextSurrender[2];
+float g_flSurrenderPercent;
+int g_iSurrenderTeam = -1, g_iSurrenderRoster[MAXPLAYERS + 1],
+    g_iFinalScores[2];
+
 int g_iEligibleVoters = 0,
     g_iNextMapPick = -1,
     g_iCountdown = 0;
@@ -68,8 +97,8 @@ public Plugin myinfo =
 {
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
-    description = "When a game is already decided on the 4th map, slays everyone, announces the victory and rotates to a random official campaign instead of playing the last map",
-    version = "1.6.0",
+    description = "Ends decided matches or team-approved surrenders and rotates campaigns",
+    version = "1.7.0",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -85,11 +114,26 @@ public void OnPluginStart()
     g_cvVoteDuration = CreateConVar("l4d2_early_victory_vote_duration", "15", "How many seconds the losing team has to vote whether to continue playing", FCVAR_NOTIFY, true, 5.0);
     g_cvSlayDelay = CreateConVar("l4d2_early_victory_slay_delay", "5.0", "How many seconds after announcing the victory before slaying everyone", FCVAR_NOTIFY, true, 0.0);
     g_cvChangeDelay = CreateConVar("l4d2_early_victory_change_delay", "3.0", "How many seconds after slaying everyone before changing to a random campaign", FCVAR_NOTIFY, true, 0.0);
+
+    g_cvSurrenderEnabled = CreateConVar("l4d2_surrender_enabled", "1", "Enable team surrender votes", FCVAR_NOTIFY, true, 0.0, true, 1.0);
+    g_cvSurrenderChapter = CreateConVar("l4d2_surrender_min_chapter", "2", "First chapter allowing surrender", FCVAR_NOTIFY, true, 2.0);
+    g_cvSurrenderHalf = CreateConVar("l4d2_surrender_min_round", "1", "First allowed round in the minimum chapter; later chapters allow either round", FCVAR_NOTIFY, true, 1.0, true, 2.0);
+    g_cvSurrenderLiveDelay = CreateConVar("l4d2_surrender_live_delay", "10.0", "Seconds live before surrender can be requested", FCVAR_NOTIFY, true, 0.0);
+    g_cvSurrenderVoteDuration = CreateConVar("l4d2_surrender_vote_duration", "15", "Surrender vote duration in seconds", FCVAR_NOTIFY, true, 5.0);
+    g_cvSurrenderPercent = CreateConVar("l4d2_surrender_vote_percent", "50.0", "Percentage of all eligible teammates that YES votes must strictly exceed", FCVAR_NOTIFY, true, 50.0, true, 99.0);
+    g_cvSurrenderCooldown = CreateConVar("l4d2_surrender_cooldown", "60.0", "Seconds between surrender attempts by the same campaign team", FCVAR_NOTIFY, true, 0.0);
+    g_cvSurrenderPoints = CreateConVar("l4d2_surrender_points", "250", "Points awarded above the higher team score to the opponent", FCVAR_NOTIFY, true, 1.0, true, 100000.0);
+    g_cvSurrenderForceDelay = CreateConVar("l4d2_surrender_forcestart_delay", "8.0", "Seconds after the second round starts before forcing live; minimum allows PlayStats to initialize teams", FCVAR_NOTIFY, true, 6.0);
+    g_cvSurrenderSlayDelay = CreateConVar("l4d2_surrender_second_slay_delay", "3.0", "Seconds live in the automatic second round before slaying everyone", FCVAR_NOTIFY, true, 1.0);
+
+    RegConsoleCmd("sm_surrender", Surrender_Cmd);
+    RegConsoleCmd("sm_render", Surrender_Cmd);
     
     RegServerCmd("l4d2_early_victory_queue", InitialQueue_Cmd, "Appends a single official campaign name to the next-campaign queue (e.g. l4d2_early_victory_queue \"The Parish\"). Use one command per line in your config to build the ordered rotation. Ignored once the queue is locked");
     RegServerCmd("l4d2_early_victory_queue_lock", InitialQueueLock_Cmd, "Locks the initial queue so later l4d2_early_victory_queue calls are ignored. Call this once right after the last campaign in your config");
 
     HookEvent("round_start", RoundStart_Event, EventHookMode_PostNoCopy);
+    HookEvent("player_team", PlayerTeam_Event);
 
     AddCommandListener(CallVote_Listener, "callvote");
 
@@ -100,8 +144,26 @@ public void OnPluginStart()
 
 public void OnMapStart()
 {
+    g_bEndingMatch = false;
+    g_SurrenderPhase = Surrender_None;
+    g_iSurrenderTeam = -1;
+    g_flLiveSince = -1.0;
+    g_flNextSurrender[0] = 0.0;
+    g_flNextSurrender[1] = 0.0;
     PrecacheSound(VICTORY_SOUND);
     RemoveCurrentMapFromQueue();
+}
+
+public void OnMapEnd()
+{
+    CancelActiveVote();
+    KillCheckTimer();
+    KillCountdownTimer();
+    delete g_hSurrenderTimer;
+    g_SurrenderPhase = Surrender_None;
+    g_bEndingMatch = false;
+    g_iSurrenderTeam = -1;
+    g_flLiveSince = -1.0;
 }
 
 Action InitialQueue_Cmd(int args)
@@ -144,9 +206,27 @@ Action InitialQueueLock_Cmd(int args)
 
 void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 {
+    g_flLiveSince = -1.0;
+    CancelActiveVote();
+    if (g_bEndingMatch)
+    {
+        if (g_SurrenderPhase == Surrender_WaitSecondRound && InSecondHalfOfRound())
+        {
+            g_bRoundOver = false;
+            g_bSurrenderSecondHalf = true;
+            g_flSecondRoundStarted = GetGameTime();
+            g_SurrenderPhase = Surrender_WaitForceStart;
+            g_flSurrenderDeadline = GetGameTime() + g_cvSurrenderForceDelay.FloatValue;
+            CPrintToChatAll("%t", "SurrenderForceStart", RoundToCeil(g_cvSurrenderForceDelay.FloatValue));
+        }
+        return;
+    }
+
     g_bTriggered = false;
     g_bVoteResolved = false;
     g_bRoundOver = false;
+    g_bSurrenderVote = false;
+    g_iSurrenderTeam = -1;
     g_hVote = null;
     g_iEligibleVoters = 0;
     g_iNextMapPick = -1;
@@ -158,6 +238,19 @@ void RoundStart_Event(Handle event, const char[] name, bool dontBroadcast)
 
 public void OnRoundIsLive()
 {
+    g_flLiveSince = GetGameTime();
+    if (g_bEndingMatch)
+    {
+        if (g_SurrenderPhase == Surrender_WaitForceStart || g_SurrenderPhase == Surrender_WaitLive)
+        {
+            g_SurrenderPhase = Surrender_WaitSecondSlay;
+            g_flSurrenderDeadline = GetGameTime() + g_cvSurrenderSlayDelay.FloatValue;
+            if (g_flSurrenderDeadline < g_flSecondRoundStarted + 6.0)
+                g_flSurrenderDeadline = g_flSecondRoundStarted + 6.0;
+            CPrintToChatAll("%t", "SurrenderSecondLive", RoundToCeil(g_flSurrenderDeadline - GetGameTime()));
+        }
+        return;
+    }
     if (g_hCheckTimer != null)
         return;
 
@@ -168,11 +261,47 @@ public void L4D2_OnEndVersusModeRound_Post()
 {
     g_bRoundOver = true;
 
+    CancelActiveVote();
+
     KillCheckTimer();
+
+    if (g_SurrenderPhase != Surrender_None && g_SurrenderPhase != Surrender_WaitChange)
+    {
+        if (g_bSurrenderSecondHalf)
+        {
+            g_SurrenderPhase = Surrender_WaitChange;
+            // PlayStats writes the second half one second after round_end.
+            g_flSurrenderDeadline = GetGameTime() + SurrenderChangeDelay();
+            CPrintToChatAll("%t", "SurrenderSaving");
+            RequestFrame(RestoreSurrenderScores_Frame);
+        }
+        else
+        {
+            g_SurrenderPhase = Surrender_WaitSecondRound;
+            CPrintToChatAll("%t", "SurrenderSwitching");
+        }
+    }
+}
+
+// Match readyup.inc's scalar declaration; the reason is intentionally unused.
+public void OnReadyCountdownCancelled(int client, char sDisruptReason)
+{
+    if (g_SurrenderPhase == Surrender_WaitLive)
+    {
+        g_SurrenderPhase = Surrender_WaitForceStart;
+        g_flSurrenderDeadline = GetGameTime() + g_cvSurrenderForceDelay.FloatValue;
+    }
 }
 
 Action CallVote_Listener(int client, const char[] command, int argc)
 {
+    if (g_bEndingMatch)
+    {
+        if (client > 0 && IsClientInGame(client))
+            CPrintToChat(client, "%t", "MatchEnding");
+        return Plugin_Handled;
+    }
+
     if (!g_cvEnabled.BoolValue || client <= 0 || !IsClientInGame(client) || IsFakeClient(client) || argc < 1)
         return Plugin_Continue;
 
@@ -185,7 +314,10 @@ Action CallVote_Listener(int client, const char[] command, int argc)
     if (!StrEqual(voteType, "ChangeMission", false))
         return Plugin_Continue;
 
-    CPrintToChat(client, "%t", "MapVoteBlocked");
+    if (g_cvSurrenderEnabled.BoolValue && SurrenderRoundAllowed())
+        CPrintToChat(client, "%t", "MapVoteSurrender");
+    else
+        CPrintToChat(client, "%t", "MapVoteBlocked");
 
     return Plugin_Handled;
 }
@@ -244,7 +376,7 @@ Action Check_Timer(Handle timer)
     if (losingTeam == 0)
         return Plugin_Continue;
 
-    if (IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
+    if (g_bEndingMatch || g_hVote != null || IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
         return Plugin_Continue;
 
     if (!HasHumanOnLosingTeam(losingTeam))
@@ -257,6 +389,310 @@ Action Check_Timer(Handle timer)
     StartContinueVote(losingTeam);
 
     return Plugin_Stop;
+}
+
+int CampaignTeam(int client)
+{
+    int survivorTeam = AreTeamsFlipped() ? 1 : 0;
+    return GetClientTeam(client) == L4D_TEAM_SURVIVOR ? survivorTeam : 1 - survivorTeam;
+}
+
+bool SurrenderRoundAllowed()
+{
+    int chapter = L4D_GetCurrentChapter();
+    int round = InSecondHalfOfRound() ? 2 : 1;
+    return chapter > g_cvSurrenderChapter.IntValue
+        || (chapter == g_cvSurrenderChapter.IntValue && round >= g_cvSurrenderHalf.IntValue);
+}
+
+void CancelActiveVote()
+{
+    if (g_hVote != null && !g_bVoteResolved)
+        CancelBuiltinVote();
+}
+
+public void OnClientDisconnect(int client)
+{
+    if (g_bSurrenderVote && g_iSurrenderRoster[client] != 0)
+        CancelActiveVote();
+}
+
+void PlayerTeam_Event(Event event, const char[] name, bool dontBroadcast)
+{
+    int client = GetClientOfUserId(event.GetInt("userid"));
+    if (client > 0 && g_bSurrenderVote && g_iSurrenderRoster[client] != 0
+        && event.GetInt("oldteam") != event.GetInt("team"))
+        CancelActiveVote();
+}
+
+Action Surrender_Cmd(int client, int args)
+{
+    if (client <= 0 || !IsClientInGame(client) || IsFakeClient(client))
+        return Plugin_Handled;
+
+    int team = GetClientTeam(client);
+    if (team != L4D_TEAM_SURVIVOR && team != L4D_TEAM_INFECTED)
+    {
+        CPrintToChat(client, "%t", "SurrenderPlayersOnly");
+        return Plugin_Handled;
+    }
+
+    if (!g_cvSurrenderEnabled.BoolValue || g_bEndingMatch || g_bRoundOver
+        || !L4D_HasMapStarted() || IsInReady() || g_flLiveSince < 0.0)
+    {
+        CPrintToChat(client, "%t", "SurrenderUnavailable");
+        return Plugin_Handled;
+    }
+
+    if (!SurrenderRoundAllowed())
+    {
+        CPrintToChat(client, "%t", "SurrenderTooEarly", g_cvSurrenderChapter.IntValue, g_cvSurrenderHalf.IntValue);
+        return Plugin_Handled;
+    }
+
+    float remaining = g_cvSurrenderLiveDelay.FloatValue - (GetGameTime() - g_flLiveSince);
+    if (remaining > 0.0)
+    {
+        CPrintToChat(client, "%t", "SurrenderWait", RoundToCeil(remaining));
+        return Plugin_Handled;
+    }
+
+    int campaignTeam = CampaignTeam(client);
+    remaining = g_flNextSurrender[campaignTeam] - GetGameTime();
+    if (remaining > 0.0)
+    {
+        CPrintToChat(client, "%t", "SurrenderWait", RoundToCeil(remaining));
+        return Plugin_Handled;
+    }
+
+    if (g_hVote != null || IsBuiltinVoteInProgress() || CheckBuiltinVoteDelay() > 0)
+    {
+        CPrintToChat(client, "%t", "SurrenderVoteBusy");
+        return Plugin_Handled;
+    }
+
+    int[] players = new int[MaxClients];
+    g_iEligibleVoters = 0;
+    for (int i = 1; i <= MaxClients; i++)
+    {
+        g_iSurrenderRoster[i] = 0;
+        if (!IsClientInGame(i) || IsFakeClient(i) || GetClientTeam(i) != team)
+            continue;
+
+        players[g_iEligibleVoters++] = i;
+        g_iSurrenderRoster[i] = GetClientUserId(i);
+    }
+
+    g_hVote = CreateBuiltinVote(SurrenderVoteActionHandler, BuiltinVoteType_Custom_YesNo,
+        BuiltinVoteAction_Cancel | BuiltinVoteAction_End);
+    if (g_hVote == null)
+    {
+        CPrintToChat(client, "%t", "SurrenderVoteBusy");
+        return Plugin_Handled;
+    }
+
+    g_iSurrenderTeam = campaignTeam;
+    g_flSurrenderPercent = g_cvSurrenderPercent.FloatValue;
+    g_bSurrenderVote = true;
+    g_bVoteResolved = false;
+
+    char title[128];
+    FormatEx(title, sizeof(title), "%T", "SurrenderVoteTitle", LANG_SERVER);
+    SetBuiltinVoteArgument(g_hVote, title);
+    SetBuiltinVoteInitiator(g_hVote, client);
+    SetBuiltinVoteTeam(g_hVote, team);
+    SetBuiltinVoteResultCallback(g_hVote, SurrenderVoteResultHandler);
+
+    if (!DisplayBuiltinVote(g_hVote, players, g_iEligibleVoters, g_cvSurrenderVoteDuration.IntValue))
+    {
+        delete g_hVote;
+        g_bSurrenderVote = false;
+        CPrintToChat(client, "%t", "SurrenderVoteBusy");
+        return Plugin_Handled;
+    }
+
+    g_flNextSurrender[campaignTeam] = GetGameTime() + g_cvSurrenderCooldown.FloatValue;
+    FakeClientCommand(client, "Vote Yes");
+    return Plugin_Handled;
+}
+
+void SurrenderVoteActionHandler(Handle vote, BuiltinVoteAction action, int param1, int param2)
+{
+    switch (action)
+    {
+        case BuiltinVoteAction_Cancel:
+        {
+            if (!g_bVoteResolved)
+            {
+                g_bVoteResolved = true;
+                g_flNextSurrender[g_iSurrenderTeam] = GetGameTime() + g_cvSurrenderCooldown.FloatValue;
+                DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Generic);
+                CPrintToChatAll("%t", "VoteCancelled");
+            }
+            g_bSurrenderVote = false;
+        }
+        case BuiltinVoteAction_End:
+        {
+            if (vote == g_hVote)
+            {
+                g_hVote = null;
+                g_bSurrenderVote = false;
+            }
+            delete vote;
+        }
+    }
+}
+
+void SurrenderVoteResultHandler(Handle vote, int num_votes, int num_clients, const int[][] client_info,
+    int num_items, const int[][] item_info)
+{
+    if (g_bVoteResolved || vote != g_hVote)
+        return;
+
+    int yesVotes = 0;
+    for (int i = 0; i < num_clients; i++)
+    {
+        int client = client_info[i][BUILTINVOTEINFO_CLIENT_INDEX];
+        if (client > 0 && client <= MaxClients && IsClientInGame(client)
+            && g_iSurrenderRoster[client] == GetClientUserId(client)
+            && CampaignTeam(client) == g_iSurrenderTeam
+            && client_info[i][BUILTINVOTEINFO_CLIENT_ITEM] == BUILTINVOTES_VOTE_YES)
+            yesVotes++;
+    }
+
+    g_bVoteResolved = true;
+    g_bSurrenderVote = false;
+    if (g_bRoundOver || g_bEndingMatch || IsInReady() || !SurrenderRoundAllowed()
+        || float(yesVotes * 100) <= float(g_iEligibleVoters) * g_flSurrenderPercent)
+    {
+        g_flNextSurrender[g_iSurrenderTeam] = GetGameTime() + g_cvSurrenderCooldown.FloatValue;
+        DisplayBuiltinVoteFail(vote, BuiltinVoteFail_Loses);
+        CPrintToChatAll("%t", "SurrenderRejected");
+        return;
+    }
+
+    g_iFinalScores[0] = GetTeamAScore();
+    g_iFinalScores[1] = GetTeamBScore();
+    int opponent = 1 - g_iSurrenderTeam;
+    int highest = g_iFinalScores[0] > g_iFinalScores[1] ? g_iFinalScores[0] : g_iFinalScores[1];
+    g_iFinalScores[opponent] = highest + g_cvSurrenderPoints.IntValue;
+    g_bEndingMatch = true;
+    g_bTriggered = true;
+    g_bSurrenderSecondHalf = InSecondHalfOfRound();
+    g_SurrenderPhase = Surrender_WaitSlay;
+    g_flSurrenderDeadline = GetGameTime() + g_cvSlayDelay.FloatValue;
+    KillCheckTimer();
+    ApplySurrenderScores();
+
+    char message[128];
+    FormatEx(message, sizeof(message), "%T", "SurrenderPassed", LANG_SERVER);
+    DisplayBuiltinVotePass(vote, message);
+    CPrintToChatAll("%t", "SurrenderResult", g_iFinalScores[g_iSurrenderTeam], g_iFinalScores[opponent]);
+    g_iNextMapPick = PickNextMapIndex();
+    EmitSoundToAll(VICTORY_SOUND);
+    CPrintToChatAll("%t", "SurrenderClosing");
+    CPrintToChatAll("{orange}[%t]{default} %t", "Tag", "NextMap", g_sOfficialCampaigns[g_iNextMapPick]);
+    g_hSurrenderTimer = CreateTimer(1.0, SurrenderProgress_Timer, _, TIMER_REPEAT | TIMER_FLAG_NO_MAPCHANGE);
+}
+
+float SurrenderChangeDelay()
+{
+    return g_cvChangeDelay.FloatValue < 2.0 ? 2.0 : g_cvChangeDelay.FloatValue;
+}
+
+void RestoreSurrenderScores_Frame(any data)
+{
+    if (g_SurrenderPhase != Surrender_None)
+        ApplySurrenderScores();
+}
+
+Action SurrenderProgress_Timer(Handle timer)
+{
+    if (g_SurrenderPhase == Surrender_None)
+    {
+        g_hSurrenderTimer = null;
+        return Plugin_Stop;
+    }
+
+    float remaining = g_flSurrenderDeadline - GetGameTime();
+    switch (g_SurrenderPhase)
+    {
+        case Surrender_WaitSlay, Surrender_WaitSecondSlay:
+        {
+            if (remaining <= 0.0 && !g_bRoundOver)
+            {
+                MaterializeSurrenderInfected();
+                g_SurrenderPhase = g_bSurrenderSecondHalf ? Surrender_WaitRoundEnd : Surrender_WaitSecondRound;
+                ServerCommand("sm_slay @all");
+            }
+        }
+        case Surrender_WaitForceStart:
+        {
+            if (remaining <= 0.0 && IsInReady())
+            {
+                g_SurrenderPhase = Surrender_WaitLive;
+                ServerCommand("sm_forcestart");
+            }
+        }
+        case Surrender_WaitChange:
+        {
+            if (remaining <= 0.0)
+            {
+                ApplySurrenderScores();
+                g_hSurrenderTimer = null;
+                ChangeMap_Timer(null);
+                return Plugin_Stop;
+            }
+        }
+    }
+
+    if (g_SurrenderPhase == Surrender_WaitChange)
+        PrintHintTextToAll("%t", "CeremonyCountdown", g_sOfficialCampaigns[g_iNextMapPick], RoundToCeil(remaining));
+    else
+        PrintHintTextToAll("%t", "SurrenderClosing");
+
+    return Plugin_Continue;
+}
+
+void MaterializeSurrenderInfected()
+{
+    // The API requires infected statistics, and PlayStats omits players with no spawns.
+    for (int client = 1; client <= MaxClients; client++)
+    {
+        if (!IsClientInGame(client) || IsFakeClient(client) || GetClientTeam(client) != L4D_TEAM_INFECTED)
+            continue;
+
+        if (!IsPlayerAlive(client))
+            L4D_RespawnPlayer(client);
+
+        if (IsPlayerAlive(client) && GetEntProp(client, Prop_Send, "m_isGhost") != 0)
+            L4D_MaterializeFromGhost(client);
+    }
+}
+
+void ApplySurrenderScores()
+{
+    g_bApplyingScores = true;
+    L4D2Direct_SetVSCampaignScore(0, g_iFinalScores[0]);
+    L4D2Direct_SetVSCampaignScore(1, g_iFinalScores[1]);
+    g_bApplyingScores = false;
+}
+
+public Action L4D_OnSetCampaignScores(int &scoreA, int &scoreB)
+{
+    if (g_SurrenderPhase == Surrender_None)
+        return Plugin_Continue;
+
+    scoreA = g_iFinalScores[0];
+    scoreB = g_iFinalScores[1];
+    return Plugin_Changed;
+}
+
+public void L4D_OnSetCampaignScores_Post(int scoreA, int scoreB)
+{
+    // Reapply through the native so PlayStats sees the final scores regardless of hook order.
+    if (g_SurrenderPhase != Surrender_None && !g_bApplyingScores)
+        ApplySurrenderScores();
 }
 
 Action Debug_Cmd(int client, int args)
@@ -290,6 +726,7 @@ Action Debug_Cmd(int client, int args)
 
     ReplyToCommand(client, "===== Early Victory Debug =====");
     ReplyToCommand(client, "Chapter: %d (trigger: %d) | 2nd half: %d | InReady: %d | RoundOver: %d | Flipped: %d", L4D_GetCurrentChapter(), g_cvChapter.IntValue, InSecondHalfOfRound(), IsInReady(), g_bRoundOver, AreTeamsFlipped());
+    ReplyToCommand(client, "Surrender phase: %d | campaign team: %d | ending: %d | live since: %.1f | final A/B: %d / %d", g_SurrenderPhase, g_iSurrenderTeam, g_bEndingMatch, g_flLiveSince, g_iFinalScores[0], g_iFinalScores[1]);
     ReplyToCommand(client, "Scoring team score: %d", scoringScore);
     ReplyToCommand(client, "Already-played team score: %d", alreadyPlayedScore);
     ReplyToCommand(client, "min_diff: %d", g_cvMinDiff.IntValue);
@@ -318,6 +755,8 @@ void KillCheckTimer()
 
 void StartContinueVote(int losingTeam)
 {
+    g_bVoteResolved = false;
+    g_bSurrenderVote = false;
     g_iEligibleVoters = 0;
 
     int[] players = new int[MaxClients];
@@ -417,6 +856,7 @@ void ContinueVoteResultHandler(Handle vote, int num_votes, int num_clients, cons
 
 void ScheduleEarlyVictory()
 {
+    g_bEndingMatch = true;
     g_iNextMapPick = PickNextMapIndex();
 
     PrecacheSound(VICTORY_SOUND);

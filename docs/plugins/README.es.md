@@ -138,13 +138,17 @@ El daño se ignora cuando la víctima está incapacitada, colgando o cayendo de 
 
 ## l4d2_early_victory
 
-**Fuente:** [`scripting/l4d2_early_victory.sp`](../../addons/sourcemod/scripting/l4d2_early_victory.sp) · **Versión:** 1.6.0
+**Fuente:** [`scripting/l4d2_early_victory.sp`](../../addons/sourcemod/scripting/l4d2_early_victory.sp) · **Versión:** 1.7.0
+
+**Rendición por equipo** — `!surrender` o `!render` abre una votación para los humanos del propio equipo, incluidos los muertos. Los espectadores no pueden iniciar ni votar. Por defecto se permite desde el segundo mapa, en cualquier round, tras 10 segundos live. Los votos Sí deben superar estrictamente el 50% del electorado inicial: hacen falta tres de cuatro. Las abstenciones no aprueban la rendición. Si un elector sale o cambia de equipo se cancela; los intentos rechazados o cancelados tienen una espera de 60 segundos por equipo.
+
+Al aprobar, el resultado queda fijado: el rival recibe `max(marcador A, marcador B) + l4d2_surrender_points` (250 por defecto), conservando los puntos y la identidad del equipo rendido al cambiar de lados. Se bloquean nuevas votaciones y se anuncia cada paso. Todos mueren tras `l4d2_early_victory_slay_delay`. Si era el primer round, se espera al segundo, se ejecuta `sm_forcestart` después de `l4d2_surrender_forcestart_delay`, se espera el evento live y se mata a todos tras `l4d2_surrender_second_slay_delay`. Antes de los slays se materializan los infectados humanos para registrar los spawns que requiere la API. La campaña cambia solo después del segundo round y de `l4d2_early_victory_change_delay`, con un mínimo efectivo de dos segundos para escribir las estadísticas. El sincronizador existente envía los archivos en el próximo round; este plugin no espera confirmación HTTP. La rendición se habilita independientemente de la victoria anticipada automática.
 
 **Qué hace** — Detecta cuando una campaña versus ya está decidida antes de su último mapa. Durante la segunda ronda del capítulo configurado (por defecto el 4.º mapa, nunca un final), revisa el marcador cada 5 segundos (no mientras haya un tank vivo o un superviviente incapacitado). La partida está decidida cuando el equipo que juega de superviviente va por delante por al menos `min_diff`, o ya no puede quedar a menos de `min_diff` del otro equipo ni con la puntuación máxima que queda en el mapa. Entonces todos reciben *"Game decided ({score} x {score}). Losing team will vote."* y el equipo perdedor recibe una votación corta con el título *"Game decided, keep playing?"*:
 
 - Si al menos la mitad del equipo perdedor vota Sí (los votos no emitidos cuentan como No) → *"Losing team chose to continue."* y la partida sigue con normalidad. Si la votación se cancela → *"Vote cancelled. Match continues."*
 - Si no → *"No majority to continue. Ending match."*, suena un sonido de victoria, se anuncia la siguiente campaña (*"Next campaign: {name}"*) con una cuenta regresiva en pantalla (*"Next campaign: {name} - changing map in {n}s"*), todos mueren tras `slay_delay`, y el servidor cambia al primer mapa de la siguiente campaña tras `change_delay` segundos más.
-- Durante la segunda ronda de ese capítulo, las votaciones para cambiar de campaña están bloqueadas: *"Map change blocked until the match ends."*
+- Durante la segunda ronda de ese capítulo, las votaciones para cambiar de campaña están bloqueadas: *"Map change blocked until the match ends."* Cuando se bloquea la votación de cambio de campaña y la rendición está habilitada para ese mapa y round, el mensaje indica usar `!surrender`. Durante un cierre ya aprobado, pide esperar la próxima campaña.
 
 La siguiente campaña es la primera entrada de una cola de rotación (ver abajo); cuando la cola está vacía, es una aleatoria entre las 10 campañas oficiales que conoce el plugin (Dead Center, Dark Carnival, Swamp Fever, Hard Rain, The Parish, No Mercy, Death Toll, Dead Air, Blood Harvest, Cold Stream). La campaña en juego se quita de la cola al iniciar el mapa. Un admin puede añadir campañas a la cola o vaciarla con un menú (*"Queue the next campaigns (in queue: {n})"* / *"Clear list"*); cada cambio se anuncia (*"The next campaigns are: …"*).
 
@@ -160,6 +164,16 @@ La siguiente campaña es la primera entrada de una cola de rotación (ver abajo)
 | `l4d2_early_victory_vote_duration` | `15` | Segundos que tiene el equipo perdedor para votar si continúa |
 | `l4d2_early_victory_slay_delay` | `5.0` | Segundos después del anuncio antes de matar a todos |
 | `l4d2_early_victory_change_delay` | `3.0` | Segundos después de matar a todos antes de cambiar de campaña |
+| `l4d2_surrender_enabled` | `1` | Activa las votaciones de rendición |
+| `l4d2_surrender_min_chapter` | `2` | Primer mapa permitido; mínimo 2 |
+| `l4d2_surrender_min_round` | `1` | Primer round permitido en el mapa mínimo; los siguientes permiten ambos |
+| `l4d2_surrender_live_delay` | `10.0` | Segundos desde el evento live |
+| `l4d2_surrender_vote_duration` | `15` | Duración de la votación en segundos |
+| `l4d2_surrender_vote_percent` | `50.0` | Porcentaje del electorado inicial que los votos Sí deben superar; mínimo 50 |
+| `l4d2_surrender_cooldown` | `60.0` | Espera por equipo tras intento rechazado o cancelado |
+| `l4d2_surrender_points` | `250` | Puntos por encima del mayor marcador otorgados al rival |
+| `l4d2_surrender_forcestart_delay` | `8.0` | Espera tras iniciar el segundo round antes del forcestart; mínimo 6 segundos para inicializar PlayStats |
+| `l4d2_surrender_second_slay_delay` | `3.0` | Segundos live antes del slay del segundo round automático; mínimo 1 |
 
 **Comandos**
 
@@ -169,6 +183,7 @@ La siguiente campaña es la primera entrada de una cola de rotación (ver abajo)
 | `l4d2_early_victory_queue_lock` | servidor (cfg) | Bloquea la cola; las llamadas posteriores a `l4d2_early_victory_queue` se ignoran |
 | `sm_setnextcampaign` | `ADMFLAG_CHANGEMAP` | Menú para añadir campañas a la cola o vaciarla |
 | `sm_early_victory_debug` | `ADMFLAG_ROOT` | Muestra los marcadores internos y el desglose de bonificaciones para depuración |
+| `sm_surrender`, `sm_render` | jugadores de los equipos | Vota para que el propio equipo se rinda y pierda la partida |
 
 **Cómo configurar** — Define las ConVars mediante `confogl_addcvar` en `shared_cvars.cfg` y, justo después, arma la rotación de campañas con líneas `l4d2_early_victory_queue` directas, terminando con `l4d2_early_victory_queue_lock`. Ejemplo (resumido de [`zonemod/shared_cvars.cfg`](../../cfg/cfgogl/zonemod/shared_cvars.cfg)):
 

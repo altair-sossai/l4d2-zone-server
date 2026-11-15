@@ -57,4 +57,73 @@
     {
         "en"    "No next campaign set. The next one will be random."
     }
+    "SurrenderPlayersOnly"
+    {
+        "en"    "Only players on a team can request surrender."
+    }
+    "SurrenderUnavailable"
+    {
+        "en"    "Surrender is unavailable now. Wait for the round to be live."
+    }
+    "SurrenderTooEarly"
+    {
+        "#format"    "{1:d},{2:d}"
+        "en"    "Surrender unlocks on chapter {1}, round {2}; later chapters allow either round."
+    }
+    "SurrenderWait"
+    {
+        "#format"    "{1:d}"
+        "en"    "Wait {1} seconds before requesting surrender."
+    }
+    "SurrenderVoteBusy"
+    {
+        "en"    "A surrender vote cannot start now. Try again shortly."
+    }
+    "SurrenderVoteTitle"
+    {
+        "en"    "Surrender and lose the match?"
+    }
+    "SurrenderRejected"
+    {
+        "en"    "Surrender rejected. The match continues."
+    }
+    "SurrenderPassed"
+    {
+        "en"    "Surrender approved."
+    }
+    "SurrenderResult"
+    {
+        "#format"    "{1:d},{2:d}"
+        "en"    "Surrender approved. Surrendering team: {olive}{1}{default}. Opponent wins: {green}{2}{default}."
+    }
+    "SurrenderClosing"
+    {
+        "en"    "Surrender approved. Finishing rounds to register the result in the ranking. Please wait."
+    }
+    "SurrenderSwitching"
+    {
+        "en"    "Surrender: waiting for the side switch. The next round will start and end automatically."
+    }
+    "SurrenderForceStart"
+    {
+        "#format"    "{1:d}"
+        "en"    "Surrender: forcing the second round to start in {1} seconds. You do not need to ready up."
+    }
+    "SurrenderSecondLive"
+    {
+        "#format"    "{1:d}"
+        "en"    "Surrender: second round live. Ending automatically in {1} seconds."
+    }
+    "SurrenderSaving"
+    {
+        "en"    "Surrender: both rounds ended. Saving statistics before changing campaign."
+    }
+    "MapVoteSurrender"
+    {
+        "en"    "Campaign change blocked. Use !surrender to ask your team to surrender and end the match."
+    }
+    "MatchEnding"
+    {
+        "en"    "The match is ending. Please wait for the next campaign."
+    }
 }

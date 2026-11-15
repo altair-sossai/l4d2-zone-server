@@ -57,4 +57,73 @@
     {
         "es"    "Ninguna campaña definida. La próxima será aleatoria."
     }
+    "SurrenderPlayersOnly"
+    {
+        "es"    "Solo los jugadores de un equipo pueden pedir rendirse."
+    }
+    "SurrenderUnavailable"
+    {
+        "es"    "La rendición no está disponible ahora. Espera a que el round esté live."
+    }
+    "SurrenderTooEarly"
+    {
+        "#format"    "{1:d},{2:d}"
+        "es"    "La rendición se habilita en el mapa {1}, round {2}; los siguientes permiten cualquier round."
+    }
+    "SurrenderWait"
+    {
+        "#format"    "{1:d}"
+        "es"    "Espera {1} segundos para pedir rendirte."
+    }
+    "SurrenderVoteBusy"
+    {
+        "es"    "No se puede iniciar la votación de rendición ahora. Inténtalo en unos momentos."
+    }
+    "SurrenderVoteTitle"
+    {
+        "es"    "¿Rendirse y perder la partida?"
+    }
+    "SurrenderRejected"
+    {
+        "es"    "Rendición rechazada. La partida continúa."
+    }
+    "SurrenderPassed"
+    {
+        "es"    "Rendición aprobada."
+    }
+    "SurrenderResult"
+    {
+        "#format"    "{1:d},{2:d}"
+        "es"    "Rendición aprobada. Equipo rendido: {olive}{1}{default}. El rival gana: {green}{2}{default}."
+    }
+    "SurrenderClosing"
+    {
+        "es"    "Rendición aprobada. Finalizando los rounds para registrar el resultado en el ranking. Espera."
+    }
+    "SurrenderSwitching"
+    {
+        "es"    "Rendición: esperando el cambio de lados. El próximo round empezará y terminará automáticamente."
+    }
+    "SurrenderForceStart"
+    {
+        "#format"    "{1:d}"
+        "es"    "Rendición: inicio forzado del segundo round en {1} segundos. No necesitas dar ready."
+    }
+    "SurrenderSecondLive"
+    {
+        "#format"    "{1:d}"
+        "es"    "Rendición: segundo round live. Finalizará automáticamente en {1} segundos."
+    }
+    "SurrenderSaving"
+    {
+        "es"    "Rendición: ambos rounds terminaron. Guardando estadísticas antes de cambiar de campaña."
+    }
+    "MapVoteSurrender"
+    {
+        "es"    "Cambio de campaña bloqueado. Usa !surrender para pedir la rendición de tu equipo y terminar la partida."
+    }
+    "MatchEnding"
+    {
+        "es"    "La partida está finalizando. Espera la próxima campaña."
+    }
 }

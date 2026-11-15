@@ -138,13 +138,17 @@ Damage is ignored when the victim is incapacitated, hanging from or falling off 
 
 ## l4d2_early_victory
 
-**Source:** [`scripting/l4d2_early_victory.sp`](../../addons/sourcemod/scripting/l4d2_early_victory.sp) · **Version:** 1.6.0
+**Source:** [`scripting/l4d2_early_victory.sp`](../../addons/sourcemod/scripting/l4d2_early_victory.sp) · **Version:** 1.7.0
+
+**Team surrender** — `!surrender` or `!render` opens a vote for human teammates, including dead players. Spectators cannot initiate or vote. Defaults allow either round starting on map two, after 10 seconds live. YES must strictly exceed 50% of the original electorate: three of four players are required. Abstentions do not approve surrender. A voter leaving or changing teams cancels the vote; rejected or cancelled attempts impose a 60-second team cooldown.
+
+Approval locks the result: the opponent receives `max(score A, score B) + l4d2_surrender_points` (default 250), preserving the surrendering team score and identity across the side switch. New votes are blocked and players are informed of each step. Everyone is slain after `l4d2_early_victory_slay_delay`. When surrender starts in the first round, the plugin waits for round two, delays `sm_forcestart` by `l4d2_surrender_forcestart_delay`, waits for the live event and slays everyone after `l4d2_surrender_second_slay_delay`. Human infected are materialized before the slays so PlayStats records the spawns required by API infected statistics. Campaign rotation only follows the completed second round and `l4d2_early_victory_change_delay`, with an effective minimum of two seconds for PlayStats to write. The existing synchronizer uploads on the next round; this plugin does not await HTTP confirmation. Surrender is enabled independently of automatic early victory.
 
 **What it does** — Detects when a versus campaign is already decided before its last map. During the second round of the configured chapter (default the 4th map, never a finale), it checks the score every 5 seconds (not while a tank is alive or a survivor is incapacitated). The match is decided when the team playing survivors leads by at least `min_diff`, or can no longer get within `min_diff` of the other team even with the maximum score left on the map. Then everyone is told *"Game decided ({score} x {score}). Losing team will vote."* and the losing team gets a short vote titled *"Game decided, keep playing?"*:
 
 - If at least half of the losing team votes Yes (missing votes count as No) → *"Losing team chose to continue."* and the match proceeds normally. If the vote is cancelled → *"Vote cancelled. Match continues."*
 - Otherwise → *"No majority to continue. Ending match."*, a victory sound plays, the next campaign is announced (*"Next campaign: {name}"*) with a countdown hint (*"Next campaign: {name} - changing map in {n}s"*), everyone is slain after `slay_delay`, and the server changes to the first map of the next campaign after `change_delay` more seconds.
-- During the second round of that chapter, change-campaign votes are blocked: *"Map change blocked until the match ends."*
+- During the second round of that chapter, change-campaign votes are blocked: *"Map change blocked until the match ends."* When campaign-change voting is blocked and surrender is enabled for that map and round, the message directs the player to `!surrender`. During an approved match ending, it asks players to wait for the next campaign.
 
 The next campaign is the first entry of a rotation queue (see below); when the queue is empty, it is a random one of the 10 official campaigns the plugin knows (Dead Center, Dark Carnival, Swamp Fever, Hard Rain, The Parish, No Mercy, Death Toll, Dead Air, Blood Harvest, Cold Stream). The campaign being played is removed from the queue on map start. An admin can add campaigns to the queue or clear it with a menu (*"Queue the next campaigns (in queue: {n})"* / *"Clear list"*); each change is announced (*"The next campaigns are: …"*).
 
@@ -160,6 +164,16 @@ The next campaign is the first entry of a rotation queue (see below); when the q
 | `l4d2_early_victory_vote_duration` | `15` | Seconds the losing team has to vote to continue |
 | `l4d2_early_victory_slay_delay` | `5.0` | Seconds after the announcement before slaying everyone |
 | `l4d2_early_victory_change_delay` | `3.0` | Seconds after slaying before changing campaign |
+| `l4d2_surrender_enabled` | `1` | Enable surrender votes |
+| `l4d2_surrender_min_chapter` | `2` | First eligible map; minimum 2 |
+| `l4d2_surrender_min_round` | `1` | First eligible round in the minimum map; later maps allow either round |
+| `l4d2_surrender_live_delay` | `10.0` | Seconds since the live event before requesting surrender |
+| `l4d2_surrender_vote_duration` | `15` | Vote duration in seconds |
+| `l4d2_surrender_vote_percent` | `50.0` | Percentage of the original electorate YES must strictly exceed; minimum 50 |
+| `l4d2_surrender_cooldown` | `60.0` | Per-team cooldown after rejected or cancelled attempts |
+| `l4d2_surrender_points` | `250` | Points above the higher score awarded to the opponent |
+| `l4d2_surrender_forcestart_delay` | `8.0` | Seconds after round two starts before forcestart; minimum 6 for PlayStats initialization |
+| `l4d2_surrender_second_slay_delay` | `3.0` | Seconds live before slaying the automatic second round; minimum 1 |
 
 **Commands**
 
@@ -169,6 +183,7 @@ The next campaign is the first entry of a rotation queue (see below); when the q
 | `l4d2_early_victory_queue_lock` | server (cfg) | Lock the queue; later `l4d2_early_victory_queue` calls are ignored |
 | `sm_setnextcampaign` | `ADMFLAG_CHANGEMAP` | Menu to add campaigns to the queue or clear it |
 | `sm_early_victory_debug` | `ADMFLAG_ROOT` | Print internal scores/bonus breakdown for debugging |
+| `sm_surrender`, `sm_render` | team players | Vote for your own team to surrender and lose the match |
 
 **How to configure** — Set the ConVars via `confogl_addcvar` in `shared_cvars.cfg`, then build the campaign rotation right after with raw `l4d2_early_victory_queue` lines, ending with `l4d2_early_victory_queue_lock`. Example (abridged from [`zonemod/shared_cvars.cfg`](../../cfg/cfgogl/zonemod/shared_cvars.cfg)):
 
