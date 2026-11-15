@@ -67,8 +67,7 @@
     }
     "SurrenderTooEarly"
     {
-        "#format"    "{1:d},{2:d}"
-        "es"    "La rendición se habilita en el mapa {1}, round {2}; los siguientes permiten cualquier round."
+        "es"    "La rendición está disponible desde el segundo mapa, en cualquier round."
     }
     "SurrenderWait"
     {
@@ -125,5 +124,13 @@
     "MatchEnding"
     {
         "es"    "La partida está finalizando. Espera la próxima campaña."
+    }
+    "SurrenderReadyRequired"
+    {
+        "es"    "La rendición en el primer round requiere ready manual o por equipo, sin auto-ready."
+    }
+    "SurrenderStartRetry"
+    {
+        "es"    "Rendición: el segundo round todavía no está live. Reintentando; un admin puede necesitar revisar ReadyUp."
     }
 }

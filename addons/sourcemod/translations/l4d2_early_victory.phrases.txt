@@ -67,8 +67,7 @@
     }
     "SurrenderTooEarly"
     {
-        "#format"    "{1:d},{2:d}"
-        "en"    "Surrender unlocks on chapter {1}, round {2}; later chapters allow either round."
+        "en"    "Surrender is available from the second map, in either round."
     }
     "SurrenderWait"
     {
@@ -125,5 +124,13 @@
     "MatchEnding"
     {
         "en"    "The match is ending. Please wait for the next campaign."
+    }
+    "SurrenderReadyRequired"
+    {
+        "en"    "First-round surrender requires manual or team ready with auto-ready disabled."
+    }
+    "SurrenderStartRetry"
+    {
+        "en"    "Surrender: the second round has not reached live. Retrying; an admin may need to check ReadyUp."
     }
 }
