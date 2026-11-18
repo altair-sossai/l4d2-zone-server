@@ -356,7 +356,7 @@ O plugin lê este arquivo com a API `KeyValues` (não com `exec`), ao iniciar e 
 
 ## l4d2_show_patent_icon
 
-**Fonte:** [`scripting/l4d2_show_patent_icon.sp`](../../addons/sourcemod/scripting/l4d2_show_patent_icon.sp) · **Versão:** 1.1.0
+**Fonte:** [`scripting/l4d2_show_patent_icon.sp`](../../addons/sourcemod/scripting/l4d2_show_patent_icon.sp) · **Versão:** 1.2.0
 
 **O que faz** — Durante o ready-up de um novo jogo (placar 0–0), mostra o ícone de patente de cada jogador que está jogando como um sprite acima da cabeça. Os níveis vêm de `GET {l4d2_web_url}/api/players/patents`, atualizados no início do mapa e quando um novo jogo começa. A `l4d2_web_url` é criada pelo `l4d2_gameinfo_sync` e pelo `l4d2_weapon_skins` e definida no `cfg/server.cfg`; enquanto ela não existir ou estiver vazia, os níveis não são carregados. Os sprites (`materials/sprites/patent_<level>_v<version>.vmt/.vtf`, níveis de 1 a `patent_icon_max_level`) são adicionados à tabela de downloads. Os sobreviventes não veem os ícones dos jogadores infectados, e todos os ícones são removidos quando a rodada começa a valer.
 
@@ -366,12 +366,13 @@ O plugin lê este arquivo com a API `KeyValues` (não com `exec`), ao iniciar e 
 
 | ConVar | Padrão | Descrição |
 |--------|---------|-------------|
+| `patent_icon_enabled` | `0` | Ativa os ícones de patente. Desligado, nada é precacheado nem adicionado à tabela de downloads, e os níveis não são carregados; ao ligar, passa a valer no próximo mapa |
 | `patent_icon_version` | `1` | Versão dos arquivos de ícone (`PROTECTED`) |
 | `patent_icon_max_level` | `15` | Nível máximo de patente (`PROTECTED`) |
 
 **Comandos** — Nenhum.
 
-**Como configurar** — Defina as duas ConVars no `shared_cvars.cfg` (nenhuma delas é segredo; o `zonemod` usa a versão de ícone `2`). A URL do site vem da `l4d2_web_url`.
+**Como configurar** — Defina as três ConVars no `shared_cvars.cfg` (nenhuma delas é segredo; o `zonemod` e o `neomod` usam `patent_icon_enabled 1` e a versão de ícone `2`). A URL do site vem da `l4d2_web_url`.
 
 ---
 
