@@ -52,7 +52,6 @@ $targets = @(
     @{ src = "l4d2_ranking.sp";                     out = "optional\l4d2_ranking.smx" },
     @{ src = "l4d2_show_patent_icon.sp";            out = "optional\l4d2_show_patent_icon.smx" },
     @{ src = "l4d2_no_skip_getup_animation.sp";     out = "optional\l4d2_no_skip_getup_animation.smx" },
-    @{ src = "l4d2_jockey_no_deadstops.sp";         out = "optional\l4d2_jockey_no_deadstops.smx" },
     @{ src = "l4d2_gameinfo_sync.sp";               out = "l4d2_gameinfo_sync.smx" },
     @{ src = "l4d2_admin_hp.sp";                    out = "optional\l4d2_admin_hp.smx" },
     @{ src = "l4d2_admin_spec_lock.sp";             out = "optional\l4d2_admin_spec_lock.smx" },
