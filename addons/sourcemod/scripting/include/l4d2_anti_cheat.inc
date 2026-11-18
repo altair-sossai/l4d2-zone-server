@@ -17,6 +17,18 @@ enum AntiCheatStatus
  */
 native AntiCheatStatus L4D2AC_GetStatus();
 
+/**
+ * Returns whether the current mode and lists require this player to run the anti-cheat client.
+ * Mode 0 (everyone must use it): true for everyone except the whitelist.
+ * Mode 1 (only the required list): true only for the players on the required list.
+ * It does not look at anti_cheat_enabled; use L4D2AC_GetStatus for that.
+ *
+ * @param client	Client index
+ * @return			True if the player must run the anti-cheat client
+ * @error			Invalid client index
+ */
+native bool L4D2AC_IsRequired(int client);
+
 public SharedPlugin __pl_l4d2_anti_cheat =
 {
 	name = "l4d2_anti_cheat",
@@ -32,5 +44,6 @@ public SharedPlugin __pl_l4d2_anti_cheat =
 public void __pl_l4d2_anti_cheat_SetNTVOptional()
 {
 	MarkNativeAsOptional("L4D2AC_GetStatus");
+	MarkNativeAsOptional("L4D2AC_IsRequired");
 }
 #endif
