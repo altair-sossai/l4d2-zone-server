@@ -15,7 +15,10 @@ resources:
   pipelines:
     - pipeline: hub
       source: l4d2-playstats-hub
-      trigger: true
+      trigger:
+        branches:
+          include:
+            - refs/tags/v*
 
 pool:
   vmImage: "ubuntu-latest"
