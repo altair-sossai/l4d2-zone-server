@@ -273,21 +273,7 @@ Ejemplos:
 
 ### Tienda de skins (sitio)
 
-Los jugadores compran las skins en [l4d2.com.br/skins](https://l4d2.com.br/skins) con estrellas (1 estrella por MVP de daño a SI o de comunes en partidas competitivas, desde el inicio del ranking). Solo los archivos de las skins que al menos un jugador compró entran en la lista de descargas, a partir del cambio de mapa siguiente a la compra.
-
-Las compras valen hasta el final de la temporada del ranking: en cada reinicio del ranking (cada 2 meses) se **reembolsan automáticamente** y las estrellas vuelven a los jugadores. Las skins dadas como regalo se quedan.
-
-Los admins del sitio tienen el menú **Admin** arriba en [l4d2.com.br](https://l4d2.com.br):
-
-| Qué hacer | Cómo |
-|---|---|
-| Cambiar el precio de una skin | **Admin → Precios de skins**: haz clic en la skin, cambia el valor y haz clic en **Guardar**. Solo vale para las próximas compras; a quien ya la compró no le afecta. **Restaurar predeterminado** vuelve al precio del catálogo |
-| Regalar una skin | **Admin → Compras de skins → Regalar skin** (o **Regalar** en la skin, en Precios de skins): elige el jugador y la skin. La skin queda equipada para el jugador y no gasta estrellas |
-| Reembolsar una compra | **Admin → Compras de skins**: haz clic en la compra, luego en **Reembolsar compra** y **Confirmar reembolso**. Las estrellas pagadas vuelven al jugador, la skin sale de su cuenta y, si estaba equipada, el arma vuelve a la predeterminada |
-| Reembolsar todo | **Admin → Compras de skins → Reembolsar todo**: marca la confirmación y haz clic en **Reembolsar todo**. Reembolsa todas las compras y todos los regalos de todos los jugadores, y no se puede deshacer. Si algún elemento falla, ejecútalo de nuevo |
-| Banear a un jugador del chat del sitio | **Admin → Baneos del Chat → Agregar baneo**: el jugador ya no puede enviar mensajes al servidor por el chat del sitio |
-
-> Las estrellas siempre vienen del ranking: el admin no cambia el saldo de nadie, solo regala skins o reembolsa compras. Más detalles en [Operación de las skins → Tareas comunes](../weapon-skins/06-operations.es.md#tareas-comunes).
+Los jugadores compran skins en [l4d2.com.br/skins](https://l4d2.com.br/skins) con las estrellas que ganan en los MVPs. La tienda, las estrellas, los precios, los regalos y los reembolsos, y los baneos del chat del sitio se gestionan en el menú **Admin** de [l4d2.com.br](https://l4d2.com.br). Cómo funciona todo y qué hace cada página de administración está en el manual del sitio: [Tienda de skins → Para administradores](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.es.md#para-administradores) y [Moderación](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/moderation.es.md).
 
 ### Modo de prueba: todas las skins
 

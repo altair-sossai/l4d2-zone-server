@@ -1,4 +1,4 @@
-# 2. Skin assets
+# Skin assets
 
 🌐 **English** | [Português](02-assets.pt.md) | [Español](02-assets.es.md) · [Wiki home](README.md)
 
@@ -120,19 +120,19 @@ The combined models (`v.mdl` and `w.mdl`) of every weapon with skins (the six fi
 | Cricket bat, crowbar | 2 | 2 |
 | Baseball bat, electric guitar, fireaxe, frying pan, golf club, katana, machete | 1 | 1 |
 
-Those families point to the textures of the stock model (their names and material search paths are appended to the texture table), so family `0` of a combined model looks exactly like the stock weapon. This is what lets first person always use the combined model: a weapon without a skin keeps its original `m_nSkin`, and the anti-cheat client can point the game at the combined model to stop the flicker on animation changes (see [Game plugin](03-game-plugin.md)).
+Those families point to the textures of the stock model (their names and material search paths are appended to the texture table), so family `0` of a combined model looks exactly like the stock weapon. This is what lets first person always use the combined model: a weapon without a skin keeps its original `m_nSkin`, and the anti-cheat client can point the game at the combined model to stop the flicker on animation changes (see the `l4d2_weapon_skins` plugin in [l4d2-playstats-hub](https://github.com/altair-sossai/l4d2-playstats-hub/tree/main/plugins)).
 
 They are added by [`scripts/add-stock-families.js`](https://github.com/altair-sossai/l4d2-zone-server-assets/blob/main/scripts/add-stock-families.js) in the assets repository, which reads the stock models from the game VPKs (`update/` first) and rewrites the combined view and world models of every weapon. Run it after rebuilding the combined models of a weapon; a model that already has them is skipped, and with `check` at the end the script only prints what would change:
 
 ```bash
-node scripts/add-stock-families.js "<Left 4 Dead 2 folder>" <zone-server>/addons/sourcemod/configs/weapon_skins.cfg [check]
+node scripts/add-stock-families.js "<Left 4 Dead 2 folder>" <l4d2-playstats-hub>/plugins/left4dead2/addons/sourcemod/configs/weapon_skins.cfg [check]
 ```
 
 The `"skin"` value of a skin is therefore `stock_skins` + its position inside the weapon (starting at 0). On the MAC-10 (`stock_skins` 2): printstream-mac, the first one, is `2`; dark-matter, the second one, is `3`.
 
 ## The cfg that ties it together
 
-[`addons/sourcemod/configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg) (zone-server repository):
+[`plugins/left4dead2/addons/sourcemod/configs/weapon_skins.cfg`](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/plugins/left4dead2/addons/sourcemod/configs/weapon_skins.cfg) (l4d2-playstats-hub repository, deployed to the game server with the plugins):
 
 ```text
 "WeaponSkins"
@@ -188,10 +188,10 @@ Every skin was made by the Left 4 Dead 2 community and published on the Steam Wo
 2. Read the addon's Workshop description: if the author asks not to redistribute or re-upload the work, **do not add it** (commissioned items, marked "[COMMS]", usually ask this). Five skins were removed from the catalog for this reason.
 3. Extract, relocate and optimize its materials into `materials/models/l4d2br/weapons/<weapon>_<workshopId>/`: at most 1024 px, DXT1/DXT5 instead of uncompressed formats, mipmaps, and one copy of each identical texture.
 4. Add the skin to `weapon_skins.cfg` (id, weapon, materials) and **rebuild the combined models** of that weapon (then run `scripts/add-stock-families.js`); set the `"skin"` family indexes (`stock_skins` + position).
-5. Add the skin to the site catalog `skins.json` (id, weapon, rarity, price, `workshopId`, `shots`, `author`, titles/descriptions in en/pt/es) and its thumbnail `wwwroot/imgs/skins/<id>.jpg`. See [Skin shop → Catalog](05-skin-shop.md#catalog-skinsjson).
+5. Add the skin to the site catalog `src/L4D2PlayStats.Hub.Core/Modules/Skins/Data/skins.json` (id, weapon, rarity, price, `workshopId`, `shots`, `author`, titles/descriptions in en/pt/es) and its thumbnail `src/L4D2PlayStats.Hub.Web/wwwroot/imgs/skins/<id>.jpg`, both in l4d2-playstats-hub. See [Weapon skin shop → Catalog](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.md#catalog).
 6. In the assets repository, add the photos in `assets/skin-shots/<id>/` (30 files: six photos in AVIF and WebP, at full size, `-thumb` and, for photos 1, 5 and 6, `-card`; see the assets README) and the skin to the credits table of its weapon (skin, author, Workshop link), updating the count in the weapon heading and the list of authors.
 7. Regenerate the anti-cheat server assets manifest (see below) and bump the client version.
-8. Deploy in this order: anti-cheat client → assets → site → zone-server, then restart the game server while it is empty. See [Operations → When the combined models change](06-operations.md#when-the-combined-models-change).
+8. Deploy in the [order below](#deploy-order), then restart the game server while it is empty.
 
 > The scripts used for steps 3–4 were run locally during development and are **not versioned** in any repository yet.
 
@@ -206,3 +206,23 @@ dotnet run --project tools/L4D2AntiCheat.ManifestGenerator -- server-assets <pat
 Generate it from files with **LF** line endings: the assets repository normalizes text files (`.vmt`) to LF, and that is what the server and FastDL receive.
 
 The new client must be published **before** the assets: a player whose client still has the old manifest and downloads the new files is kicked by the anti-cheat.
+
+## Deploy order
+
+Adding, removing or changing a skin changes the combined models and the skin files. Follow this order:
+
+1. **Anti-cheat client** — publish the new client (new server assets manifest + version bump) and make sure it is available to players.
+2. **Assets** — push the assets repository (game folder + FastDL + skin photos).
+3. **l4d2-playstats-hub** — publish a release with the catalog, the thumbnails and `weapon_skins.cfg` (family indexes). Its pipeline updates the site.
+4. **Zone-server** — run its pipeline. It copies the plugins and `weapon_skins.cfg` of the latest hub release to the game server.
+5. **Restart the game server while it is empty** (see below).
+
+Why: the anti-cheat verifies the server-sent skin files against its manifest, so a player whose client still has the old manifest and downloads the new model is kicked. And a changed model must be downloaded on connect, not on a map change, which is why the server is restarted.
+
+## Restarting the game server
+
+1. Check that nobody is playing: send `status` to the `27015` screen session and read the player count.
+2. Restart with the server scripts only: `bash/stop.sh 27015`, wait a few seconds, `bash/start.sh 27015 c2m1_highway`.
+3. Check `sm plugins info l4d2_weapon_skins` (status `running`) and the SourceMod error log of the day.
+
+> Do **not** run the bootstrap or firewall scripts remotely: they can lock the SSH session out.

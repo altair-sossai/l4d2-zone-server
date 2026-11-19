@@ -273,21 +273,7 @@ Examples:
 
 ### Skin shop (site)
 
-Players buy skins at [l4d2.com.br/skins](https://l4d2.com.br/skins) with stars (1 star per SI damage MVP or common infected MVP in competitive matches, since the ranking started). Only the files of skins that at least one player bought go on the download list, starting from the map change after the purchase.
-
-Purchases last until the end of the ranking season: at every ranking reset (every 2 months) they are **refunded automatically** and the stars go back to the players. Skins given as gifts are kept.
-
-Site admins have the **Admin** menu at the top of [l4d2.com.br](https://l4d2.com.br):
-
-| What to do | How |
-|---|---|
-| Change a skin's price | **Admin → Skin prices**: click the skin, change the value and click **Save**. It only applies to new purchases; whoever already bought it is not affected. **Reset to default** goes back to the catalog price |
-| Give a skin as a gift | **Admin → Skin purchases → Give a skin** (or **Give as a gift** on the skin, in Skin prices): pick the player and the skin. The skin is equipped for the player and costs no stars |
-| Refund a purchase | **Admin → Skin purchases**: click the purchase, then **Refund purchase** and **Confirm refund**. The stars paid go back to the player, the skin leaves their account and, if it was equipped, the weapon goes back to the default one |
-| Refund everything | **Admin → Skin purchases → Refund everything**: tick the confirmation and click **Refund everything**. It refunds every purchase and every gift of every player, and it cannot be undone. If some items fail, run it again |
-| Ban a player from the site chat | **Admin → Chat Bans → Add ban**: the player can no longer send messages to the server through the site chat |
-
-> Stars always come from the ranking: admins do not change anyone's balance, they only give gifts or refund purchases. More details in [Skins operations → Common tasks](../weapon-skins/06-operations.md#common-tasks).
+Players buy skins at [l4d2.com.br/skins](https://l4d2.com.br/skins) with stars earned from MVPs. The shop, the stars, the prices, gifts and refunds, and the chat bans of the site chat are managed in the **Admin** menu of [l4d2.com.br](https://l4d2.com.br). How it works and what each admin page does is in the manual of the site: [Weapon skin shop → For administrators](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.md#for-administrators) and [Moderation](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/moderation.md).
 
 ### Test mode: every skin
 

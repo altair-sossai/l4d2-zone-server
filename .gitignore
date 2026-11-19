@@ -27,3 +27,4 @@ $RECYCLE.BIN/
 
 # Ignore secrets file
 cfg/server_secrets.cfg
+cfg/playstats_token.cfg

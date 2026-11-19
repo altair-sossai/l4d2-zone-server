@@ -1,32 +1,30 @@
-# Skins de armas e loja de skins — Wiki
+# Skins de armas
 
 🌐 [English](README.md) | **Português** | [Español](README.es.md)
 
-Esta wiki explica, de ponta a ponta, como funcionam as skins de armas do servidor **l4d2.com.br**: como os arquivos das skins são montados e entregues, como o servidor de jogo aplica as skins, como os jogadores ganham **estrelas** (MVPs) e gastam na **loja de skins**, e como os admins gerenciam tudo. Ela foi escrita para quem quer estudar, manter ou estender o sistema. Ela faz parte da [documentação do servidor](../README.pt.md).
+Esta pasta cobre a parte das skins de armas que pertence ao servidor de jogo e aos assets dele: como os arquivos das skins são montados, os modelos combinados, o FastDL, os créditos e como adicionar uma skin. Ela faz parte da [documentação do servidor](../README.pt.md).
 
 ## Páginas
 
-| # | Página | O que cobre |
-|---|---|---|
-| 1 | [Visão geral e arquitetura](01-overview.pt.md) | Os cinco repositórios, como eles se comunicam e o caminho de uma compra |
-| 2 | [Assets das skins](02-assets.pt.md) | Skins só de textura, modelos combinados com uma skin family por skin, o repositório de assets, FastDL, créditos e como adicionar uma skin nova |
-| 3 | [Plugin do servidor de jogo](03-game-plugin.pt.md) | `l4d2_weapon_skins.sp`: tabela de downloads, aplicação das skins nos modelos de visão e de mundo, jogadores sem downloads, comandos, cache e sincronização com o site |
-| 4 | [Estrelas (PlayStats API)](04-stars-api.pt.md) | Como os MVPs de todo o histórico viram estrelas, como são calculadas e guardadas em cache |
-| 5 | [Loja de skins (PlayStats web)](05-skin-shop.pt.md) | Catálogo, raridades e preços, modelo de dados no Table Storage, a transação de compra, temporadas e estornos, segurança e telas de admin |
-| 6 | [Operação e procedimentos](06-operations.pt.md) | Configuração e segredos, deploys e a ordem deles, reinício do servidor, tarefas comuns, solução de problemas e testes |
+| Página | O que cobre |
+|---|---|
+| [Assets das skins](02-assets.pt.md) | Skins só de textura, modelos combinados com uma skin family por skin, o repositório de assets, FastDL, créditos, como adicionar uma skin, o manifesto do anti-cheat, a ordem de deploy e o reinício do servidor de jogo |
 
-## O sistema em um parágrafo
+## Loja, estrelas e plugin
 
-Cada arma com skin (SMG, MAC-10, MP5, escopeta pump, escopeta cromada, Magnum e nove armas brancas) tem **um modelo combinado** que contém todas as skins daquela arma, cada uma como uma *skin family* separada. Os jogadores ganham **1 estrela por MVP** (dano em SI ou comuns) em partidas competitivas, contando todo o histórico do ranking. Eles compram skins em **l4d2.com.br/skins**; a compra é gravada no Azure Table Storage e a skin já fica equipada. Uma skin comprada vale **uma temporada do ranking**: a cada reset do ranking (a cada dois meses) as compras da temporada que terminou são estornadas automaticamente e as estrelas voltam; as skins dadas de presente pelos admins ficam para sempre. O plugin do servidor lê quais skins foram compradas e quem tem o quê, coloca **só as skins compradas** na tabela de downloads do FastDL no início do mapa e troca o modelo da arma e o `m_nSkin`, para que o dono (e todo mundo em volta) veja a skin. Uma skin comprada no meio de um mapa aparece a partir da **próxima troca de mapa**.
+A loja de skins, as estrelas, as compras, os presentes e os estornos, e o plugin `l4d2_weapon_skins` com o `weapon_skins.cfg` fazem parte do [l4d2-playstats-hub](https://github.com/altair-sossai/l4d2-playstats-hub), o projeto que roda o l4d2.com.br:
+
+- [Loja de skins](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.pt.md) — estrelas, a página da loja, compras, equipar, estornos no fim da temporada, presentes e as páginas de administração.
+- [Conectando um servidor de jogo](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/game-server.pt.md) — os plugins, as ConVars e os comandos deles.
+- [Pasta de plugins](https://github.com/altair-sossai/l4d2-playstats-hub/tree/main/plugins) — fontes, plugins compilados e o `weapon_skins.cfg`.
+
+O pipeline deste repositório copia os plugins e o `weapon_skins.cfg` da última release do hub para o servidor de jogo. Veja [Plugins customizados → Plugins de estatísticas](../plugins/README.pt.md#plugins-de-estatísticas-l4d2-playstats-hub).
 
 ## Repositórios
 
 | Repositório | Papel |
 |---|---|
-| [l4d2-zone-server](https://github.com/altair-sossai/l4d2-zone-server) | Plugins do SourceMod (incluindo `l4d2_weapon_skins` e `l4d2_gameinfo_sync`), configs, docs e esta wiki |
-| [l4d2-zone-server-assets](https://github.com/altair-sossai/l4d2-zone-server-assets) | Modelos e materiais das skins, publicados no servidor de jogo e no blob do FastDL; o README dele dá o crédito ao autor de cada skin |
-| l4d2-playstats-api | API em Azure Functions que guarda as estatísticas das partidas, monta o ranking e fornece as **estrelas** |
-| l4d2-playstats-web | O site **l4d2.com.br**: loja de skins, telas de admin e a API usada pelo plugin |
+| [l4d2-zone-server](https://github.com/altair-sossai/l4d2-zone-server) | Configs do servidor de jogo, incluindo as ConVars `weapon_skins_*` de cada modo e os filtros do stripper |
+| [l4d2-zone-server-assets](https://github.com/altair-sossai/l4d2-zone-server-assets) | Modelos e materiais das skins, enviados ao servidor de jogo e ao blob do FastDL; o README dele dá o crédito ao autor de cada skin |
+| [l4d2-playstats-hub](https://github.com/altair-sossai/l4d2-playstats-hub) | O site l4d2.com.br com a loja de skins, o catálogo e as miniaturas das skins, e o plugin `l4d2_weapon_skins` |
 | l4d2-anti-cheat-client | O cliente do anti-cheat, que confere os arquivos de skin enviados pelo servidor com um manifesto |
-
-> Segredos (tokens, chaves, senhas) nunca aparecem nesta wiki. Quando um segredo é necessário, a página diz **onde** ele é configurado, nunca o valor.

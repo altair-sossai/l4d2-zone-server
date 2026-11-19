@@ -12,6 +12,7 @@ Every document exists in three languages and follows the same naming rule: `name
 |---|---|
 | Player commands guide | [English](players/README.md) · [Português](players/README.pt.md) · [Español](players/README.es.md) |
 | Fixing the UDP connect retry issue | [English](tutorials/connect-fix/README.md) · [Português](tutorials/connect-fix/README.pt.md) · [Español](tutorials/connect-fix/README.es.md) |
+| Server changelog — November 19, 2026 | [English](changelog/2026-11-19.md) · [Português](changelog/2026-11-19.pt.md) · [Español](changelog/2026-11-19.es.md) |
 | Server changelog — August 4, 2026 | [English](changelog/2026-08-04.md) · [Português](changelog/2026-08-04.pt.md) · [Español](changelog/2026-08-04.es.md) |
 
 ## Admins
@@ -25,7 +26,7 @@ Every document exists in three languages and follows the same naming rule: `name
 | Document | Languages |
 |---|---|
 | Custom plugins (objective, ConVars, commands, configuration) | [English](plugins/README.md) · [Português](plugins/README.pt.md) · [Español](plugins/README.es.md) |
-| Weapon skins & skin shop wiki | [English](weapon-skins/README.md) · [Português](weapon-skins/README.pt.md) · [Español](weapon-skins/README.es.md) |
+| Weapon skin assets | [English](weapon-skins/README.md) · [Português](weapon-skins/README.pt.md) · [Español](weapon-skins/README.es.md) |
 
 ## Maintenance
 
@@ -44,5 +45,5 @@ docs/
 ├── players/          Player commands guide
 ├── plugins/          Custom plugins reference
 ├── tutorials/        Step-by-step guides for players
-└── weapon-skins/     Weapon skins & skin shop wiki
+└── weapon-skins/     Weapon skin assets
 ```

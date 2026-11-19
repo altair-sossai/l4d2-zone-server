@@ -5,6 +5,8 @@
 This document explains how to compile the custom SourceMod plugins in this
 repository using [`ps/compile-custom-plugins.ps1`](../../ps/compile-custom-plugins.ps1).
 
+The statistics plugins (`l4d2_playstats_sync`, `l4d2_gameinfo_sync`, `l4d2_ranking`, `l4d2_show_patent_icon` and `l4d2_weapon_skins`) are not compiled here: they are built and released by [l4d2-playstats-hub](https://github.com/altair-sossai/l4d2-playstats-hub/tree/main/plugins), and the deploy pipeline copies them to the server. See [Custom plugins → Statistics plugins](../plugins/README.md#statistics-plugins-l4d2-playstats-hub).
+
 ## What the script does
 
 The script compiles the custom `.sp` source files into `.smx` plugins using the
@@ -77,20 +79,8 @@ Pick a line below, copy it, and run it:
 # l4d_death_item_glow
 ./ps/compile-custom-plugins.ps1 l4d_death_item_glow
 
-# l4d2_playstats_sync
-./ps/compile-custom-plugins.ps1 l4d2_playstats_sync
-
-# l4d2_ranking
-./ps/compile-custom-plugins.ps1 l4d2_ranking
-
-# l4d2_show_patent_icon
-./ps/compile-custom-plugins.ps1 l4d2_show_patent_icon
-
 # l4d2_no_skip_getup_animation
 ./ps/compile-custom-plugins.ps1 l4d2_no_skip_getup_animation
-
-# l4d2_gameinfo_sync
-./ps/compile-custom-plugins.ps1 l4d2_gameinfo_sync
 
 # l4d2_admin_hp
 ./ps/compile-custom-plugins.ps1 l4d2_admin_hp
@@ -125,9 +115,6 @@ Pick a line below, copy it, and run it:
 # l4d2_lerp_advisor
 ./ps/compile-custom-plugins.ps1 l4d2_lerp_advisor
 
-# l4d2_weapon_skins
-./ps/compile-custom-plugins.ps1 l4d2_weapon_skins
-
 # slots_vote
 ./ps/compile-custom-plugins.ps1 slots_vote
 ```
@@ -160,11 +147,7 @@ Copy any name from this list to compile it individually.
 | `l4d2_connect_announce` | `optional/l4d2_connect_announce.smx` |
 | `l4d2_tank_is_comming` | `optional/l4d2_tank_is_comming.smx` |
 | `l4d_death_item_glow` | `optional/l4d_death_item_glow.smx` |
-| `l4d2_playstats_sync` | `optional/l4d2_playstats_sync.smx` |
-| `l4d2_ranking` | `optional/l4d2_ranking.smx` |
-| `l4d2_show_patent_icon` | `optional/l4d2_show_patent_icon.smx` |
 | `l4d2_no_skip_getup_animation` | `optional/l4d2_no_skip_getup_animation.smx` |
-| `l4d2_gameinfo_sync` | `l4d2_gameinfo_sync.smx` |
 | `l4d2_admin_hp` | `optional/l4d2_admin_hp.smx` |
 | `l4d2_admin_spec_lock` | `optional/l4d2_admin_spec_lock.smx` |
 | `map-decals` | `optional/map-decals.smx` |
@@ -176,11 +159,10 @@ Copy any name from this list to compile it individually.
 | `l4d2_campaign_vote` | `optional/l4d2_campaign_vote.smx` |
 | `l4d2_forced_names` | `optional/l4d2_forced_names.smx` |
 | `l4d2_lerp_advisor` | `optional/l4d2_lerp_advisor.smx` |
-| `l4d2_weapon_skins` | `l4d2_weapon_skins.smx` |
 | `slots_vote` | `optional/slots_vote.smx` |
 
 ### All names on one line (for quick copy-paste)
 
 ```
-l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_playstats_sync l4d2_ranking l4d2_show_patent_icon l4d2_no_skip_getup_animation l4d2_gameinfo_sync l4d2_admin_hp l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands l4d2_campaign_vote l4d2_forced_names l4d2_lerp_advisor l4d2_weapon_skins slots_vote
+l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_no_skip_getup_animation l4d2_admin_hp l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands l4d2_campaign_vote l4d2_forced_names l4d2_lerp_advisor slots_vote
 ```

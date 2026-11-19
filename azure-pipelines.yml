@@ -11,17 +11,53 @@ trigger:
 
 pr: none
 
+resources:
+  pipelines:
+    - pipeline: hub
+      source: l4d2-playstats-hub
+      trigger: true
+
 pool:
   vmImage: "ubuntu-latest"
 
 variables:
   sshServiceConnection: "L4D2 - Server"
+  hubRepository: "altair-sossai/l4d2-playstats-hub"
 
 stages:
   - stage: Deploy
     jobs:
       - job: CompressAndUpload
         steps:
+          - script: |
+              set -euo pipefail
+              ref="$(resources.pipeline.hub.sourceBranch)"
+              case "${ref}" in
+                refs/tags/v*) url="https://github.com/$(hubRepository)/releases/download/${ref#refs/tags/}/l4d2-playstats-hub-plugins.zip" ;;
+                *) url="https://github.com/$(hubRepository)/releases/latest/download/l4d2-playstats-hub-plugins.zip" ;;
+              esac
+              echo "Plugins from ${url}"
+              curl -fsSL "${url}" -o hub-plugins.zip
+              unzip -q hub-plugins.zip -d hub-plugins
+              for folder in plugins translations configs; do
+                cp -r "hub-plugins/left4dead2/addons/sourcemod/${folder}/." "$(Build.Repository.LocalPath)/addons/sourcemod/${folder}/"
+              done
+              rm -rf hub-plugins hub-plugins.zip
+            displayName: "🧩 Add the PlayStats Hub plugins from its release"
+
+          - script: |
+              set -euo pipefail
+              case "${PLAYSTATS_TOKEN:-}" in
+                "" | *PLAYSTATS_TOKEN*)
+                  echo "The secret variable PLAYSTATS_TOKEN is not set on this pipeline."
+                  exit 1
+                  ;;
+              esac
+              printf 'playstats_token "%s"\nsm_cvar l4d2_web_secret "%s"\n' "${PLAYSTATS_TOKEN}" "${PLAYSTATS_TOKEN}" > "$(Build.Repository.LocalPath)/cfg/playstats_token.cfg"
+            displayName: "🔑 Write the PlayStats Hub token"
+            env:
+              PLAYSTATS_TOKEN: $(PLAYSTATS_TOKEN)
+
           - script: |
               tar -czf addons.tar.gz -C $(Build.Repository.LocalPath)/addons .
               tar -czf cfg.tar.gz -C $(Build.Repository.LocalPath)/cfg .

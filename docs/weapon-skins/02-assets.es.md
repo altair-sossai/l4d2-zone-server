@@ -1,4 +1,4 @@
-# 2. Assets de las skins
+# Assets de las skins
 
 🌐 [English](02-assets.md) | [Português](02-assets.pt.md) | **Español** · [Inicio de la wiki](README.es.md)
 
@@ -120,19 +120,19 @@ Los modelos combinados (`v.mdl` y `w.mdl`) de toda arma con skins (las seis arma
 | Bate de críquet, palanca | 2 | 2 |
 | Bate de béisbol, guitarra, hacha, sartén, palo de golf, katana, machete | 1 | 1 |
 
-Esas families apuntan a las texturas del modelo original (sus nombres y las carpetas de búsqueda de materiales se agregan al final de la tabla de texturas), así que la family `0` de un modelo combinado se ve idéntica al arma original. Eso es lo que permite usar siempre el modelo combinado en primera persona: un arma sin skin mantiene su `m_nSkin` original, y el cliente del anti-cheat puede apuntar el juego al modelo combinado y terminar con el parpadeo en los cambios de animación (ver [Plugin del juego](03-game-plugin.es.md)).
+Esas families apuntan a las texturas del modelo original (sus nombres y las carpetas de búsqueda de materiales se agregan al final de la tabla de texturas), así que la family `0` de un modelo combinado se ve idéntica al arma original. Eso es lo que permite usar siempre el modelo combinado en primera persona: un arma sin skin mantiene su `m_nSkin` original, y el cliente del anti-cheat puede apuntar el juego al modelo combinado y terminar con el parpadeo en los cambios de animación (ver el plugin `l4d2_weapon_skins` en [l4d2-playstats-hub](https://github.com/altair-sossai/l4d2-playstats-hub/tree/main/plugins)).
 
 Las agrega [`scripts/add-stock-families.js`](https://github.com/altair-sossai/l4d2-zone-server-assets/blob/main/scripts/add-stock-families.js) del repositorio de assets: lee los modelos originales de los VPK del juego (primero `update/`) y reescribe los modelos combinados de mano y de mundo de cada arma. Ejecútalo después de reconstruir los modelos combinados de un arma; un modelo que ya las tiene se omite, y con `check` al final el script solo muestra lo que cambiaría:
 
 ```bash
-node scripts/add-stock-families.js "<carpeta de Left 4 Dead 2>" <zone-server>/addons/sourcemod/configs/weapon_skins.cfg [check]
+node scripts/add-stock-families.js "<carpeta de Left 4 Dead 2>" <l4d2-playstats-hub>/plugins/left4dead2/addons/sourcemod/configs/weapon_skins.cfg [check]
 ```
 
 El valor de `"skin"` de una skin es entonces `stock_skins` + su posición dentro del arma (empezando en 0). En la MAC-10 (`stock_skins` 2): printstream-mac, la primera, es `2`; dark-matter, la segunda, es `3`.
 
 ## El cfg que lo une todo
 
-[`addons/sourcemod/configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg) (repositorio zone-server):
+[`plugins/left4dead2/addons/sourcemod/configs/weapon_skins.cfg`](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/plugins/left4dead2/addons/sourcemod/configs/weapon_skins.cfg) (repositorio l4d2-playstats-hub, enviado al servidor de juego junto con los plugins):
 
 ```text
 "WeaponSkins"
@@ -188,10 +188,10 @@ Todas las skins fueron hechas por la comunidad de Left 4 Dead 2 y publicadas en 
 2. Lee la descripción del addon en la Workshop: si el autor pide no redistribuir ni volver a subir su trabajo, **no lo agregues** (los encargos, marcados con "[COMMS]", suelen pedirlo). Cinco skins se quitaron del catálogo por este motivo.
 3. Extrae, reubica y optimiza sus materiales en `materials/models/l4d2br/weapons/<weapon>_<workshopId>/`: como máximo 1024 px, DXT1/DXT5 en lugar de formatos sin compresión, mipmaps y una sola copia de cada textura idéntica.
 4. Agrega la skin a `weapon_skins.cfg` (id, arma, materiales) y **reconstruye los modelos combinados** de esa arma (y ejecuta `scripts/add-stock-families.js` después); define los índices de family en `"skin"` (`stock_skins` + posición).
-5. Agrega la skin al catálogo del sitio `skins.json` (id, arma, rareza, precio, `workshopId`, `shots`, `author`, títulos/descripciones en en/pt/es) y su miniatura `wwwroot/imgs/skins/<id>.jpg`. Ver [Tienda de skins → Catálogo](05-skin-shop.es.md#catálogo-skinsjson).
+5. Agrega la skin al catálogo del sitio `src/L4D2PlayStats.Hub.Core/Modules/Skins/Data/skins.json` (id, arma, rareza, precio, `workshopId`, `shots`, `author`, títulos/descripciones en en/pt/es) y su miniatura `src/L4D2PlayStats.Hub.Web/wwwroot/imgs/skins/<id>.jpg`, ambos en l4d2-playstats-hub. Ver [Tienda de skins → Catálogo](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.es.md#catálogo).
 6. En el repositorio de assets, agrega las fotos en `assets/skin-shots/<id>/` (30 archivos: seis fotos en AVIF y WebP, en tamaño completo, `-thumb` y, en las fotos 1, 5 y 6, `-card`; ver el README de los assets) y la skin a la tabla de créditos de su arma (skin, autor, enlace de la Workshop), actualizando la cantidad en el título del arma y la lista de autores.
 7. Vuelve a generar el manifiesto de assets del servidor del anti-cheat (ver abajo) y sube la versión del cliente.
-8. Despliega en este orden: cliente del anti-cheat → assets → sitio → zone-server, y luego reinicia el servidor de juego mientras está vacío. Consulta [Operación → Cuando cambian los modelos combinados](06-operations.es.md#cuando-cambian-los-modelos-combinados).
+8. Despliega en el [orden de abajo](#orden-de-deploy) y luego reinicia el servidor de juego mientras está vacío.
 
 > Los scripts usados en los pasos 3–4 se ejecutaron localmente durante el desarrollo y **todavía no están versionados** en ningún repositorio.
 
@@ -206,3 +206,23 @@ dotnet run --project tools/L4D2AntiCheat.ManifestGenerator -- server-assets <pat
 Genéralo a partir de archivos con fin de línea **LF**: el repositorio de assets normaliza los archivos de texto (`.vmt`) a LF, y eso es lo que reciben el servidor y FastDL.
 
 El cliente nuevo debe publicarse **antes** que los assets: un jugador cuyo cliente todavía tiene el manifiesto anterior y que descarga los archivos nuevos es expulsado por el anti-cheat.
+
+## Orden de deploy
+
+Agregar, quitar o cambiar una skin cambia los modelos combinados y los archivos de las skins. Sigue este orden:
+
+1. **Cliente del anti-cheat** — publica el cliente nuevo (nuevo manifiesto de assets del servidor + subida de versión) y asegúrate de que ya esté disponible para los jugadores.
+2. **Assets** — haz push del repositorio de assets (carpeta del juego + FastDL + fotos de las skins).
+3. **l4d2-playstats-hub** — publica una release con el catálogo, las miniaturas y `weapon_skins.cfg` (índices de family). Su pipeline actualiza el sitio.
+4. **Zone-server** — ejecuta su pipeline. Copia los plugins y `weapon_skins.cfg` de la última release del hub al servidor de juego.
+5. **Reinicia el servidor de juego mientras está vacío** (ver abajo).
+
+Por qué: el anti-cheat verifica los archivos de skin enviados por el servidor contra su manifiesto, así que un jugador cuyo cliente todavía tiene el manifiesto anterior y que descarga el modelo nuevo es expulsado. Además, un modelo cambiado debe descargarse al conectarse, no en un cambio de mapa, y por eso se reinicia el servidor.
+
+## Reiniciar el servidor de juego
+
+1. Comprueba que nadie esté jugando: envía `status` a la sesión `screen` `27015` y mira la cantidad de jugadores.
+2. Reinicia solo con los scripts del servidor: `bash/stop.sh 27015`, espera unos segundos, `bash/start.sh 27015 c2m1_highway`.
+3. Revisa `sm plugins info l4d2_weapon_skins` (estado `running`) y el log de errores de SourceMod del día.
+
+> **No** ejecutes los scripts de bootstrap ni de firewall de forma remota: pueden dejar fuera la sesión SSH.

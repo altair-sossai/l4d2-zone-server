@@ -48,11 +48,7 @@ $targets = @(
     @{ src = "l4d2_connect_announce.sp";            out = "optional\l4d2_connect_announce.smx" },
     @{ src = "l4d2_tank_is_comming.sp";             out = "optional\l4d2_tank_is_comming.smx" },
     @{ src = "l4d_death_item_glow.sp";              out = "optional\l4d_death_item_glow.smx" },
-    @{ src = "l4d2_playstats_sync.sp";              out = "optional\l4d2_playstats_sync.smx" },
-    @{ src = "l4d2_ranking.sp";                     out = "optional\l4d2_ranking.smx" },
-    @{ src = "l4d2_show_patent_icon.sp";            out = "optional\l4d2_show_patent_icon.smx" },
     @{ src = "l4d2_no_skip_getup_animation.sp";     out = "optional\l4d2_no_skip_getup_animation.smx" },
-    @{ src = "l4d2_gameinfo_sync.sp";               out = "l4d2_gameinfo_sync.smx" },
     @{ src = "l4d2_admin_hp.sp";                    out = "optional\l4d2_admin_hp.smx" },
     @{ src = "l4d2_admin_spec_lock.sp";             out = "optional\l4d2_admin_spec_lock.smx" },
     @{ src = "map-decals.sp";                       out = "optional\map-decals.smx" },
@@ -64,7 +60,6 @@ $targets = @(
     @{ src = "l4d2_campaign_vote.sp";               out = "optional\l4d2_campaign_vote.smx" },
     @{ src = "l4d2_forced_names.sp";                out = "optional\l4d2_forced_names.smx" },
     @{ src = "l4d2_lerp_advisor.sp";                out = "optional\l4d2_lerp_advisor.smx" },
-    @{ src = "l4d2_weapon_skins.sp";                out = "l4d2_weapon_skins.smx" },
     @{ src = "slots_vote.sp";                       out = "optional\slots_vote.smx" }
 )
 

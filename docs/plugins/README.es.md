@@ -10,7 +10,7 @@ Este documento describe los plugins mantenidos en este repositorio:
 Para el resto de plugins de terceros que vienen sin modificaciones con la base [ZoneMod / L4D2 Competitive Rework](https://github.com/SirPlease/L4D2-Competitive-Rework), consulta a sus autores originales.
 
 - **Fuentes:** [`addons/sourcemod/scripting/`](../../addons/sourcemod/scripting/) (`.sp`)
-- **Compilados:** [`addons/sourcemod/plugins/optional/`](../../addons/sourcemod/plugins/optional/) (`.smx`) — excepto `l4d2_gameinfo_sync` y `l4d2_weapon_skins`, que están en `plugins/` (carga automática), y `annoyance_exploit_fixes`, que está en `plugins/fixes/`
+- **Compilados:** [`addons/sourcemod/plugins/optional/`](../../addons/sourcemod/plugins/optional/) (`.smx`) — excepto `annoyance_exploit_fixes`, que está en `plugins/fixes/`
 - **Script de compilación:** [`ps/compile-custom-plugins.ps1`](../../ps/compile-custom-plugins.ps1) — consulta [Compilar los plugins personalizados](../maintenance/compile-custom-plugins.es.md)
 
 ---
@@ -24,12 +24,13 @@ La mayoría de estos plugins están en `optional/`, así que no se cargan autom�
 | `cfg/cfgogl/<mod>/shared_plugins.cfg`  | **Carga** cada plugin (`sm plugins load optional/<name>.smx`) |
 | `cfg/cfgogl/<mod>/shared_cvars.cfg`    | **Define ConVars** mediante `confogl_addcvar <cvar> <value>` |
 | `cfg/cfgogl/<mod>/shared_settings.cfg` | También define ConVars mediante `confogl_addcvar` (se usa para `l4d2_spec_lister_hint`) |
-| `cfg/server.cfg`                       | Valores de todo el servidor que deben existir antes de cargar cualquier config de partida (`l4d2_web_url`) |
+| `cfg/server.cfg`                       | Valores de todo el servidor que deben existir antes de cargar cualquier config de partida (`l4d2_web_url`, `playstats_url`, `playstats_public_url`) |
 | `cfg/server_secrets.cfg`               | **Secretos** (tokens/claves de API) mediante `sm_cvar` — **ignorado por git**, nunca se sube; se ejecuta al inicio de `server.cfg` |
+| `cfg/playstats_token.cfg`              | **Fuera del repositorio.** Lo escribe el pipeline de deploy a partir de una variable secreta, con el token de este servidor en l4d2.com.br (`playstats_token` y `l4d2_web_secret`); lo ejecuta `server.cfg` |
 
 `<mod>` es la carpeta de config activa, principalmente [`zonemod`](../../cfg/cfgogl/zonemod/) y [`neomod`](../../cfg/cfgogl/neomod/).
 
-> **Las ConVars marcadas como `PROTECTED`** se crean con `FCVAR_PROTECTED`, así que su valor nunca se muestra a los clientes. Solo los secretos reales (`playstats_access_token`, `l4d2_web_secret`) van en `cfg/server_secrets.cfg`, para que nunca se filtren en el repositorio público; las demás ConVars protegidas (URLs) se definen en los archivos cfg versionados.
+> **Las ConVars marcadas como `PROTECTED`** se crean con `FCVAR_PROTECTED`, así que su valor nunca se muestra a los clientes. Los secretos reales nunca van en los archivos de cfg versionados: el token de PlayStats lo escribe el pipeline de deploy en `cfg/playstats_token.cfg`, y los demás secretos van en `cfg/server_secrets.cfg`, para que nunca se filtren en el repositorio público; las demás ConVars protegidas (URLs) se definen en los archivos cfg versionados.
 
 Los mensajes de chat que ven los jugadores están en [`addons/sourcemod/translations/`](../../addons/sourcemod/translations/) (`<name>.phrases.txt`) y se pueden traducir/editar ahí.
 
@@ -51,13 +52,14 @@ Los mensajes de chat que ven los jugadores están en [`addons/sourcemod/translat
 | [l4d2_tank_is_comming](#l4d2_tank_is_comming) | Avisa a todos cuando se acerca el punto de aparición del tank |
 | [l4d2_spec_lister](#l4d2_spec_lister) | Permite que los espectadores elijan qué equipo escuchan |
 | [l4d2_forced_names](#l4d2_forced_names) | Fija un nombre para SteamIDs específicos |
-| [l4d2_ranking](#l4d2_ranking) | Muestra el ranking de jugadores (en el juego + panel MOTD) |
-| [l4d2_show_patent_icon](#l4d2_show_patent_icon) | Muestra el ícono de rango de cada jugador durante el ready-up |
-| [l4d2_playstats_sync](#l4d2_playstats_sync) | Envía las estadísticas de las partidas a la API de PlayStats |
-| [l4d2_gameinfo_sync](#l4d2_gameinfo_sync) | Sincroniza la información del juego en vivo, los eventos y el chat con el sitio |
 | [l4d2_campaign_vote](#l4d2_campaign_vote) | Permite que cualquier jugador vote para cambiar a cualquier campaña instalada |
 | [l4d2_lerp_advisor](#l4d2_lerp_advisor) | Indica a los jugadores con un lerp inválido qué comandos de red ejecutar |
-| [l4d2_weapon_skins](#l4d2_weapon_skins) | Skins de armas por jugador, compradas en la tienda de skins con estrellas de MVP |
+
+**Plugins de estadísticas (mantenidos en l4d2-playstats-hub)**
+
+| Plugin | Resumen |
+|--------|---------|
+| [l4d2_playstats_sync, l4d2_gameinfo_sync, l4d2_ranking, l4d2_show_patent_icon, l4d2_weapon_skins](#plugins-de-estadísticas-l4d2-playstats-hub) | Estadísticas, partida en vivo, ranking, rangos y skins de armas de l4d2.com.br |
 
 **Plugins adaptados (de terceros)**
 
@@ -329,109 +331,6 @@ El plugin lee este archivo con la API `KeyValues` (no con `exec`), al iniciarse 
 
 ---
 
-## l4d2_ranking
-
-**Fuente:** [`scripting/l4d2_ranking.sp`](../../addons/sourcemod/scripting/l4d2_ranking.sp) · **Versión:** 1.0.0
-
-**Qué hace** — Muestra el ranking de jugadores alojado en `ranking_url`. `!ranking` abre un panel MOTD con el título *"L4D2 | Player Rankings"* con el sitio del ranking. Mientras un juego nuevo (marcador 0–0) todavía no ha empezado, el plugin también muestra el nombre del sitio y *"Type !ranking to check your position."* cada 200 segundos, y abre el panel una vez para cada jugador 60 segundos después de que entra. Todos los paneles dependen de `ranking_show_motd_panel`; con `0`, `!ranking` no hace nada.
-
-**Objetivo** — Llevar el ranking competitivo a los jugadores directamente desde el servidor, en el chat y mediante un panel web.
-
-**ConVars**
-
-| ConVar | Predeterminado | Descripción |
-|--------|---------|-------------|
-| `ranking_url` | `""` | URL del sitio del ranking (`PROTECTED`) |
-| `ranking_show_motd_panel` | `1` | Muestra el panel MOTD con la URL del ranking (`1`/`0`) |
-
-**Comandos**
-
-| Comando | Acceso | Descripción |
-|---------|--------|-------------|
-| `sm_ranking` | todos | Abre el panel del ranking |
-
-**Cómo configurar** — Define `ranking_url` y `ranking_show_motd_panel` en `shared_cvars.cfg`.
-
----
-
-## l4d2_show_patent_icon
-
-**Fuente:** [`scripting/l4d2_show_patent_icon.sp`](../../addons/sourcemod/scripting/l4d2_show_patent_icon.sp) · **Versión:** 1.2.0
-
-**Qué hace** — Durante el ready-up de un juego nuevo (marcador 0–0), muestra el ícono de rango de cada jugador que está jugando como un sprite sobre su cabeza. Los niveles vienen de `GET {l4d2_web_url}/api/players/patents`, que se actualiza al iniciar el mapa y cuando empieza un juego nuevo. `l4d2_web_url` la crean `l4d2_gameinfo_sync` y `l4d2_weapon_skins` y se define en `cfg/server.cfg`; mientras no exista o esté vacía, los niveles no se cargan. Los sprites (`materials/sprites/patent_<level>_v<version>.vmt/.vtf`, niveles del 1 a `patent_icon_max_level`) se añaden a la tabla de descargas. Los supervivientes no ven los íconos de los jugadores infectados, y todos los íconos se quitan cuando la ronda empieza.
-
-**Objetivo** — Mostrar la posición competitiva de forma visual en el juego, para que el rango de un jugador se reconozca de un vistazo.
-
-**ConVars**
-
-| ConVar | Predeterminado | Descripción |
-|--------|---------|-------------|
-| `patent_icon_enabled` | `0` | Activa los íconos de rango. Desactivado, no se precachea nada ni se añade a la tabla de descargas, y los niveles no se cargan; al activarlo, rige a partir del siguiente mapa |
-| `patent_icon_version` | `1` | Versión de los archivos de íconos (`PROTECTED`) |
-| `patent_icon_max_level` | `15` | Nivel máximo de rango (`PROTECTED`) |
-
-**Comandos** — Ninguno.
-
-**Cómo configurar** — Define las tres ConVars en `shared_cvars.cfg` (ninguna es un secreto; `zonemod` y `neomod` usan `patent_icon_enabled 1` y la versión de íconos `2`). La URL del sitio viene de `l4d2_web_url`.
-
----
-
-## l4d2_playstats_sync
-
-**Fuente:** [`scripting/l4d2_playstats_sync.sp`](../../addons/sourcemod/scripting/l4d2_playstats_sync.sp) · **Versión:** 1.1.0
-
-**Qué hace** — Hace de puente entre el plugin `l4d2_playstats.smx` y la API externa de PlayStats. 10 segundos después de que empieza cada ronda, envía todos los archivos de log de estadísticas que ese plugin escribió en `addons/sourcemod/logs/` a `POST {playstats_url}/api/statistics`, con el token de acceso en la cabecera `Authorization`. Los archivos que la API marca como procesados se borran y, después de cada envío correcto, el plugin pide al sitio (`{l4d2_web_url}/api/cache/clear`, con `l4d2_web_secret` en la cabecera `Authorization`) que limpie la caché del ranking. Las dos ConVars las crean `l4d2_gameinfo_sync` y `l4d2_weapon_skins`; si alguna está vacía, la caché no se limpia y el sitio la actualiza en una hora como máximo.
-
-**Objetivo** — Guardar las estadísticas de cada partida en el servicio central de estadísticas para mantener actualizados los rankings/rangos.
-
-**ConVars**
-
-| ConVar | Predeterminado | Descripción |
-|--------|---------|-------------|
-| `playstats_url` | `""` | URL de la API de PlayStats (`PROTECTED`) |
-| `playstats_access_token` | `""` | Token de acceso de PlayStats (`PROTECTED`) |
-
-**Comandos** — Ninguno.
-
-**Cómo configurar** — Define `playstats_url` en `shared_cvars.cfg`; define el secreto **`playstats_access_token` en `cfg/server_secrets.cfg`** (ignorado por git):
-
-```
-sm_cvar playstats_access_token "your-token-here"
-```
-
----
-
-## l4d2_gameinfo_sync
-
-**Fuente:** [`scripting/l4d2_gameinfo_sync.sp`](../../addons/sourcemod/scripting/l4d2_gameinfo_sync.sp) · **Versión:** 1.1.0
-
-**Qué hace** — Mantiene el sitio (`l4d2_web_url`) al día con lo que pasa en el servidor, para que pueda mostrar el estado de la partida y el chat en vivo. Cada petición lleva `l4d2_web_secret` en la cabecera `Authorization`. Este plugin se carga desde `plugins/` (carga automática), no desde `optional/`.
-
-- **Envía** la configuración de la partida, la información de la ronda, el marcador y los jugadores (cada 5 segundos), los eventos de la partida (ronda en juego/terminada, pausas, mix iniciado, tank apareció/murió, skeets, levels, crowns, vómitos de boomer que alcanzan al menos a `gameinfo_boomer_vomit_min_survivors` supervivientes, entre otros) y el chat, interceptando `say` y `say_team` (los mensajes que empiezan con `!` o `/` no se envían).
-- **Recibe** mensajes escritos en el sitio, que se muestran en el juego como *"(External) {name}: {text}"*, y comandos de servidor encolados en el sitio, que ejecuta.
-- **Al conectarse**, informa al sitio de la conexión del jugador. Si el sitio encuentra otras cuentas que se conectaron desde la misma dirección IP, sus nombres se muestran en la consola de todos y, cuando `gameinfo_related_accounts_chat` es `1`, se anuncian en el chat (*"{player} previously connected as {name}…"*).
-
-**Objetivo** — Exponer al sitio el estado del servidor/partida y el chat en tiempo real, para funciones del sitio e integraciones.
-
-**ConVars**
-
-| ConVar | Predeterminado | Descripción |
-|--------|---------|-------------|
-| `l4d2_web_url` | `""` | URL del sitio L4D2, compartida con `l4d2_weapon_skins` (`PROTECTED`) |
-| `l4d2_web_secret` | `""` | Clave secreta del sitio L4D2 (el `SecretKey` del sitio), compartida con `l4d2_weapon_skins` (`PROTECTED`) |
-| `gameinfo_related_accounts_chat` | `1` | Anuncia las cuentas relacionadas en el chat (`1`/`0`); el listado en la consola siempre se muestra |
-| `gameinfo_boomer_vomit_min_survivors` | `3` | Número mínimo de supervivientes alcanzados para informar un evento de vómito de boomer |
-
-**Comandos** — Intercepta `say` y `say_team` para reenviar el chat (no registra comandos nuevos).
-
-**Cómo configurar** — `l4d2_web_url` se define en `cfg/server.cfg`; define el secreto **`l4d2_web_secret` en `cfg/server_secrets.cfg`** (ignorado por git). Las dos cvars las comparten todos los plugins que se comunican con el sitio. Define `gameinfo_related_accounts_chat` y `gameinfo_boomer_vomit_min_survivors` en `shared_cvars.cfg` (`zonemod` desactiva el anuncio en el chat).
-
-```
-sm_cvar l4d2_web_secret "your-secret-here"
-```
-
----
-
 ## l4d2_campaign_vote
 
 **Fuente:** [`scripting/l4d2_campaign_vote.sp`](../../addons/sourcemod/scripting/l4d2_campaign_vote.sp) · **Versión:** 1.0.0
@@ -478,53 +377,18 @@ Los comandos sugeridos (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 
 ---
 
-## l4d2_weapon_skins
+# Plugins de estadísticas (l4d2-playstats-hub)
 
-**Fuente:** [`scripting/l4d2_weapon_skins.sp`](../../addons/sourcemod/scripting/l4d2_weapon_skins.sp) · **Versión:** 3.3.0
+`l4d2_playstats_sync`, `l4d2_gameinfo_sync`, `l4d2_ranking`, `l4d2_show_patent_icon` y `l4d2_weapon_skins`, con sus traducciones y `configs/weapon_skins.cfg`, no están en este repositorio. Se mantienen en [l4d2-playstats-hub](https://github.com/altair-sossai/l4d2-playstats-hub), junto con el sitio con el que hablan, l4d2.com.br. `l4d2_playstats`, el plugin de Competitive Rework que escribe los archivos de estadísticas, sigue aquí.
 
-> La documentación completa del sistema de skins (assets, funcionamiento interno del plugin, estrellas, tienda de skins y operación) está en la [wiki de Skins de Armas y Tienda de Skins](../weapon-skins/README.es.md). Esta sección es un resumen.
+- **Deploy** — en cada deploy, el pipeline de este repositorio ([`azure-pipelines.yml`](../../azure-pipelines.yml)) descarga `l4d2-playstats-hub-plugins.zip` de la [última release del hub](https://github.com/altair-sossai/l4d2-playstats-hub/releases/latest) y copia su carpeta `addons` sobre el servidor. `l4d2_gameinfo_sync` y `l4d2_weapon_skins` van a `plugins/` (carga automática); los otros tres van a `plugins/optional/`.
+- **Carga** — `cfg/cfgogl/<mod>/shared_plugins.cfg` los carga, como antes.
+- **Ajustes que quedan aquí** — las ConVars de cada modo en `shared_cvars.cfg` (`ranking_show_motd_panel`, `patent_icon_*`, `gameinfo_*`, `weapon_skins_*`).
+- **Dirección del sitio** — `cfg/server.cfg` define `playstats_url "http://124.198.128.43:5000"` (HTTP simple, para que el navegador del juego también la abra), `playstats_public_url "https://l4d2.com.br"` (la dirección que los jugadores leen en el chat) y `l4d2_web_url` (la lee el plugin del anti-cheat).
+- **Token** — fuera del repositorio. El pipeline escribe `cfg/playstats_token.cfg` a partir de una variable secreta, y `server.cfg` lo ejecuta.
+- **Eliminados** — las ConVars antiguas `playstats_access_token` y `ranking_url`, y `playstats_url` apuntando a la API antigua de PlayStats.
 
-**Qué hace** — Permite que cada jugador use las skins de armas que compró en la tienda de skins del sitio (`{l4d2_web_url}/skins`) con **estrellas** — 1 estrella por cada MVP histórico (daño a SI o infectados comunes) en partidas competitivas. Hay skins para la SMG, la MAC-10 (SMG silenciada), la MP5, la pump shotgun, la chrome shotgun, la Magnum (Desert Eagle) y nueve armas cuerpo a cuerpo (fireaxe, katana, machete, bate de béisbol, bate de críquet, guitarra eléctrica, palanca, palo de golf y sartén). Son solo de textura y se entregan por FastDL, así que los jugadores no necesitan instalar ningún `.vpk`: el plugin cambia el arma a un modelo combinado y selecciona la familia de skin de la skin elegida. La skin acompaña al arma: si se suelta, quien la recoja la usa con la misma skin.
-
-- **Solo se descargan las skins compradas.** Al iniciar el mapa, solo los materiales de las skins compradas por al menos un jugador (`GET {l4d2_web_url}/api/skins`) se añaden a la tabla de descargas. Las skins que tiene cada uno y las equipadas vienen de `GET {l4d2_web_url}/api/players/skins`. Ambas se actualizan cuando se ejecutan las configs, al empezar y al terminar la ronda, y cada 2 minutos mientras hay jugadores; las últimas respuestas válidas se guardan en caché en `addons/sourcemod/data/` para el primer mapa después de un reinicio, porque un servidor vacío hiberna.
-- **Las compras nuevas** se equipan al momento y aparecen a partir del siguiente cambio de mapa (o al momento, cuando los archivos de la skin ya están en las descargas de este mapa porque otra persona ya la había comprado). Un jugador conectado recibe un aviso en el chat cuando llega una compra.
-- **Cambiar de skin en el juego:** solo supervivientes, solo durante el ready-up (cuando `readyup` está cargado) y solo skins que el jugador tiene. Cada cambio se guarda en el sitio (`POST {l4d2_web_url}/api/players/{communityId}/skins/equip`, autenticado con `l4d2_web_secret`), así que las skins equipadas se mantienen sincronizadas entre el juego y el sitio.
-- **Reembolso por temporada:** las skins compradas duran una temporada del ranking. En cada reinicio del ranking (cada 2 meses) las compras se reembolsan automáticamente y las estrellas gastadas vuelven; las skins recibidas como regalo se conservan.
-- **Jugadores sin descargas:** cuando `weapon_skins_kick_no_downloads` es `1` (y las skins están activadas), un jugador cuyo juego tiene `cl_allowdownload` distinto de `1` o `cl_downloadfilter` distinto de `all`/`nosounds` es expulsado. El mensaje de expulsión indica qué ajuste está mal y su valor, da el comando de consola que lo corrige (`cl_allowdownload 1` o `cl_downloadfilter all`) y sugiere revisar `autoexec.cfg`/`config.cfg`; cada expulsión queda registrada en el log. Cuando es `0`, esos jugadores se quedan y las skins vistas en tercera persona vuelven a las predeterminadas para todos mientras ellos están en el servidor, así que nadie ve nunca un modelo de ERROR.
-- **Limpieza de montones de armas:** cada vez que se suelta un arma principal, el plugin cuenta las armas principales soltadas por jugadores dentro de `weapon_skins_pile_radius` y quita las más antiguas por encima de `weapon_skins_pile_max` (por ejemplo, cuando los jugadores cambian de arma una y otra vez en los spawns infinitos de una saferoom). Los spawns de armas, las armas colocadas por el mapa, las armas secundarias, los objetos y las armas en la mano nunca se quitan.
-- **Primera persona sin parpadeo:** en las seis armas de fuego y en las nueve armas cuerpo a cuerpo con skins el modelo de primera persona es siempre el modelo combinado, con la family de la skin o, sin skin, la family original del arma (las families originales van primero en los modelos combinados, ver `stock_skins` en el cfg). El cliente del anti-cheat apunta el juego al mismo modelo mientras el jugador está en el servidor, así el arma original deja de parpadear sobre la skin en cada disparo, golpe, recarga y cambio de arma. Detalles en la [wiki](../weapon-skins/03-game-plugin.es.md).
-
-Este plugin se carga desde `plugins/` (carga automática), no desde `optional/`, así que los archivos ya están en la tabla de descargas cuando los jugadores se conectan por primera vez.
-
-**Objetivo** — Recompensar el rendimiento de MVP con skins de armas cosméticas compradas en la tienda de skins, sin obligar a los jugadores a instalar nada.
-
-**ConVars**
-
-| ConVar | Predeterminado | Descripción |
-|--------|---------|-------------|
-| `weapon_skins_enabled` | `0` | Activa las skins de armas |
-| `l4d2_web_url` | `""` | URL del sitio L4D2, compartida con `l4d2_gameinfo_sync`. Se usa para leer las skins compradas y equipadas, guardar las skins equipadas en el juego y armar el enlace `/skins` (`PROTECTED`) |
-| `l4d2_web_secret` | `""` | Clave secreta del sitio L4D2 (el `SecretKey` del sitio), compartida con `l4d2_gameinfo_sync`. Se envía en la cabecera `Authorization` para guardar las skins equipadas en el juego (`PROTECTED`) |
-| `weapon_skins_kick_no_downloads` | `0` | Expulsa a los jugadores cuyo juego no descarga los archivos del servidor. El mensaje de expulsión indica qué ajuste está mal y el comando de consola que lo corrige |
-| `weapon_skins_pile_radius` | `120.0` | Radio, en unidades del juego, usado para encontrar armas principales soltadas cerca unas de otras |
-| `weapon_skins_pile_max` | `3` | Número máximo de armas principales soltadas que se conservan dentro de ese radio; las más antiguas se quitan (`0` = desactivado) |
-| `weapon_skins_preview_all` | `0` | Modo de prueba. En el siguiente mapa todas las skins de `weapon_skins.cfg` se añaden a la tabla de descargas, compradas o no, y los admins root pueden usar cualquier skin (`!skin <id>`, `!skin next`, `!skin prev`), ignorando compras, equipo y ready-up. Todo jugador que se conecta mientras está activado descarga todas las skins; desactívalo y cambia el mapa para volver a descargar solo las skins compradas |
-
-**Comandos**
-
-| Comando | Acceso | Descripción |
-|---------|--------|-------------|
-| `sm_skin` / `sm_skins` | todos | Sin argumentos, muestra la ayuda y el enlace de la tienda de skins |
-| `sm_skin <id>` | todos | Selecciona una de las skins del jugador por su id (p. ej. `hellsing-gold`) |
-| `sm_skin next [weapon]` / `sm_skin prev [weapon]` | todos | Recorre las skins que el jugador tiene para esa arma, pasando por la skin predeterminada |
-| `sm_skin default [weapon]` | todos | Vuelve a la skin predeterminada |
-| `sm_skin status` | todos | Muestra si las skins están activadas y, en el juego, las estrellas y el número de skins del jugador |
-| `sm_skin on` / `sm_skin off` | `ADMFLAG_ROOT` | Activa o desactiva las skins para todos. Tiene prioridad sobre `weapon_skins_enabled` y se mantiene en los cambios de mapa |
-| `sm_skin test <id\|default> [weapon]` | `ADMFLAG_ROOT` | Prueba en ti mismo, hasta que cambie el mapa, cualquier skin que ya esté en las descargas de este mapa, sin comprarla y fuera del ready-up |
-
-`sm_skins` acepta los mismos argumentos que `sm_skin`. El acceso root se comprueba mediante el override `sm_weaponskins_admin`, así que se puede cambiar en `admin_overrides.cfg`. `[weapon]` acepta `smg`/`uzi`, `mac`/`mac10`/`mac-10`/`silenced`, `mp5`, `pump`, `chrome`, `magnum`/`deagle`, `axe`/`fireaxe`, `bat`, `cricket`, `guitar`, `pan`, `golf`, los nombres de script de las armas cuerpo a cuerpo (`katana`, `machete`, `crowbar`…) y las claves completas (`weapon_smg_mp5`, `weapon_melee_katana`…). Sin él, se usa el arma que el jugador tiene en la mano, luego el arma principal y luego el arma secundaria (cuerpo a cuerpo o Magnum).
-
-**Cómo configurar** — `l4d2_web_url` se define en `cfg/server.cfg`, para que el plugin sepa qué skins se pueden descargar antes de que se cargue cualquier config de partida, y el secreto **`l4d2_web_secret` en `cfg/server_secrets.cfg`** (ignorado por git); ambas se comparten con `l4d2_gameinfo_sync`. Define `weapon_skins_enabled`, `weapon_skins_kick_no_downloads`, `weapon_skins_pile_radius` y `weapon_skins_pile_max` en `shared_cvars.cfg`. Las armas y skins se definen en [`configs/weapon_skins.cfg`](../../addons/sourcemod/configs/weapon_skins.cfg): la sección `Weapons` tiene los modelos combinados y predeterminados de cada arma, y la sección `Skins` asocia cada id de skin con su arma, el índice de la familia de skin (`skin`) y la carpeta de materiales. El índice `skin` debe coincidir con la familia de skin dentro de los modelos combinados, así que los modelos deben rehacerse cuando se añaden o quitan skins. Los modelos y materiales están en el repositorio [`l4d2-zone-server-assets`](https://github.com/altair-sossai/l4d2-zone-server-assets), cuyo pipeline los publica en el servidor y en el blob de FastDL. Los títulos, rarezas, precios e imágenes de las skins, las compras, los regalos y los reembolsos se gestionan en el sitio (consulta la [wiki](../weapon-skins/README.es.md)). Los textos que ven los jugadores están en [`addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt`](../../addons/sourcemod/translations/l4d2_weapon_skins.phrases.txt) (inglés, portugués y español).
+Qué hace cada plugin, sus ConVars y comandos: [Conectar un servidor de juego](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/game-server.es.md) y la [carpeta de plugins](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/plugins/README.es.md) del hub. Para jugadores y admins: [tienda de skins](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.es.md), [servidor en vivo](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/live-server.es.md), [rangos](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/patents.es.md) y [páginas dentro del juego](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/in-game-pages.es.md).
 
 ---
 

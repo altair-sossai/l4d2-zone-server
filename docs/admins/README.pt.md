@@ -273,21 +273,7 @@ Exemplos:
 
 ### Loja de skins (site)
 
-Os jogadores compram as skins em [l4d2.com.br/skins](https://l4d2.com.br/skins) com estrelas (1 estrela por MVP de dano em SI ou de comuns em partidas competitivas, desde o início do ranking). Só os arquivos das skins que pelo menos um jogador comprou entram na lista de downloads, a partir da troca de mapa seguinte à compra.
-
-As compras valem até o fim da temporada do ranking: a cada reset do ranking (a cada 2 meses), elas são **estornadas automaticamente** e as estrelas voltam para os jogadores. As skins dadas de presente ficam.
-
-Os admins do site têm o menu **Admin** no topo de [l4d2.com.br](https://l4d2.com.br):
-
-| O que fazer | Como |
-|---|---|
-| Mudar o preço de uma skin | **Admin → Preços das skins**: clique na skin, troque o valor e clique em **Salvar**. Vale só para as próximas compras; quem já comprou não é afetado. **Restaurar padrão** volta ao preço do catálogo |
-| Dar uma skin de presente | **Admin → Compras de skins → Dar skin de presente** (ou **Dar de presente** na skin, em Preços das skins): escolha o jogador e a skin. A skin fica equipada para o jogador e não gasta estrelas |
-| Estornar uma compra | **Admin → Compras de skins**: clique na compra, depois em **Estornar compra** e **Confirmar estorno**. As estrelas pagas voltam para o jogador, a skin sai da conta dele e, se estava equipada, a arma volta para a padrão |
-| Estornar tudo | **Admin → Compras de skins → Estornar tudo**: marque a confirmação e clique em **Estornar tudo**. Estorna todas as compras e todos os presentes de todos os jogadores, e não dá para desfazer. Se algum item falhar, rode de novo |
-| Banir um jogador do chat do site | **Admin → Bans do Chat → Adicionar ban**: o jogador não consegue mais mandar mensagens para o servidor pelo chat do site |
-
-> As estrelas sempre vêm do ranking: o admin não altera o saldo de ninguém, só dá presente ou estorna compras. Mais detalhes em [Operação das skins → Tarefas comuns](../weapon-skins/06-operations.pt.md#tarefas-comuns).
+Os jogadores compram skins em [l4d2.com.br/skins](https://l4d2.com.br/skins) com as estrelas ganhas nos MVPs. A loja, as estrelas, os preços, os presentes e os estornos, e os bans do chat do site são gerenciados no menu **Admin** do [l4d2.com.br](https://l4d2.com.br). Como tudo funciona e o que cada página de administração faz está no manual do site: [Loja de skins → Para administradores](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.pt.md#para-administradores) e [Moderação](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/moderation.pt.md).
 
 ### Modo de teste: todas as skins
 
