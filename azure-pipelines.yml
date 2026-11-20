@@ -75,26 +75,40 @@ stages:
                 mkdir -p /home/devops/$(Build.BuildId)
 
           - task: CopyFilesOverSSH@0
-            displayName: "📤 Upload the files to the server"
+            displayName: "📤 Upload compressed files to server"
+            inputs:
+              sshEndpoint: $(sshServiceConnection)
+              sourceFolder: "$(Build.Repository.LocalPath)"
+              contents: "*.tar.gz"
+              targetFolder: "/home/devops/$(Build.BuildId)"
+              cleanTargetFolder: false
+              overwrite: true
+              readyTimeout: "20000"
+
+          - task: CopyFilesOverSSH@0
+            displayName: "📄 Upload host and motd files to game directory"
             inputs:
               sshEndpoint: $(sshServiceConnection)
               sourceFolder: "$(Build.Repository.LocalPath)"
               contents: |
-                *.tar.gz
                 host.txt
                 motd.txt
-                bash/deploy-when-empty.sh
-              targetFolder: "/home/devops/$(Build.BuildId)"
+              targetFolder: "/home/steam/l4d2/left4dead2"
               cleanTargetFolder: false
               overwrite: true
-              flattenFolders: true
               readyTimeout: "20000"
 
           - task: SSH@0
-            displayName: "⏳ Deploy once the game server is empty"
+            displayName: "🛠️ Extract files on server and set permissions"
             inputs:
               sshEndpoint: $(sshServiceConnection)
               readyTimeout: "20000"
               commands: |
-                setsid nohup bash /home/devops/$(Build.BuildId)/deploy-when-empty.sh $(Build.BuildId) > /home/devops/deploy-$(Build.BuildId).log 2>&1 < /dev/null &
-                echo "Waiting in the background, see /home/devops/deploy-$(Build.BuildId).log"
+                tar -xzf /home/devops/$(Build.BuildId)/addons.tar.gz -C /home/steam/l4d2/left4dead2/addons
+                mkdir -p /home/steam/l4d2/left4dead2/bash
+                tar -xzf /home/devops/$(Build.BuildId)/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
+                tar -xzf /home/devops/$(Build.BuildId)/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
+                tar -xzf /home/devops/$(Build.BuildId)/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
+                dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
+                chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
+                rm -rf /home/devops/$(Build.BuildId)
