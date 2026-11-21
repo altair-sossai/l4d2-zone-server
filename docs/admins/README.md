@@ -250,7 +250,7 @@ Examples:
 
 | Command | What it does |
 |---|---|
-| `!slots <number>` | Changes the number of server slots **right away**, without a vote (maximum 30). E.g. `!slots 10` |
+| `!slots <number>` | Changes the number of server slots **right away**, without a vote (maximum 30). Players cannot change the slots on this server, only admins. E.g. `!slots 10` |
 | `!killlobbyres` | Removes the server's lobby reservation (lets in players who did not come through the lobby) |
 
 ## Weapon skins
@@ -301,8 +301,8 @@ To check skins in game that nobody has bought yet:
 | `!reloadadmins` | Reloads the admin list (after someone is added) |
 | `!listcampaigns` | Lists every installed campaign in the console |
 | `!refreshcampaigns` | Refreshes the campaign list of `!votecamp` |
-| `!add_caster_id <SteamID>` | Adds the SteamID to the list of who can register themselves as a caster (`!cast`) |
-| `!remove_caster_id <SteamID>` | Removes the SteamID from that list |
+| `!add_caster_id <SteamID>` | Restricts `!cast` to a list of SteamIDs. The list starts empty, so anyone can use `!cast`; once a SteamID is added, only the SteamIDs on the list can register themselves as casters |
+| `!remove_caster_id <SteamID>` | Removes the SteamID from that list. When the list is empty again, `!cast` is open to everyone |
 | `!printcasters` | Shows the list of caster SteamIDs |
 | `statsreset` | **Console only.** Resets the current match stats (`!stats`, `!mvp`) |
 

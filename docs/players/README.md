@@ -33,6 +33,8 @@ In this guide, `< >` and `[ ]` only show what goes in that spot. **Don't type th
 
 ✅ Right: `!mix "(LoD) Adeilson" Feeh`
 
+**Command list:** `!help` lists in your console (`~`) the commands you can use, 10 per page. Use `!help 2`, `!help 3` and so on for the next pages.
+
 ---
 
 ## Ready-up (before the round starts)
@@ -102,9 +104,28 @@ Examples:
 | `!votecamp` / `!votecampaign` | Opens a menu to vote for a campaign change (official and custom campaigns) |
 | `!voteboss <tank> <witch>` | Votes to change the Tank and Witch spawn percentages (only during the ready-up of the first round of a map). `0` = no spawn, `-1` = keep current |
 | `!setscores <survivors> <infected>` | Starts a vote to change the match score (players on a team only) |
-| `!slots <number>` | Starts a vote to change the number of server slots. Ex.: `!slots 10` |
+| `!surrender` / `!render` | Starts a vote for your team to give up and lose the match. Only from the second map on, in either round, once the round is live. More than half of your team must vote **yes** (3 of 4 in 4v4); not voting counts as no. If it is rejected, your team waits 60 seconds to try again |
 
 Main configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`. `!match` without a config opens a menu with every config installed on the server.
+
+> **About the surrender:** when the vote passes, the other team wins, with the higher score of the match plus 250 points. The server ends the map's rounds on its own and then moves on to the next campaign. Spectators cannot start or vote in a surrender.
+
+> **Server slots:** only admins can change the number of slots (`!slots`). Players cannot start a vote for it on this server.
+
+---
+
+## Anti-Cheat
+
+| Command | What it does |
+|---|---|
+| `!aac` | Tells you whether the Anti-Cheat is on and whether your account must use it. If you must use it and it is not open, it also shows where to download it |
+| `!aac vote` | While the Anti-Cheat is off, starts a vote to play this match with it |
+
+> **About `!aac vote`:**
+> - It can only be started in the ready-up of the first map, before the match begins, with both teams full and no mix running. Only players on the two teams can start it and vote.
+> - It passes when more than half of the players on both teams vote **yes**; not voting counts as no. If it fails, wait 60 seconds to start another one.
+> - If it passes, the Anti-Cheat is on for this match: whoever must use it and does not have it open goes to spectators, and must close the game and open it through the Anti-Cheat. When the match ends, it turns off again.
+> - While the Anti-Cheat is off, the chat reminds you once, shortly after you join, that you can use `!aac vote`.
 
 ---
 
@@ -119,6 +140,7 @@ Main configs: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zonere
 | `!cfg` / `!changelog` | Shows what the current config changes |
 | `!lerps` | Lists every player's lerp |
 | `!rates` | Lists every player's network settings |
+| `!weaponstats [weapon]` / `!weapon_attributes [weapon]` | Shows the stats the config gives to the weapon in your hand, or to the weapon you name. Ex.: `!weaponstats smg` |
 
 ## Stats and ranking
 
@@ -180,8 +202,8 @@ Examples:
 | `!hear` | Chooses whose voice you hear: survivors, infected, spectators only, or everyone. Ex.: `!hear survivors` |
 | `!spechud` | Shows or hides the spectator HUD |
 | `!tankhud` | Shows or hides the Tank HUD |
-| `!cast` | Registers you as a caster (only for authorized casters) |
-| `!notcasting` / `!uncast` | Removes you from casters |
+| `!cast` | Registers you as a caster (open to everyone): you go to spectators and stay there while you are a caster, and `!kickspecs` does not kick you |
+| `!notcasting` / `!uncast` | Removes you from casters (the server reconnects you) |
 
 ---
 
@@ -191,7 +213,7 @@ Examples:
 
 | Command | What it does |
 |---|---|
-| `!warp <1-4>` / `!warp <name>` | While in ghost mode, teleports you to a survivor |
+| `!warp` / `!warp <name>` / `!warp <rank>` | While in ghost mode, teleports you to a survivor. Without anything, to a random survivor (not the same one as last time). With a name, to that character: `nick`, `rochelle`, `coach`, `ellis`, `bill`, `zoey`, `louis` or `francis`. With a number, by progress: `1` = the survivor furthest ahead, `2` = the second one, and so on. Ex.: `!warp ellis`, `!warp 1` |
 
 ### Tank rock throw
 

@@ -33,6 +33,8 @@ Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali
 
 ✅ Certo: `!mix "(LoD) Adeilson" Feeh`
 
+**Lista de comandos:** o `!help` lista no seu console (`~`) os comandos que você pode usar, 10 por página. Use `!help 2`, `!help 3` e assim por diante para ver as próximas páginas.
+
 ---
 
 ## Ready-up (antes do round começar)
@@ -102,9 +104,28 @@ Exemplos:
 | `!votecamp` / `!votecampaign` | Abre um menu para votar na troca de campanha (oficiais e customizadas) |
 | `!voteboss <tank> <witch>` | Vota para mudar a porcentagem de spawn do Tank e da Witch (só no ready-up do primeiro round do mapa). `0` = não aparece, `-1` = mantém a atual |
 | `!setscores <survivors> <infected>` | Abre votação para mudar o placar da partida (só quem está em um time) |
-| `!slots <número>` | Abre votação para mudar a quantidade de vagas do servidor. Ex.: `!slots 10` |
+| `!surrender` / `!render` | Abre votação para o seu time desistir e perder a partida. Só a partir do segundo mapa, em qualquer round, com o round já valendo. Mais da metade do seu time precisa votar **sim** (3 de 4 no 4v4); quem não vota conta como não. Se for recusada, o seu time espera 60 segundos para tentar de novo |
 
 Configs principais: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `zoneretro`. O `!match` sem config abre um menu com todas as configs instaladas no servidor.
+
+> **Sobre a desistência:** quando a votação passa, o outro time vence, com o maior placar da partida mais 250 pontos. O servidor termina os rounds do mapa sozinho e depois passa para a próxima campanha. Spectators não podem abrir nem votar numa desistência.
+
+> **Vagas do servidor:** só admins podem mudar a quantidade de vagas (`!slots`). Neste servidor, jogadores não conseguem abrir votação para isso.
+
+---
+
+## Anti-Cheat
+
+| Comando | O que faz |
+|---|---|
+| `!aac` | Diz se o Anti-Cheat está ligado e se a sua conta precisa usá-lo. Se você precisa e ele não está aberto, mostra também onde baixar |
+| `!aac vote` | Com o Anti-Cheat desligado, abre votação para jogar esta partida com ele |
+
+> **Sobre o `!aac vote`:**
+> - Só pode ser aberta no ready-up do primeiro mapa, antes da partida começar, com os dois times cheios e sem mix em andamento. Só os jogadores dos dois times podem abrir e votar.
+> - Passa quando mais da metade dos jogadores dos dois times vota **sim**; quem não vota conta como não. Se não passar, espere 60 segundos para abrir outra.
+> - Se passar, o Anti-Cheat fica ligado nesta partida: quem precisa usar e não está com ele aberto vai para spectator, e precisa fechar o jogo e abrir pelo Anti-Cheat. Quando a partida acaba, ele desliga de novo.
+> - Com o Anti-Cheat desligado, o chat avisa uma vez, pouco depois de você entrar, que dá para usar o `!aac vote`.
 
 ---
 
@@ -119,6 +140,7 @@ Configs principais: `zonemod` (4v4), `zm3v3`, `zm2v2`, `zm1v1`, `zonehunters`, `
 | `!cfg` / `!changelog` | Mostra o que a config atual muda no jogo |
 | `!lerps` | Lista o lerp de todos os jogadores |
 | `!rates` | Lista as configurações de rede de todos os jogadores |
+| `!weaponstats [arma]` / `!weapon_attributes [arma]` | Mostra os atributos que a config dá para a arma na sua mão, ou para a arma que você escrever. Ex.: `!weaponstats smg` |
 
 ## Estatísticas e ranking
 
@@ -180,8 +202,8 @@ Exemplos:
 | `!hear` | Escolhe de quem você ouve a voz: survivors, infected, só spectators ou todos. Ex.: `!hear survivors` |
 | `!spechud` | Mostra ou esconde o HUD de spectator |
 | `!tankhud` | Mostra ou esconde o HUD do Tank |
-| `!cast` | Registra você como caster (só para casters autorizados) |
-| `!notcasting` / `!uncast` | Tira você dos casters |
+| `!cast` | Registra você como caster (aberto a todos): você vai para spectator e fica lá enquanto for caster, e o `!kickspecs` não expulsa você |
+| `!notcasting` / `!uncast` | Tira você dos casters (o servidor reconecta você) |
 
 ---
 
@@ -191,7 +213,7 @@ Exemplos:
 
 | Comando | O que faz |
 |---|---|
-| `!warp <1-4>` / `!warp <nome>` | No modo fantasma (ghost), teleporta você até um survivor |
+| `!warp` / `!warp <nome>` / `!warp <posição>` | No modo fantasma (ghost), teleporta você até um survivor. Sem nada, até um survivor aleatório (diferente do da última vez). Com um nome, até aquele personagem: `nick`, `rochelle`, `coach`, `ellis`, `bill`, `zoey`, `louis` ou `francis`. Com um número, pelo progresso: `1` = o survivor mais à frente, `2` = o segundo, e assim por diante. Ex.: `!warp ellis`, `!warp 1` |
 
 ### Arremesso de pedra do Tank
 

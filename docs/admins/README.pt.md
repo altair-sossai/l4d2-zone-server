@@ -250,7 +250,7 @@ Exemplos:
 
 | Comando | O que faz |
 |---|---|
-| `!slots <número>` | Muda a quantidade de vagas do servidor **na hora**, sem votação (máximo 30). Ex.: `!slots 10` |
+| `!slots <número>` | Muda a quantidade de vagas do servidor **na hora**, sem votação (máximo 30). Neste servidor, só admins mudam as vagas, jogadores não conseguem. Ex.: `!slots 10` |
 | `!killlobbyres` | Remove a reserva de lobby do servidor (libera a entrada de quem não veio pelo lobby) |
 
 ## Skins de armas
@@ -301,8 +301,8 @@ Para conferir no jogo skins que ninguém comprou ainda:
 | `!reloadadmins` | Recarrega a lista de admins (depois de alguém ser adicionado) |
 | `!listcampaigns` | Lista no console todas as campanhas instaladas |
 | `!refreshcampaigns` | Atualiza a lista de campanhas do `!votecamp` |
-| `!add_caster_id <SteamID>` | Adiciona a SteamID à lista de quem pode se registrar sozinho como caster (`!cast`) |
-| `!remove_caster_id <SteamID>` | Remove a SteamID dessa lista |
+| `!add_caster_id <SteamID>` | Restringe o `!cast` a uma lista de SteamIDs. A lista começa vazia, então qualquer um pode usar o `!cast`; quando uma SteamID é adicionada, só as SteamIDs da lista conseguem se registrar sozinhas como caster |
+| `!remove_caster_id <SteamID>` | Remove a SteamID dessa lista. Quando a lista fica vazia de novo, o `!cast` volta a ser aberto a todos |
 | `!printcasters` | Mostra a lista de SteamIDs de casters |
 | `statsreset` | **Só pelo console.** Zera as estatísticas da partida atual (`!stats`, `!mvp`) |
 
