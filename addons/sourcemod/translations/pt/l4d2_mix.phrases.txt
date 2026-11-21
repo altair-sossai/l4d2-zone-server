@@ -195,4 +195,48 @@
         "#format"    "{1:d}"
         "pt"         "Aguarde {olive}{1}{default} segundos após o mix para expulsar os espectadores."
     }
+    "RankingVoteProgress"
+    {
+        "pt"    "{lightgreen}{1} {default}quer iniciar o mix pelo ranking da comunidade. Digite {olive}!rmix{default} para votar ({olive}votos necessários: {2}{default})."
+    }
+    "RankingVoteCast"
+    {
+        "pt"    "{lightgreen}{1} {default}votou para iniciar o mix pelo ranking da comunidade."
+    }
+    "RankingAlreadyVoted"
+    {
+        "pt"    "Você já votou para iniciar o mix pelo ranking da comunidade."
+    }
+    "RankingRequestInProgress"
+    {
+        "pt"    "O mix pelo ranking da comunidade já está sendo iniciado."
+    }
+    "RankingStarting"
+    {
+        "pt"    "Iniciando o mix com base no ranking da comunidade..."
+    }
+    "RankingUnranked"
+    {
+        "pt"    "Ainda fora do ranking da comunidade: {olive}{1}{default}. O mix não começou; use o {olive}!mix{default}."
+    }
+    "RankingUnavailable"
+    {
+        "pt"    "O ranking da comunidade não está disponível agora. Use o {olive}!mix{default}."
+    }
+    "RankingCancelled"
+    {
+        "pt"    "Os times mudaram enquanto o mix começava. O mix foi cancelado."
+    }
+    "RankingSwapFailed"
+    {
+        "pt"    "Não foi possível mover os jogadores para os times. O mix foi cancelado."
+    }
+    "RankingSurvivors"
+    {
+        "pt"    "{blue}Sobreviventes{default}: {1}"
+    }
+    "RankingInfected"
+    {
+        "pt"    "{red}Infectados{default}: {1}"
+    }
 }

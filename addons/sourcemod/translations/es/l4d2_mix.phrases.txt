@@ -195,4 +195,48 @@
         "#format"    "{1:d}"
         "es"         "Espera {olive}{1}{default} segundos después del mix antes de expulsar a los espectadores."
     }
+    "RankingVoteProgress"
+    {
+        "es"    "{lightgreen}{1} {default}quiere empezar un mix por el ranking de la comunidad. Escribe {olive}!rmix{default} para votar ({olive}votos necesarios: {2}{default})."
+    }
+    "RankingVoteCast"
+    {
+        "es"    "{lightgreen}{1} {default}votó para empezar un mix por el ranking de la comunidad."
+    }
+    "RankingAlreadyVoted"
+    {
+        "es"    "Ya votaste para empezar un mix por el ranking de la comunidad."
+    }
+    "RankingRequestInProgress"
+    {
+        "es"    "El mix por el ranking de la comunidad ya se está iniciando."
+    }
+    "RankingStarting"
+    {
+        "es"    "Iniciando el mix según el ranking de la comunidad..."
+    }
+    "RankingUnranked"
+    {
+        "es"    "Todavía fuera del ranking de la comunidad: {olive}{1}{default}. El mix no empezó; usa {olive}!mix{default}."
+    }
+    "RankingUnavailable"
+    {
+        "es"    "El ranking de la comunidad no está disponible ahora. Usa {olive}!mix{default}."
+    }
+    "RankingCancelled"
+    {
+        "es"    "Los equipos cambiaron mientras empezaba el mix. El mix fue cancelado."
+    }
+    "RankingSwapFailed"
+    {
+        "es"    "No fue posible mover a los jugadores a sus equipos. El mix fue cancelado."
+    }
+    "RankingSurvivors"
+    {
+        "es"    "{blue}Supervivientes{default}: {1}"
+    }
+    "RankingInfected"
+    {
+        "es"    "{red}Infectados{default}: {1}"
+    }
 }
