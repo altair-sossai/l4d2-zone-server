@@ -47,16 +47,27 @@ stages:
 
           - script: |
               set -euo pipefail
-              case "${PLAYSTATS_TOKEN:-}" in
-                "" | *PLAYSTATS_TOKEN*)
-                  echo "The secret variable PLAYSTATS_TOKEN is not set on this pipeline."
-                  exit 1
-                  ;;
-              esac
-              printf 'playstats_token "%s"\nsm_cvar l4d2_web_secret "%s"\n' "${PLAYSTATS_TOKEN}" "${PLAYSTATS_TOKEN}" > "$(Build.Repository.LocalPath)/cfg/playstats_token.cfg"
-            displayName: "🔑 Write the PlayStats Hub token"
+              for name in PLAYSTATS_TOKEN RCON_PASSWORD ANTI_CHEAT_ACCESS_TOKEN; do
+                value="${!name:-}"
+                case "${value}" in
+                  "" | *"${name}"*)
+                    echo "The secret variable ${name} is not set on this pipeline."
+                    exit 1
+                    ;;
+                esac
+              done
+              umask 077
+              {
+                printf 'rcon_password "%s"\n' "${RCON_PASSWORD}"
+                printf 'playstats_token "%s"\n' "${PLAYSTATS_TOKEN}"
+                printf 'sm_cvar l4d2_web_secret "%s"\n' "${PLAYSTATS_TOKEN}"
+                printf 'sm_cvar anti_cheat_access_token "%s"\n' "${ANTI_CHEAT_ACCESS_TOKEN}"
+              } > "$(Build.Repository.LocalPath)/cfg/server_secrets.cfg"
+            displayName: "🔑 Write the server secrets"
             env:
               PLAYSTATS_TOKEN: $(PLAYSTATS_TOKEN)
+              RCON_PASSWORD: $(RCON_PASSWORD)
+              ANTI_CHEAT_ACCESS_TOKEN: $(ANTI_CHEAT_ACCESS_TOKEN)
 
           - script: |
               tar -czf addons.tar.gz -C $(Build.Repository.LocalPath)/addons .
@@ -111,4 +122,6 @@ stages:
                 tar -xzf /home/devops/$(Build.BuildId)/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
                 dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
                 chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
+                chmod 600 /home/steam/l4d2/left4dead2/cfg/server_secrets.cfg
+                rm -f /home/steam/l4d2/left4dead2/cfg/playstats_token.cfg
                 rm -rf /home/devops/$(Build.BuildId)

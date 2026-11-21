@@ -24,9 +24,8 @@ Most of these plugins live in `optional/`, so they don't auto-load — they are 
 | `cfg/cfgogl/<mod>/shared_plugins.cfg`  | **Loads** each plugin (`sm plugins load optional/<name>.smx`) |
 | `cfg/cfgogl/<mod>/shared_cvars.cfg`    | **Sets ConVars** via `confogl_addcvar <cvar> <value>` |
 | `cfg/cfgogl/<mod>/shared_settings.cfg` | Also sets ConVars via `confogl_addcvar` (used for `l4d2_spec_lister_hint`) |
-| `cfg/server.cfg`                       | Server-wide values that must exist before any match config is loaded (`l4d2_web_url`, `playstats_url`, `playstats_public_url`) |
-| `cfg/server_secrets.cfg`               | **Secrets** (API tokens/keys) via `sm_cvar` — **git-ignored**, never committed; executed at the top of `server.cfg` |
-| `cfg/playstats_token.cfg`              | **Not in the repository.** Written by the deploy pipeline from a secret variable, with the token of this server on l4d2.com.br (`playstats_token` and `l4d2_web_secret`); executed by `server.cfg` |
+| `cfg/server.cfg`                       | Server-wide values that must exist before any match config is loaded (`l4d2_web_url`, `playstats_url`, `playstats_public_url`, and the anti-cheat `anti_cheat_endpoint`, `anti_cheat_server_id` and `anti_cheat_download_url`) |
+| `cfg/server_secrets.cfg`               | **Not in the repository.** Written by the deploy pipeline on every deploy from the secret variables `RCON_PASSWORD`, `PLAYSTATS_TOKEN` and `ANTI_CHEAT_ACCESS_TOKEN` (`rcon_password`, `playstats_token`, `l4d2_web_secret` and `anti_cheat_access_token`), with permission `600`; executed at the top of `server.cfg` |
 
 `<mod>` is the active config folder, primarily [`zonemod`](../../cfg/cfgogl/zonemod/) and [`neomod`](../../cfg/cfgogl/neomod/).
 
@@ -385,7 +384,7 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 - **Loading** — `cfg/cfgogl/<mod>/shared_plugins.cfg` loads them, as before.
 - **Settings kept here** — the per-mode ConVars in `shared_cvars.cfg` (`ranking_show_motd_panel`, `patent_icon_*`, `gameinfo_*`, `weapon_skins_*`).
 - **Site address** — `cfg/server.cfg` sets `playstats_url "http://124.198.128.43:5000"` (plain HTTP, so the in-game browser opens it too), `playstats_public_url "https://l4d2.com.br"` (the address players read in chat) and `l4d2_web_url` (read by the anti-cheat plugin).
-- **Token** — not in the repository. The pipeline writes `cfg/playstats_token.cfg` from a secret variable, and `server.cfg` runs it.
+- **Secrets** — not in the repository. The pipeline writes `cfg/server_secrets.cfg` from secret variables, and `server.cfg` runs it. To rotate one, change the variable of the pipeline and deploy again; for the anti-cheat token, also change the key of `l4d2-zone-server` in the anti-cheat API.
 - **Removed** — the old ConVars `playstats_access_token` and `ranking_url`, and `playstats_url` pointing to the old PlayStats API.
 
 What each plugin does, its ConVars and commands: [Connecting a game server](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/game-server.md) and the [plugins folder](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/plugins/README.md) of the hub. For players and admins: [skin shop](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/skin-shop.md), [live server](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/live-server.md), [patents](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/patents.md) and [in-game pages](https://github.com/altair-sossai/l4d2-playstats-hub/blob/main/docs/manual/in-game-pages.md).
