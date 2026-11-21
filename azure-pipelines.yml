@@ -42,6 +42,10 @@ stages:
               for folder in plugins translations configs; do
                 cp -r "hub-plugins/left4dead2/addons/sourcemod/${folder}/." "$(Build.Repository.LocalPath)/addons/sourcemod/${folder}/"
               done
+              if [ -d hub-plugins/left4dead2/materials ]; then
+                mkdir -p "$(Build.Repository.LocalPath)/materials"
+                cp -r hub-plugins/left4dead2/materials/. "$(Build.Repository.LocalPath)/materials/"
+              fi
               rm -rf hub-plugins hub-plugins.zip
             displayName: "🧩 Add the PlayStats Hub plugins from its release"
 
@@ -74,6 +78,9 @@ stages:
               tar -czf cfg.tar.gz -C $(Build.Repository.LocalPath)/cfg .
               tar -czf bash.tar.gz -C $(Build.Repository.LocalPath)/bash .
               tar -czf scripts.tar.gz -C $(Build.Repository.LocalPath)/scripts .
+              if [ -d $(Build.Repository.LocalPath)/materials ]; then
+                tar -czf materials.tar.gz -C $(Build.Repository.LocalPath)/materials .
+              fi
             displayName: "📦 Compress folders into .tar.gz files"
 
           - task: SSH@0
@@ -120,6 +127,7 @@ stages:
                 tar -xzf /home/devops/$(Build.BuildId)/bash.tar.gz -C /home/steam/l4d2/left4dead2/bash
                 tar -xzf /home/devops/$(Build.BuildId)/cfg.tar.gz -C /home/steam/l4d2/left4dead2/cfg
                 tar -xzf /home/devops/$(Build.BuildId)/scripts.tar.gz -C /home/steam/l4d2/left4dead2/scripts
+                if [ -f /home/devops/$(Build.BuildId)/materials.tar.gz ]; then mkdir -p /home/steam/l4d2/left4dead2/materials && tar -xzf /home/devops/$(Build.BuildId)/materials.tar.gz -C /home/steam/l4d2/left4dead2/materials; fi
                 dos2unix /home/steam/l4d2/left4dead2/bash/*.sh > /dev/null 2>&1
                 chmod +x /home/steam/l4d2/left4dead2/bash/*.sh
                 chmod 600 /home/steam/l4d2/left4dead2/cfg/server_secrets.cfg
