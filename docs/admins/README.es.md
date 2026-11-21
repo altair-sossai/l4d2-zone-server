@@ -133,6 +133,7 @@ Ejemplos:
 | `!mix` | Empieza el mix **al instante**, sin votación. Los dos capitanes se eligen por votación de los jugadores |
 | `!mix <capitán1>` | Empieza el mix al instante con `capitán1` como capitán de los survivors. El segundo capitán se elige por votación |
 | `!mix <capitán1> <capitán2>` | Empieza el mix al instante con los dos capitanes definidos: `capitán1` en survivors y `capitán2` en infected |
+| `!rmix` (o `!rrmix`) | Empieza **al instante** un mix con los equipos divididos por el ranking de la comunidad. Si alguien todavía no está en el ranking, el chat dice quién es y el mix no empieza |
 | `!stopmix` | Cancela el mix en curso (por ejemplo, si un capitán salió o trabó la elección) |
 
 Ejemplos:
@@ -142,6 +143,7 @@ Ejemplos:
 !mix vorkyss                    -> vorkyss es capitán, el otro sale por votación
 !mix vorkyss Feeh               -> vorkyss y Feeh son los capitanes
 !mix "(LoD) Adeilson" Feeh      -> usa comillas cuando el nombre tenga espacios o símbolos
+!rmix                           -> el sitio divide los equipos por el ranking de la comunidad
 ```
 
 > - Los capitanes tienen que estar **jugando** (en survivors o infected), no en spectator.

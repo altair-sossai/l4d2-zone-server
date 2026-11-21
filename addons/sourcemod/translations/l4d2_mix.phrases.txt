@@ -195,4 +195,64 @@
         "#format"    "{1:d}"
         "en"         "Wait {olive}{1}{default} seconds after the mix before kicking spectators."
     }
+    "RankingVoteProgress"
+    {
+        "#format"    "{1:N},{2:d}"
+        "en"         "{lightgreen}{1} {default}wants to start a mix from the community ranking. Type {olive}!rmix{default} to vote ({olive}votes needed: {2}{default})."
+        "pt"         "{lightgreen}{1} {default}quer iniciar o mix pelo ranking da comunidade. Digite {olive}!rmix{default} para votar ({olive}votos necessários: {2}{default})."
+    }
+    "RankingVoteCast"
+    {
+        "#format"    "{1:N}"
+        "en"         "{lightgreen}{1} {default}voted to start a mix from the community ranking."
+        "pt"         "{lightgreen}{1} {default}votou para iniciar o mix pelo ranking da comunidade."
+    }
+    "RankingAlreadyVoted"
+    {
+        "en"    "You have already voted to start a mix from the community ranking."
+        "pt"    "Você já votou para iniciar o mix pelo ranking da comunidade."
+    }
+    "RankingRequestInProgress"
+    {
+        "en"    "The mix from the community ranking is already starting."
+        "pt"    "O mix pelo ranking da comunidade já está sendo iniciado."
+    }
+    "RankingStarting"
+    {
+        "en"    "Starting the mix from the community ranking..."
+        "pt"    "Iniciando o mix com base no ranking da comunidade..."
+    }
+    "RankingUnranked"
+    {
+        "#format"    "{1:s}"
+        "en"         "Not in the community ranking yet: {olive}{1}{default}. The mix did not start; use {olive}!mix{default} instead."
+        "pt"         "Ainda fora do ranking da comunidade: {olive}{1}{default}. O mix não começou; use o {olive}!mix{default}."
+    }
+    "RankingUnavailable"
+    {
+        "en"    "The community ranking is not available right now. Use {olive}!mix{default} instead."
+        "pt"    "O ranking da comunidade não está disponível agora. Use o {olive}!mix{default}."
+    }
+    "RankingCancelled"
+    {
+        "en"    "The teams changed while the mix was starting. The mix was cancelled."
+        "pt"    "Os times mudaram enquanto o mix começava. O mix foi cancelado."
+    }
+    "RankingSwapFailed"
+    {
+        "en"    "Could not move the players to their teams. The mix was cancelled."
+        "pt"    "Não foi possível mover os jogadores para os times. O mix foi cancelado."
+    }
+    "RankingSurvivors"
+    {
+        "#format"    "{1:s}"
+        "en"         "{blue}Survivors{default}: {1}"
+        "pt"         "{blue}Sobreviventes{default}: {1}"
+    }
+    "RankingInfected"
+    {
+        "#format"    "{1:s}"
+        "en"         "{red}Infected{default}: {1}"
+        "pt"         "{red}Infectados{default}: {1}"
+    }
 }

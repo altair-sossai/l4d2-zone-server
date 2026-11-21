@@ -67,6 +67,7 @@ Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali
 | `!vaga` / `!slot` | Pega uma vaga no jogo se for a sua vez na fila |
 | `!mix` | Vota para começar um mix. Quando tiver votos suficientes, todos votam nos capitães, e os capitães escolhem os times por um menu |
 | `!mix <capitão1> <capitão2>` | Abre uma votação propondo dois capitães: `capitão1` nos survivors e `capitão2` nos infected. Se a maioria votar **sim**, o mix começa com eles |
+| `!rmix` (ou `!rrmix`) | Vota para começar um mix com os times divididos pelo [ranking da comunidade](https://l4d2.com.br/community). Usa os mesmos votos necessários do `!mix`. Se alguém dos times ainda não estiver no ranking da comunidade, o chat mostra quem é e o mix não começa |
 | `!teamflip` / `!tf` | Sorteia um time (Survivor ou Infected) para você, mostrando para todos |
 | `!kickspecs` | Abre votação para expulsar os spectators |
 
@@ -76,6 +77,7 @@ Exemplos:
 !mix                           -> vota para começar um mix
 !mix vorkyss Feeh              -> propõe vorkyss e Feeh como capitães
 !mix "(LoD) Adeilson" Feeh     -> use aspas quando o nome tiver espaço ou símbolos
+!rmix                          -> vota num mix equilibrado pelo ranking da comunidade
 ```
 
 > **Sobre o mix:** os dois times precisam estar cheios e o mix só começa no início de um jogo novo (0 x 0). Os capitães precisam estar jogando (não em spectator). Não existe mix em 1v1. Se alguém sair durante o mix, o mix é cancelado; quem fizer isso pela segunda vez é **banido por 60 minutos**.

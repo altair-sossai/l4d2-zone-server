@@ -133,6 +133,7 @@ Examples:
 | `!mix` | Starts the mix **right away**, without a vote. Both captains are chosen by a player vote |
 | `!mix <captain1>` | Starts the mix right away with `captain1` as the survivors' captain. The second captain is chosen by a vote |
 | `!mix <captain1> <captain2>` | Starts the mix right away with both captains set: `captain1` on survivors and `captain2` on infected |
+| `!rmix` (or `!rrmix`) | Starts **right away** a mix with the teams split by the community ranking. If anyone is not in the ranking yet, the chat names them and the mix does not start |
 | `!stopmix` | Cancels the mix in progress (for example, if a captain left or is stalling the picks) |
 
 Examples:
@@ -142,6 +143,7 @@ Examples:
 !mix vorkyss                    -> vorkyss is a captain, the other one comes from a vote
 !mix vorkyss Feeh               -> vorkyss and Feeh are the captains
 !mix "(LoD) Adeilson" Feeh      -> use quotes when the name has spaces or symbols
+!rmix                           -> the site splits the teams by the community ranking
 ```
 
 > - The captains must be **playing** (on survivors or infected), not in spectator.

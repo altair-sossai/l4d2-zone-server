@@ -7,6 +7,7 @@
 #include <l4d2util_constants>
 #include <builtinvotes>
 #include <colors>
+#include <ripext>
 
 #define MAX_STR_LEN 30
 
@@ -20,6 +21,32 @@
 #define STATE_SECOND_CAPT 1
 #define STATE_NO_MIX 2
 #define STATE_PICK_TEAMS 3
+#define STATE_RANKING 4
+
+#define RANKING_MIX_PATH "/api/community/mix"
+#define RANKING_URL_CVAR "playstats_url"
+#define RANKING_TOKEN_CVAR "playstats_token"
+#define RANKING_AUTHORIZATION_HEADER "Authorization"
+#define RANKING_CONTENT_TYPE_HEADER "Content-Type"
+#define RANKING_CONTENT_TYPE_LOWERCASE_HEADER "content-type"
+#define RANKING_JSON_CONTENT_TYPE "json"
+#define RANKING_PLAYERS_KEY "players"
+#define RANKING_SURVIVORS_KEY "survivors"
+#define RANKING_INFECTED_KEY "infected"
+#define RANKING_URL_LENGTH 256
+#define RANKING_TOKEN_LENGTH 256
+#define RANKING_ENDPOINT_LENGTH 512
+#define RANKING_CONTENT_TYPE_LENGTH 64
+#define RANKING_LINE_LENGTH 512
+#define RANKING_SHORT_NAME 20
+#define RANKING_SHORT_NAME_BIG_TEAMS 12
+#define RANKING_BIG_TEAM 5
+#define RANKING_NAME_SEPARATOR ", "
+#define RANKING_NAME_ELLIPSIS ".."
+#define RANKING_TIMEOUT 15
+#define RANKING_ASSIGN_DELAY 0.5
+#define RANKING_ASSIGN_INTERVAL 0.3
+#define RANKING_FINISH_DELAY 1.0
 
 ConVar g_cvStartVotes,
        g_cvAdditionalPlayersAfterMix,
@@ -32,14 +59,23 @@ Menu g_mMixMenu;
 StringMap g_smVoteResults,
           g_smSwapWhitelist,
           g_smPlayers,
-          g_smAbandoners;
+          g_smAbandoners,
+          g_smRankingVoteResults;
+
+ArrayList g_alRankingSurvivors,
+          g_alRankingInfected;
 
 int g_iCurrentState = STATE_NO_MIX,
     g_iMixCallsCount = 0,
     g_iRequiredStartVotes = 0,
     g_iMaxVoteCount = 0,
     g_iPickCount = 0,
-    g_iSurvivorsPick = 0;
+    g_iSurvivorsPick = 0,
+    g_iRankingCallsCount = 0,
+    g_iRankingRequest = 0,
+    g_iRankingAssigned = 0;
+
+bool g_bRankingRequestPending = false;
 
 float g_fMixEndedTime = 0.0;
 
@@ -66,7 +102,7 @@ public Plugin myinfo =
     name = "L4D2 Mix Manager",
     author = "Luckylock (co-author: Altair Sossai)",
     description = "Provides ability to pick captains and teams through menus",
-    version = "5.0.0",
+    version = "5.1.0",
     url = "https://github.com/LuckyServ/"
 };
 
@@ -83,6 +119,8 @@ public void OnPluginStart()
     g_iRequiredStartVotes = Clamp(g_cvStartVotes.IntValue, 1, Slots());
 
     RegConsoleCmd("sm_mix", Cmd_MixStart, "Mix command");
+    RegConsoleCmd("sm_rmix", Cmd_RankingMixStart, "Starts a mix with teams balanced by the community ranking");
+    RegConsoleCmd("sm_rrmix", Cmd_RankingMixStart, "Starts a mix with teams balanced by the community ranking");
     RegAdminCmd("sm_stopmix", Cmd_MixStop, ADMFLAG_CHANGEMAP, "Mix command");
 
     AddCommandListener(PlayerJoinTeam_CallBack, "jointeam");
@@ -97,6 +135,9 @@ public void OnPluginStart()
     g_smSwapWhitelist = new StringMap();
     g_smPlayers = new StringMap();
     g_smAbandoners = new StringMap();
+    g_smRankingVoteResults = new StringMap();
+    g_alRankingSurvivors = new ArrayList(ByteCountToCells(MAX_STR_LEN));
+    g_alRankingInfected = new ArrayList(ByteCountToCells(MAX_STR_LEN));
     g_hMixStartedForward = CreateGlobalForward("OnMixStarted", ET_Event);
     g_hMixStoppedForward = CreateGlobalForward("OnMixStopped", ET_Event);
     
@@ -110,6 +151,7 @@ public void OnPluginStart()
 public void OnMapStart()
 {
     g_bIsMixAllowed = true;
+    CancelRankingRequest();
     ResetMixVoteProgress();
     StopMix();
 }
@@ -117,6 +159,7 @@ public void OnMapStart()
 public void OnRoundIsLive()
 {
     g_bIsMixAllowed = false;
+    CancelRankingRequest();
     ResetMixVoteProgress();
     StopMix();
 
@@ -376,6 +419,7 @@ void BeginMix()
 
     g_iMixCallsCount = 0;
     g_smVoteResults.Clear();
+    ResetRankingVotes();
     g_iMaxVoteCount = 0;
     strcopy(g_sCurrentMaxVotedCaptainAuthId, MAX_STR_LEN, " ");
     g_iPickCount = 0;
@@ -590,6 +634,8 @@ void ResetMixVoteProgress()
 
     if (g_smVoteResults != null)
         g_smVoteResults.Clear();
+
+    ResetRankingVotes();
 }
 
 void IncreaseRequiredStartVotes()
@@ -626,6 +672,436 @@ void HandleMixAbandon(int client)
         BanIdentity(ip, banTime, BANFLAG_IP, "Abandoned the mix", "l4d2_mix");
 
     CPrintToChatAll("%t %t", "MixTag", "PlayerLeftBan", client, banTime);
+}
+
+Action Cmd_RankingMixStart(int client, int args)
+{
+    if (client == 0)
+        return Plugin_Handled;
+
+    if (TeamSize() == 1)
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "UnavailableOneVsOne");
+        return Plugin_Handled;
+    }
+
+    if (g_iCurrentState != STATE_NO_MIX)
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "AlreadyStarted");
+        return Plugin_Handled;
+    }
+
+    if (g_bRankingRequestPending)
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "RankingRequestInProgress");
+        return Plugin_Handled;
+    }
+
+    if (!g_bIsMixAllowed || !IsNewGame())
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "NotAllowedLive");
+        return Plugin_Handled;
+    }
+
+    if (g_hMixVote != null)
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "MixVoteInProgress");
+        return Plugin_Handled;
+    }
+
+    if (GetClientTeam(client) == L4D2Team_Spectator && !GetAdminFlag(GetUserAdmin(client), Admin_Changemap))
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "SpectatorCannotStart");
+        return Plugin_Handled;
+    }
+
+    int mixConditions = GetRankingMixConditionsAfterVote(client);
+
+    if (mixConditions == COND_START_MIX_ADMIN)
+    {
+        CPrintToChatAll("%t %t", "MixTag", "StartedByAdmin", client);
+        RequestRankingMix();
+    }
+    else if (mixConditions == COND_START_MIX)
+    {
+        CPrintToChatAll("%t %t", "MixTag", "RankingVoteCast", client);
+        RequestRankingMix();
+    }
+    else if (mixConditions == COND_NEED_MORE_VOTES)
+        CPrintToChatAll("%t %t", "MixTag", "RankingVoteProgress", client, g_iRequiredStartVotes - g_iRankingCallsCount);
+    else if (mixConditions == COND_HAS_ALREADY_VOTED)
+        CPrintToChat(client, "%t %t", "MixTag", "RankingAlreadyVoted");
+    else if (mixConditions == COND_NO_PLAYERS)
+        CPrintToChat(client, "%t %t", "MixTag", "JoinTeams");
+
+    return Plugin_Handled;
+}
+
+int GetRankingMixConditionsAfterVote(int client)
+{
+    bool dummy = false;
+    char clientAuthId[MAX_STR_LEN];
+    GetClientAuthId(client, AuthId_SteamID64, clientAuthId, MAX_STR_LEN);
+    bool hasVoted = g_smRankingVoteResults.GetValue(clientAuthId, dummy);
+
+    if (!SavePlayers())
+        return COND_NO_PLAYERS;
+
+    if (GetAdminFlag(GetUserAdmin(client), Admin_Changemap))
+        return COND_START_MIX_ADMIN;
+
+    if (hasVoted)
+        return COND_HAS_ALREADY_VOTED;
+
+    g_iRankingCallsCount++;
+
+    if (g_iRankingCallsCount >= g_iRequiredStartVotes)
+        return COND_START_MIX;
+
+    g_smRankingVoteResults.SetValue(clientAuthId, true);
+    return COND_NEED_MORE_VOTES;
+}
+
+void ResetRankingVotes()
+{
+    g_iRankingCallsCount = 0;
+
+    if (g_smRankingVoteResults != null)
+        g_smRankingVoteResults.Clear();
+}
+
+void CancelRankingRequest()
+{
+    g_bRankingRequestPending = false;
+    g_iRankingRequest++;
+}
+
+void RequestRankingMix()
+{
+    ResetRankingVotes();
+
+    char url[RANKING_URL_LENGTH];
+    char token[RANKING_TOKEN_LENGTH];
+
+    if (!ReadRankingSettings(url, sizeof(url), token, sizeof(token)))
+    {
+        CPrintToChatAll("%t %t", "MixTag", "RankingUnavailable");
+        return;
+    }
+
+    char endpoint[RANKING_ENDPOINT_LENGTH];
+    FormatEx(endpoint, sizeof(endpoint), "%s%s", url, RANKING_MIX_PATH);
+
+    JSONArray players = new JSONArray();
+    StringMapSnapshot snapshot = g_smPlayers.Snapshot();
+    char authId[MAX_STR_LEN];
+
+    for (int i = 0; i < snapshot.Length; i++)
+    {
+        snapshot.GetKey(i, authId, sizeof(authId));
+        players.PushString(authId);
+    }
+
+    delete snapshot;
+
+    JSONObject body = new JSONObject();
+    body.Set(RANKING_PLAYERS_KEY, players);
+    delete players;
+
+    HTTPRequest request = new HTTPRequest(endpoint);
+    request.SetHeader(RANKING_AUTHORIZATION_HEADER, "%s", token);
+    request.Timeout = RANKING_TIMEOUT;
+
+    g_iRankingRequest++;
+    g_bRankingRequestPending = true;
+
+    CPrintToChatAll("%t %t", "MixTag", "RankingStarting");
+    request.Post(body, OnRankingMixResponse, g_iRankingRequest);
+
+    delete body;
+}
+
+bool ReadRankingSettings(char[] url, int urlLength, char[] token, int tokenLength)
+{
+    ConVar urlCvar = FindConVar(RANKING_URL_CVAR);
+    ConVar tokenCvar = FindConVar(RANKING_TOKEN_CVAR);
+
+    if (urlCvar == null || tokenCvar == null)
+        return false;
+
+    urlCvar.GetString(url, urlLength);
+    tokenCvar.GetString(token, tokenLength);
+    TrimString(url);
+    TrimString(token);
+
+    int length = strlen(url);
+
+    while (length > 0 && url[length - 1] == '/')
+    {
+        length--;
+        url[length] = '\0';
+    }
+
+    return length > 0 && token[0] != '\0';
+}
+
+void OnRankingMixResponse(HTTPResponse response, any request, const char[] error)
+{
+    if (request != g_iRankingRequest || !g_bRankingRequestPending)
+        return;
+
+    g_bRankingRequestPending = false;
+
+    if (g_iCurrentState != STATE_NO_MIX || !g_bIsMixAllowed || !IsNewGame() || g_hMixVote != null)
+    {
+        CPrintToChatAll("%t %t", "MixTag", "RankingCancelled");
+        return;
+    }
+
+    if (error[0] != '\0' || !RankingHasJson(response))
+    {
+        LogError("Ranking mix request failed (status %d): %s", response.Status, error);
+        CPrintToChatAll("%t %t", "MixTag", "RankingUnavailable");
+        return;
+    }
+
+    JSONObject data = view_as<JSONObject>(response.Data);
+
+    if (response.Status == HTTPStatus_Conflict)
+    {
+        ShowUnrankedPlayers(data);
+        return;
+    }
+
+    if (response.Status != HTTPStatus_OK)
+    {
+        LogError("Ranking mix request failed with status %d", response.Status);
+        CPrintToChatAll("%t %t", "MixTag", "RankingUnavailable");
+        return;
+    }
+
+    g_alRankingSurvivors.Clear();
+    g_alRankingInfected.Clear();
+
+    if (!SavePlayers()
+        || !ReadRankingTeam(data, RANKING_SURVIVORS_KEY, g_alRankingSurvivors)
+        || !ReadRankingTeam(data, RANKING_INFECTED_KEY, g_alRankingInfected))
+    {
+        CPrintToChatAll("%t %t", "MixTag", "RankingCancelled");
+        return;
+    }
+
+    StartRankingMix();
+}
+
+bool RankingHasJson(HTTPResponse response)
+{
+    char contentType[RANKING_CONTENT_TYPE_LENGTH];
+
+    bool found = response.GetHeader(RANKING_CONTENT_TYPE_HEADER, contentType, sizeof(contentType))
+        || response.GetHeader(RANKING_CONTENT_TYPE_LOWERCASE_HEADER, contentType, sizeof(contentType));
+
+    return found && StrContains(contentType, RANKING_JSON_CONTENT_TYPE, false) != -1;
+}
+
+bool ReadRankingTeam(JSONObject data, const char[] key, ArrayList team)
+{
+    if (data == null || !data.HasKey(key))
+        return false;
+
+    JSONArray ids = view_as<JSONArray>(data.Get(key));
+
+    if (ids == null)
+        return false;
+
+    char authId[MAX_STR_LEN];
+    bool dummy;
+    bool valid = ids.Length == TeamSize();
+
+    for (int i = 0; valid && i < ids.Length; i++)
+    {
+        ids.GetString(i, authId, sizeof(authId));
+        valid = g_smPlayers.GetValue(authId, dummy) && team.FindString(authId) == -1;
+        team.PushString(authId);
+    }
+
+    delete ids;
+
+    return valid;
+}
+
+void ShowUnrankedPlayers(JSONObject data)
+{
+    char names[RANKING_LINE_LENGTH];
+
+    if (data != null && data.HasKey(RANKING_PLAYERS_KEY))
+    {
+        JSONArray ids = view_as<JSONArray>(data.Get(RANKING_PLAYERS_KEY));
+        char authId[MAX_STR_LEN];
+        char name[MAX_NAME_LENGTH];
+
+        for (int i = 0; i < ids.Length; i++)
+        {
+            ids.GetString(i, authId, sizeof(authId));
+
+            int client = GetClientFromAuthId(authId);
+
+            if (client <= 0)
+                continue;
+
+            ShortClientName(client, RANKING_SHORT_NAME, name, sizeof(name));
+            AppendName(names, sizeof(names), name);
+        }
+
+        delete ids;
+    }
+
+    CPrintToChatAll("%t %t", "MixTag", "RankingUnranked", names);
+}
+
+void StartRankingMix()
+{
+    g_iCurrentState = STATE_RANKING;
+    StartMix();
+
+    g_smSwapWhitelist.Clear();
+    g_iMixCallsCount = 0;
+    g_smVoteResults.Clear();
+    ResetRankingVotes();
+    g_iRankingAssigned = 0;
+
+    SwapAllPlayersToSpec();
+
+    CreateTimer(RANKING_ASSIGN_DELAY, Timer_AssignRankingPlayer, g_iRankingRequest);
+}
+
+Action Timer_AssignRankingPlayer(Handle timer, any request)
+{
+    if (request != g_iRankingRequest || g_iCurrentState != STATE_RANKING)
+        return Plugin_Stop;
+
+    int survivors = g_alRankingSurvivors.Length;
+    int total = survivors + g_alRankingInfected.Length;
+
+    if (g_iRankingAssigned >= total)
+    {
+        CreateTimer(RANKING_FINISH_DELAY, Timer_FinishRankingMix, request);
+        return Plugin_Stop;
+    }
+
+    char authId[MAX_STR_LEN];
+    bool survivor = g_iRankingAssigned < survivors;
+
+    if (survivor)
+        g_alRankingSurvivors.GetString(g_iRankingAssigned, authId, sizeof(authId));
+    else
+        g_alRankingInfected.GetString(g_iRankingAssigned - survivors, authId, sizeof(authId));
+
+    if (!SwapPlayerToTeam(authId, survivor ? L4D2Team_Survivor : L4D2Team_Infected, 0))
+    {
+        CPrintToChatAll("%t %t", "MixTag", "RankingSwapFailed");
+        StopMix();
+        return Plugin_Stop;
+    }
+
+    g_iRankingAssigned++;
+    CreateTimer(RANKING_ASSIGN_INTERVAL, Timer_AssignRankingPlayer, request);
+
+    return Plugin_Stop;
+}
+
+Action Timer_FinishRankingMix(Handle timer, any request)
+{
+    if (request != g_iRankingRequest || g_iCurrentState != STATE_RANKING)
+        return Plugin_Stop;
+
+    if (!IsRankingTeamInPlace(g_alRankingSurvivors, L4D2Team_Survivor) || !IsRankingTeamInPlace(g_alRankingInfected, L4D2Team_Infected))
+    {
+        CPrintToChatAll("%t %t", "MixTag", "RankingSwapFailed");
+        StopMix();
+        return Plugin_Stop;
+    }
+
+    char survivors[RANKING_LINE_LENGTH];
+    char infected[RANKING_LINE_LENGTH];
+    RankingTeamNames(g_alRankingSurvivors, survivors, sizeof(survivors));
+    RankingTeamNames(g_alRankingInfected, infected, sizeof(infected));
+
+    CPrintToChatAll("%t %t", "MixTag", "RankingSurvivors", survivors);
+    CPrintToChatAll("%t %t", "MixTag", "RankingInfected", infected);
+
+    IncreaseRequiredStartVotes();
+    StopMix();
+
+    return Plugin_Stop;
+}
+
+bool IsRankingTeamInPlace(ArrayList team, int expectedTeam)
+{
+    char authId[MAX_STR_LEN];
+
+    for (int i = 0; i < team.Length; i++)
+    {
+        team.GetString(i, authId, sizeof(authId));
+
+        int client = GetClientFromAuthId(authId);
+
+        if (client <= 0)
+            return false;
+
+        if (GetClientTeam(client) != expectedTeam && (!ChangeClientTeamEx(client, expectedTeam) || GetClientTeam(client) != expectedTeam))
+            return false;
+    }
+
+    return true;
+}
+
+void RankingTeamNames(ArrayList team, char[] names, int maxlength)
+{
+    char authId[MAX_STR_LEN];
+    char name[MAX_NAME_LENGTH];
+    int limit = TeamSize() >= RANKING_BIG_TEAM ? RANKING_SHORT_NAME_BIG_TEAMS : RANKING_SHORT_NAME;
+
+    names[0] = '\0';
+
+    for (int i = 0; i < team.Length; i++)
+    {
+        team.GetString(i, authId, sizeof(authId));
+
+        int client = GetClientFromAuthId(authId);
+
+        if (client <= 0)
+            continue;
+
+        ShortClientName(client, limit, name, sizeof(name));
+        AppendName(names, maxlength, name);
+    }
+}
+
+void AppendName(char[] names, int maxlength, const char[] name)
+{
+    if (names[0] != '\0')
+        StrCat(names, maxlength, RANKING_NAME_SEPARATOR);
+
+    StrCat(names, maxlength, name);
+}
+
+void ShortClientName(int client, int limit, char[] name, int maxlength)
+{
+    GetClientName(client, name, maxlength);
+    ReplaceString(name, maxlength, "{", "(");
+    ReplaceString(name, maxlength, "}", ")");
+
+    if (strlen(name) <= limit)
+        return;
+
+    int cut = limit;
+
+    while (cut > 0 && (name[cut] & 0xC0) == 0x80)
+        cut--;
+
+    name[cut] = '\0';
+    StrCat(name, maxlength, RANKING_NAME_ELLIPSIS);
 }
 
 /* =============================================================================
