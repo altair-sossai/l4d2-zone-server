@@ -204,6 +204,11 @@ Action Cmd_MixStart(int client, int args)
         CPrintToChat(client, "%t %t", "MixTag", "AlreadyStarted");
         return Plugin_Handled;
     } 
+    if (g_bRankingRequestPending)
+    {
+        CPrintToChat(client, "%t %t", "MixTag", "RankingRequestInProgress");
+        return Plugin_Handled;
+    }
     
     if (!g_bIsMixAllowed || !IsNewGame())
     {
