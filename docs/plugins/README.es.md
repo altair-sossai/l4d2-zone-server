@@ -306,13 +306,17 @@ l4d2_early_victory_queue_lock
 
 ## l4d2_forced_names
 
-**Fuente:** [`scripting/l4d2_forced_names.sp`](../../addons/sourcemod/scripting/l4d2_forced_names.sp) · **Versión:** 1.0.0
+**Fuente:** [`scripting/l4d2_forced_names.sp`](../../addons/sourcemod/scripting/l4d2_forced_names.sp) · **Versión:** 1.1.0
 
-**Qué hace** — Vincula SteamIDs específicos a un nombre fijo. Un jugador vinculado recibe el nombre al entrar y, si se cambia el nombre, se le vuelve a poner el nombre fijo de inmediato. Se aceptan los formatos de id `STEAM_0` y `STEAM_1`.
+**Qué hace** — Vincula SteamIDs específicos a un nombre fijo. Un jugador vinculado recibe el nombre al entrar y, si se cambia el nombre, se le vuelve a poner el nombre fijo de inmediato. Se aceptan los formatos de id `STEAM_0` y `STEAM_1`. Con `l4d2_forced_names_hub 1`, también lee la lista guardada en el PlayStats Hub (**Administración > Nombres forzados**, `GET <playstats_url>/api/forced-names` con el `playstats_token`) cuando se ejecutan las configs y al comienzo de cada ronda, y la junta con el archivo: cuando los dos tienen el mismo jugador, vale el nombre del hub. Si el hub no responde, mantiene la última lista leída.
 
 **Objetivo** — Mantener a los jugadores conocidos con un nombre consistente y reconocible — útil para la integridad de las estadísticas/ranking y para la moderación.
 
-**ConVars** — Ninguna.
+**ConVars**
+
+| ConVar | Predeterminado | Descripción |
+|---|---|---|
+| `l4d2_forced_names_hub` | `0` | `1` también lee los nombres forzados del PlayStats Hub; este servidor la deja en `1` en `shared_cvars.cfg`. |
 
 **Comandos** — Ninguno.
 
@@ -321,14 +325,15 @@ l4d2_early_victory_queue_lock
 ```
 "ForcedNames"
 {
-	"STEAM_0:1:67149995" "Xei" // https://steamcommunity.com/profiles/76561198094565719
-	"STEAM_0:1:28225724" "jon" // https://steamcommunity.com/profiles/76561198016717177
+	"STEAM_0:0:90628109" "Altair" // https://steamcommunity.com/profiles/76561198141521946
 }
 ```
 
 El plugin lee este archivo con la API `KeyValues` (no con `exec`), al iniciarse y en cada ejecución de config — no hace falta recargarlo a mano, y los nombres con unicode no se recortan como pasaría con un cfg ejecutado con `exec`.
 
 ---
+
+Los jugadores de este servidor están en el hub; el archivo solo tiene un ejemplo.
 
 ## l4d2_campaign_vote
 

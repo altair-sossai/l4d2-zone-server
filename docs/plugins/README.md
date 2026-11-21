@@ -306,13 +306,17 @@ l4d2_early_victory_queue_lock
 
 ## l4d2_forced_names
 
-**Source:** [`scripting/l4d2_forced_names.sp`](../../addons/sourcemod/scripting/l4d2_forced_names.sp) · **Version:** 1.0.0
+**Source:** [`scripting/l4d2_forced_names.sp`](../../addons/sourcemod/scripting/l4d2_forced_names.sp) · **Version:** 1.1.0
 
-**What it does** — Binds specific SteamIDs to a fixed display name. A bound player gets the name when they join, and if they rename themselves they're immediately renamed back. Both `STEAM_0` and `STEAM_1` id formats are accepted.
+**What it does** — Binds specific SteamIDs to a fixed display name. A bound player gets the name when they join, and if they rename themselves they're immediately renamed back. Both `STEAM_0` and `STEAM_1` id formats are accepted. With `l4d2_forced_names_hub 1` it also reads the list kept in the PlayStats Hub (**Administration > Forced names**, `GET <playstats_url>/api/forced-names` with `playstats_token`) when the configs run and at the start of each round, and joins it to the file: when both have the same player, the name from the hub wins. If the hub cannot be reached, it keeps the last list it read.
 
 **Objective** — Keep known players under a consistent, recognizable name — useful for stats/ranking integrity and moderation.
 
-**ConVars** — None.
+**ConVars**
+
+| ConVar | Default | Description |
+|---|---|---|
+| `l4d2_forced_names_hub` | `0` | `1` also reads the forced names from the PlayStats Hub; this server sets it to `1` in `shared_cvars.cfg`. |
 
 **Commands** — None.
 
@@ -321,14 +325,15 @@ l4d2_early_victory_queue_lock
 ```
 "ForcedNames"
 {
-	"STEAM_0:1:67149995" "Xei" // https://steamcommunity.com/profiles/76561198094565719
-	"STEAM_0:1:28225724" "jon" // https://steamcommunity.com/profiles/76561198016717177
+	"STEAM_0:0:90628109" "Altair" // https://steamcommunity.com/profiles/76561198141521946
 }
 ```
 
 The plugin reads this file with the `KeyValues` API (not `exec`), on plugin start and on every config execution — no manual reload needed, and unicode names aren't stripped like they would be through an `exec`'d cfg.
 
 ---
+
+The players of this server are kept in the hub; the file only has an example.
 
 ## l4d2_campaign_vote
 

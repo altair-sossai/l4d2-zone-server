@@ -306,13 +306,17 @@ l4d2_early_victory_queue_lock
 
 ## l4d2_forced_names
 
-**Fonte:** [`scripting/l4d2_forced_names.sp`](../../addons/sourcemod/scripting/l4d2_forced_names.sp) · **Versão:** 1.0.0
+**Fonte:** [`scripting/l4d2_forced_names.sp`](../../addons/sourcemod/scripting/l4d2_forced_names.sp) · **Versão:** 1.1.0
 
-**O que faz** — Vincula SteamIDs específicos a um nome fixo. Um jogador vinculado recebe o nome ao entrar e, se trocar de nome, volta imediatamente para o nome fixo. Os formatos de id `STEAM_0` e `STEAM_1` são aceitos.
+**O que faz** — Vincula SteamIDs específicos a um nome fixo. Um jogador vinculado recebe o nome ao entrar e, se trocar de nome, volta imediatamente para o nome fixo. Os formatos de id `STEAM_0` e `STEAM_1` são aceitos. Com `l4d2_forced_names_hub 1`, ele também lê a lista mantida no PlayStats Hub (**Administração > Nomes forçados**, `GET <playstats_url>/api/forced-names` com o `playstats_token`) quando as configs rodam e no começo de cada round, e junta com o arquivo: quando os dois têm o mesmo jogador, vale o nome do hub. Se o hub não responder, ele mantém a última lista lida.
 
 **Objetivo** — Manter jogadores conhecidos com um nome consistente e reconhecível — útil para a integridade das estatísticas/ranking e para a moderação.
 
-**ConVars** — Nenhuma.
+**ConVars**
+
+| ConVar | Padrão | Descrição |
+|---|---|---|
+| `l4d2_forced_names_hub` | `0` | `1` também lê os nomes forçados do PlayStats Hub; este servidor deixa em `1` no `shared_cvars.cfg`. |
 
 **Comandos** — Nenhum.
 
@@ -321,14 +325,15 @@ l4d2_early_victory_queue_lock
 ```
 "ForcedNames"
 {
-	"STEAM_0:1:67149995" "Xei" // https://steamcommunity.com/profiles/76561198094565719
-	"STEAM_0:1:28225724" "jon" // https://steamcommunity.com/profiles/76561198016717177
+	"STEAM_0:0:90628109" "Altair" // https://steamcommunity.com/profiles/76561198141521946
 }
 ```
 
 O plugin lê este arquivo com a API `KeyValues` (não com `exec`), ao iniciar e a cada execução de config — não precisa recarregar manualmente, e nomes com unicode não são cortados como seriam em um cfg executado com `exec`.
 
 ---
+
+Os jogadores deste servidor ficam no hub; o arquivo tem só um exemplo.
 
 ## l4d2_campaign_vote
 
