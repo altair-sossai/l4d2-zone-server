@@ -67,7 +67,7 @@ In this guide, `< >` and `[ ]` only show what goes in that spot. **Don't type th
 | `!vaga` / `!slot` | Claims a slot in the game if it's your turn in the queue |
 | `!mix` | Votes to start a mix. Once enough players vote, everyone votes for the captains, and the captains pick the teams through a menu |
 | `!mix <captain1> <captain2>` | Starts a vote proposing two captains: `captain1` on survivors and `captain2` on infected. If most players vote **yes**, the mix starts with them |
-| `!rmix` (or `!rrmix`) | Votes to start a mix with the teams split by the [community ranking](https://l4d2.com.br/community). It uses the same votes needed as `!mix`. If anyone on the teams is not in the community ranking yet, the chat names them and the mix does not start |
+| `!rmix` | Votes to start a mix with the teams split by the [community ranking](https://l4d2.com.br/community). It uses the same votes needed as `!mix`. If anyone on the teams is not in the community ranking yet, the chat names them and the mix does not start |
 | `!teamflip` / `!tf` | Randomly picks a team (Survivor or Infected) for you, shown to everyone |
 | `!kickspecs` | Starts a vote to kick spectators |
 

@@ -120,7 +120,6 @@ public void OnPluginStart()
 
     RegConsoleCmd("sm_mix", Cmd_MixStart, "Mix command");
     RegConsoleCmd("sm_rmix", Cmd_RankingMixStart, "Starts a mix with teams balanced by the community ranking");
-    RegConsoleCmd("sm_rrmix", Cmd_RankingMixStart, "Starts a mix with teams balanced by the community ranking");
     RegAdminCmd("sm_stopmix", Cmd_MixStop, ADMFLAG_CHANGEMAP, "Mix command");
 
     AddCommandListener(PlayerJoinTeam_CallBack, "jointeam");
