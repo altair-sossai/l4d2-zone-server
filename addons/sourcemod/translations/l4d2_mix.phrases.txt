@@ -237,11 +237,11 @@
     "RankingSurvivors"
     {
         "#format"    "{1:s}"
-        "en"         "{blue}Survivors{default}: {1}"
+        "en"         "Survivors: {blue}{1}"
     }
     "RankingInfected"
     {
         "#format"    "{1:s}"
-        "en"         "{red}Infected{default}: {1}"
+        "en"         "Infected: {red}{1}"
     }
 }

@@ -233,10 +233,10 @@
     }
     "RankingSurvivors"
     {
-        "es"    "{blue}Supervivientes{default}: {1}"
+        "es"    "Supervivientes: {blue}{1}"
     }
     "RankingInfected"
     {
-        "es"    "{red}Infectados{default}: {1}"
+        "es"    "Infectados: {red}{1}"
     }
 }

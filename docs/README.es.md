@@ -12,6 +12,7 @@ Cada documento existe en tres idiomas y sigue la misma regla de nombre: `nombre.
 |---|---|
 | Guía de comandos para jugadores | [English](players/README.md) · [Português](players/README.pt.md) · [Español](players/README.es.md) |
 | Cómo corregir el problema de "UDP connect retry" | [English](tutorials/connect-fix/README.md) · [Português](tutorials/connect-fix/README.pt.md) · [Español](tutorials/connect-fix/README.es.md) |
+| Changelog del servidor — 23/11/2026 | [English](changelog/2026-11-23.md) · [Português](changelog/2026-11-23.pt.md) · [Español](changelog/2026-11-23.es.md) |
 | Changelog del servidor — 21/11/2026 | [English](changelog/2026-11-21.md) · [Português](changelog/2026-11-21.pt.md) · [Español](changelog/2026-11-21.es.md) |
 | Changelog del servidor — 19/11/2026 | [English](changelog/2026-11-19.md) · [Português](changelog/2026-11-19.pt.md) · [Español](changelog/2026-11-19.es.md) |
 | Changelog del servidor — 04/08/2026 | [English](changelog/2026-08-04.md) · [Português](changelog/2026-08-04.pt.md) · [Español](changelog/2026-08-04.es.md) |

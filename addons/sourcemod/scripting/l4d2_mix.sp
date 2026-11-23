@@ -38,11 +38,13 @@
 #define RANKING_ENDPOINT_LENGTH 512
 #define RANKING_CONTENT_TYPE_LENGTH 64
 #define RANKING_LINE_LENGTH 512
-#define RANKING_SHORT_NAME 20
-#define RANKING_SHORT_NAME_BIG_TEAMS 12
+#define RANKING_SHORT_NAME 12
+#define RANKING_SHORT_NAME_BIG_TEAMS 9
 #define RANKING_BIG_TEAM 5
-#define RANKING_NAME_SEPARATOR ", "
-#define RANKING_NAME_ELLIPSIS ".."
+#define RANKING_TEAM_NAMES_BYTES 180
+#define RANKING_UNRANKED_NAMES_BYTES 110
+#define RANKING_TEAM_SEPARATOR "\x01 | \x03"
+#define RANKING_UNRANKED_SEPARATOR "\x01 | \x05"
 #define RANKING_TIMEOUT 15
 #define RANKING_ASSIGN_DELAY 0.5
 #define RANKING_ASSIGN_INTERVAL 0.3
@@ -102,7 +104,7 @@ public Plugin myinfo =
     name = "L4D2 Mix Manager",
     author = "Luckylock (co-author: Altair Sossai)",
     description = "Provides ability to pick captains and teams through menus",
-    version = "5.1.0",
+    version = "5.1.1",
     url = "https://github.com/LuckyServ/"
 };
 
@@ -943,6 +945,7 @@ void ShowUnrankedPlayers(JSONObject data)
         JSONArray ids = view_as<JSONArray>(data.Get(RANKING_PLAYERS_KEY));
         char authId[MAX_STR_LEN];
         char name[MAX_NAME_LENGTH];
+        int maxBytes = NameByteLimit(RANKING_UNRANKED_NAMES_BYTES, ids.Length, RANKING_UNRANKED_SEPARATOR);
 
         for (int i = 0; i < ids.Length; i++)
         {
@@ -953,8 +956,8 @@ void ShowUnrankedPlayers(JSONObject data)
             if (client <= 0)
                 continue;
 
-            ShortClientName(client, RANKING_SHORT_NAME, name, sizeof(name));
-            AppendName(names, sizeof(names), name);
+            ShortClientName(client, RANKING_SHORT_NAME, maxBytes, name, sizeof(name));
+            AppendName(names, sizeof(names), name, RANKING_UNRANKED_SEPARATOR);
         }
 
         delete ids;
@@ -1064,7 +1067,8 @@ void RankingTeamNames(ArrayList team, char[] names, int maxlength)
 {
     char authId[MAX_STR_LEN];
     char name[MAX_NAME_LENGTH];
-    int limit = TeamSize() >= RANKING_BIG_TEAM ? RANKING_SHORT_NAME_BIG_TEAMS : RANKING_SHORT_NAME;
+    int maxChars = TeamSize() >= RANKING_BIG_TEAM ? RANKING_SHORT_NAME_BIG_TEAMS : RANKING_SHORT_NAME;
+    int maxBytes = NameByteLimit(RANKING_TEAM_NAMES_BYTES, team.Length, RANKING_TEAM_SEPARATOR);
 
     names[0] = '\0';
 
@@ -1077,35 +1081,68 @@ void RankingTeamNames(ArrayList team, char[] names, int maxlength)
         if (client <= 0)
             continue;
 
-        ShortClientName(client, limit, name, sizeof(name));
-        AppendName(names, maxlength, name);
+        ShortClientName(client, maxChars, maxBytes, name, sizeof(name));
+        AppendName(names, maxlength, name, RANKING_TEAM_SEPARATOR);
     }
 }
 
-void AppendName(char[] names, int maxlength, const char[] name)
+// Bytes each name may take so that every name and separator fit in the budget
+// of the line, whatever the characters of the names.
+int NameByteLimit(int budget, int count, const char[] separator)
+{
+    if (count <= 1)
+        return budget;
+
+    return (budget - strlen(separator) * (count - 1)) / count;
+}
+
+void AppendName(char[] names, int maxlength, const char[] name, const char[] separator)
 {
     if (names[0] != '\0')
-        StrCat(names, maxlength, RANKING_NAME_SEPARATOR);
+        StrCat(names, maxlength, separator);
 
     StrCat(names, maxlength, name);
 }
 
-void ShortClientName(int client, int limit, char[] name, int maxlength)
+// Cuts the name after maxChars characters (not bytes, so accents and symbols
+// count once) and never past maxBytes, without breaking a UTF-8 character
+// and without adding anything at the end.
+void ShortClientName(int client, int maxChars, int maxBytes, char[] name, int maxlength)
 {
     GetClientName(client, name, maxlength);
     ReplaceString(name, maxlength, "{", "(");
     ReplaceString(name, maxlength, "}", ")");
 
-    if (strlen(name) <= limit)
-        return;
+    int length = strlen(name);
+    int cut = length;
+    int chars = 0;
 
-    int cut = limit;
+    for (int i = 0; i < length; i++)
+    {
+        if ((name[i] & 0xC0) == 0x80)
+            continue;
 
-    while (cut > 0 && (name[cut] & 0xC0) == 0x80)
+        if (chars == maxChars)
+        {
+            cut = i;
+            break;
+        }
+
+        chars++;
+    }
+
+    if (cut > maxBytes)
+    {
+        cut = maxBytes;
+
+        while (cut > 0 && (name[cut] & 0xC0) == 0x80)
+            cut--;
+    }
+
+    while (cut > 1 && name[cut - 1] == ' ')
         cut--;
 
     name[cut] = '\0';
-    StrCat(name, maxlength, RANKING_NAME_ELLIPSIS);
 }
 
 /* =============================================================================
