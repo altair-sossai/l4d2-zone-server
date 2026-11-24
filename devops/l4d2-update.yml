@@ -18,7 +18,24 @@ stages:
             inputs:
               sshEndpoint: $(sshServiceConnection)
               readyTimeout: "20000"
+              # steamcmd.sh prints "Starting /home/steam/linux32/steamcmd" on stderr even when the update succeeds, so stderr
+              # alone must not fail the run; the checks below decide the result instead.
+              failOnStdErr: false
               runOptions: "inline"
               inline: |
                 cd /home/steam/l4d2/left4dead2/bash
                 sudo ./update.sh
+
+                grep -E '"buildid"|"LastUpdated"' /home/steam/l4d2/steamapps/appmanifest_222860.acf
+
+                for attempt in $(seq 1 30); do
+                  if ss -uln | grep -q ':27015 '; then
+                    echo "Server is listening on UDP 27015"
+                    exit 0
+                  fi
+                  sleep 2
+                done
+
+                echo "Server is not listening on UDP 27015 after the update"
+                sudo screen -ls
+                exit 1
