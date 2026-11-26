@@ -97,7 +97,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "Ends decided matches or team-approved surrenders and rotates campaigns",
-    version = "1.7.0",
+    version = "1.7.1",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -279,14 +279,6 @@ Action SurrenderForceStart_Listener(int client, const char[] command, int argc)
 {
     if (g_SurrenderPhase == Surrender_WaitForceStart && GetGameTime() < g_flSurrenderDeadline)
         return Plugin_Handled;
-
-    return Plugin_Continue;
-}
-
-public Action L4D2_OnEndVersusModeRound(bool countSurvivors)
-{
-    if (g_SurrenderPhase != Surrender_None && !g_bRoundOver && g_flLiveSince >= 0.0 && !IsInReady())
-        MaterializeSurrenderInfected();
 
     return Plugin_Continue;
 }
