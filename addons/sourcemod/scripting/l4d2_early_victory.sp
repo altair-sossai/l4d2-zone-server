@@ -97,7 +97,7 @@ public Plugin myinfo =
     name = "L4D2 - Early Victory",
     author = "Altair Sossai",
     description = "Ends decided matches or team-approved surrenders and rotates campaigns",
-    version = "1.7.1",
+    version = "1.7.2",
     url = "https://github.com/altair-sossai/l4d2-zone-server"
 };
 
@@ -785,9 +785,8 @@ public Action L4D_OnSetCampaignScores(int &scoreA, int &scoreB)
 
 public void L4D_OnSetCampaignScores_Post(int scoreA, int scoreB)
 {
-    // Reapply through the native so PlayStats sees the final scores regardless of hook order.
     if (g_SurrenderPhase != Surrender_None && !g_bApplyingScores)
-        ApplySurrenderScores();
+        RequestFrame(RestoreSurrenderScores_Frame);
 }
 
 Action Debug_Cmd(int client, int args)
