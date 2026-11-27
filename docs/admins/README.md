@@ -209,6 +209,7 @@ Examples:
 
 | Command | What it does |
 |---|---|
+| `!fix` | Opens a menu to set a survivor's health (all permanent, or 100 down to 50, permanent or temporary), give pills, pick up a downed survivor or restore the Tank's health. For an admin it applies **right away**, with no vote, at any time (even in the ready-up and as a spectator). Players use the same command, but with a vote of the other team |
 | `!hp [amount]` | Adds the amount (1 to 100, default: 100) to the health of every living survivor, without going over 100, and picks up anyone who is incapacitated |
 
 ## Spectators and casters
@@ -364,3 +365,7 @@ These commands exist, but they are for **tests, debugging or fun**. Using them i
 1. `!gag` / `!mute` / `!silence` to stop it right away
 2. If it continues: `!kick <target> <reason>`
 3. If it is serious or repeated: `!ban <target> <minutes> <reason>`
+
+**A player was harmed by a bug (lost health, ended up without pills, went down for no reason)**
+1. `!fix`, pick what to fix and the player, and confirm with **Apply now (admin)**
+2. When no admin is on the server, the players ask with `!fix` themselves and the other team votes

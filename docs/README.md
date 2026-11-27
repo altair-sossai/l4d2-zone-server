@@ -12,6 +12,7 @@ Every document exists in three languages and follows the same naming rule: `name
 |---|---|
 | Player commands guide | [English](players/README.md) · [Português](players/README.pt.md) · [Español](players/README.es.md) |
 | Fixing the UDP connect retry issue | [English](tutorials/connect-fix/README.md) · [Português](tutorials/connect-fix/README.pt.md) · [Español](tutorials/connect-fix/README.es.md) |
+| Server changelog — November 27, 2026 | [English](changelog/2026-11-27.md) · [Português](changelog/2026-11-27.pt.md) · [Español](changelog/2026-11-27.es.md) |
 | Server changelog — November 25, 2026 | [English](changelog/2026-11-25.md) · [Português](changelog/2026-11-25.pt.md) · [Español](changelog/2026-11-25.es.md) |
 | Server changelog — November 23, 2026 | [English](changelog/2026-11-23.md) · [Português](changelog/2026-11-23.pt.md) · [Español](changelog/2026-11-23.es.md) |
 | Server changelog — November 21, 2026 | [English](changelog/2026-11-21.md) · [Português](changelog/2026-11-21.pt.md) · [Español](changelog/2026-11-21.es.md) |

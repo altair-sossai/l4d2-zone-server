@@ -1,0 +1,199 @@
+"Phrases"
+{
+    "InGameOnly"
+    {
+        "pt"    "Este comando só funciona dentro do jogo."
+    }
+    "AdminsOnly"
+    {
+        "pt"    "No momento, o !fix é só para admins."
+    }
+    "TeamsOnly"
+    {
+        "pt"    "Só sobreviventes e infectados podem usar o !fix."
+    }
+    "NotLive"
+    {
+        "pt"    "O !fix só funciona com o round valendo, depois do ready-up."
+    }
+    "Paused"
+    {
+        "pt"    "O !fix não funciona com o jogo pausado."
+    }
+    "VoteBusy"
+    {
+        "pt"    "Já tem uma votação em andamento. Espere ela terminar."
+    }
+    "Wait"
+    {
+        "pt"    "Espere {green}{1}s{default} para começar uma nova votação."
+    }
+    "RoundLimit"
+    {
+        "pt"    "O time dos {1} já chegou ao limite de ajustes aprovados neste round ({green}{2}{default})."
+    }
+    "NoVoters"
+    {
+        "pt"    "Nenhum jogador do time dos {1} pode votar."
+    }
+    "TargetGone"
+    {
+        "pt"    "Essa opção não vale mais. Escolha de novo."
+    }
+    "MenuTitle"
+    {
+        "pt"    "!fix - O que você quer ajustar?"
+    }
+    "MenuHealth"
+    {
+        "pt"    "Vida de um sobrevivente"
+    }
+    "MenuPills"
+    {
+        "pt"    "Dar pills para um sobrevivente"
+    }
+    "MenuRevive"
+    {
+        "pt"    "Levantar um sobrevivente caído"
+    }
+    "MenuTank"
+    {
+        "pt"    "Restaurar a vida do Tank"
+    }
+    "NobodyNow"
+    {
+        "pt"    "{1} (ninguém no momento)"
+    }
+    "PickSurvivorTitle"
+    {
+        "pt"    "Escolha o sobrevivente:"
+    }
+    "PickTankTitle"
+    {
+        "pt"    "Escolha o Tank:"
+    }
+    "HealthLine"
+    {
+        "pt"    "{1} - {2} + {3} temp"
+    }
+    "DownedLine"
+    {
+        "pt"    "{1} (caído)"
+    }
+    "HangingLine"
+    {
+        "pt"    "{1} (pendurado)"
+    }
+    "TankLine"
+    {
+        "pt"    "{1} - {2} / {3}"
+    }
+    "HealthTitle"
+    {
+        "pt"    "Vida de {1}: {2} + {3} temp"
+    }
+    "OptionPermanent"
+    {
+        "pt"    "Deixar tudo permanente ({1})"
+    }
+    "OptionPermMenu"
+    {
+        "pt"    "Definir a vida permanente"
+    }
+    "OptionTempMenu"
+    {
+        "pt"    "Definir a vida temporária"
+    }
+    "AmountTitlePerm"
+    {
+        "pt"    "Vida permanente de {1} (agora {2} + {3} temp):"
+    }
+    "AmountTitleTemp"
+    {
+        "pt"    "Vida temporária de {1} (agora {2} + {3} temp):"
+    }
+    "OptionPerm"
+    {
+        "pt"    "{1} permanente"
+    }
+    "OptionTemp"
+    {
+        "pt"    "{1} temporária"
+    }
+    "ConfirmTitle"
+    {
+        "pt"    "!fix: {1}?"
+    }
+    "ConfirmVote"
+    {
+        "pt"    "Começar a votação (decidem os {1})"
+    }
+    "ConfirmApply"
+    {
+        "pt"    "Aplicar agora (admin)"
+    }
+    "TeamSurvivors"
+    {
+        "pt"    "sobreviventes"
+    }
+    "TeamInfected"
+    {
+        "pt"    "infectados"
+    }
+    "DescPermanent"
+    {
+        "pt"    "deixar toda a vida de {1} permanente"
+    }
+    "DescPerm"
+    {
+        "pt"    "deixar {1} com {2} de vida permanente"
+    }
+    "DescTemp"
+    {
+        "pt"    "deixar {1} com {2} de vida temporária"
+    }
+    "DescPills"
+    {
+        "pt"    "dar pills para {1}"
+    }
+    "DescRevive"
+    {
+        "pt"    "levantar {1}"
+    }
+    "DescTank"
+    {
+        "pt"    "restaurar a vida do Tank {1}"
+    }
+    "VoteTitle"
+    {
+        "pt"    "!fix: {1}?"
+    }
+    "VoteStarted"
+    {
+        "pt"    "{green}{1}{default} pediu para {olive}{2}{default}. Agora votam os {3} (F1 sim, F2 não)."
+    }
+    "VotePassScreen"
+    {
+        "pt"    "Aprovado"
+    }
+    "VotePassed"
+    {
+        "pt"    "Votação aprovada: {olive}{1}{default}."
+    }
+    "VoteFailed"
+    {
+        "pt"    "Votação recusada: {1}."
+    }
+    "VoteCancelled"
+    {
+        "pt"    "Votação cancelada: {1}."
+    }
+    "NoLongerValid"
+    {
+        "pt"    "A votação passou, mas não vale mais porque a situação mudou: {1}."
+    }
+    "AdminApplied"
+    {
+        "pt"    "{green}{1}{default} (admin) usou o !fix: {olive}{2}{default}."
+    }
+}

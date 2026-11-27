@@ -53,6 +53,7 @@ Chat messages shown to players are defined in [`addons/sourcemod/translations/`]
 | [l4d2_forced_names](#l4d2_forced_names) | Locks specific SteamIDs to a fixed name |
 | [l4d2_campaign_vote](#l4d2_campaign_vote) | Lets any player vote to change to any installed campaign |
 | [l4d2_lerp_advisor](#l4d2_lerp_advisor) | Tells players with an invalid lerp which network commands to run |
+| [l4d2_fix](#l4d2_fix) | Lets players fix a survivor's health, give pills, revive a downed survivor or restore the Tank's health through a vote of the other team |
 
 **Statistics plugins (maintained in l4d2-playstats-hub)**
 
@@ -378,6 +379,49 @@ The suggested commands (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 **Commands** — None.
 
 **How to configure** — Set `l4d2_lerp_advisor_enabled` in `shared_cvars.cfg`. Requires `lerpmonitor` to be loaded (it provides the lerp value and the `sm_min_lerp` / `sm_max_lerp` range). Player-facing text is defined in [`addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt`](../../addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt) (English, Portuguese and Spanish).
+
+---
+
+## l4d2_fix
+
+**Source:** [`scripting/l4d2_fix.sp`](../../addons/sourcemod/scripting/l4d2_fix.sp) · **Version:** 1.0.0
+
+**What it does** — `!fix` opens a menu for the players themselves to fix, during the game, problems that only an admin could fix before: a survivor's health, a pills, a downed survivor or the Tank's health. The menu has four options:
+
+| Option | What it does |
+|---|---|
+| Health of a survivor | Lists the standing survivors with their current health (*"Feeh - 37 + 20 temp"*) and offers: make it all permanent (permanent + temporary, up to the max health), set the permanent health or set the temporary health. The last two open a submenu with 100, 90, 80, 70, 60 and 50; for temporary health 1 stays permanent and the rest is temporary (100 = 1 + 99). A value that would change nothing is shown disabled. For non-admins the submenu only shows the values that do not lower the health: neither the permanent health nor the total (permanent + temporary) can end up lower, so the voting team cannot take health away from anyone |
+| Give pills to a survivor | Lists only the survivors with no pills or adrenaline and gives a `weapon_pain_pills` |
+| Revive a downed survivor | Lists the survivors who are incapacitated or hanging from a ledge and revives them with the game's own revive (`L4D_ReviveSurvivor`), which counts as a down (it can leave the player black and white). Survivors pinned by an infected, being picked up by a teammate or falling from a ledge are not listed |
+| Restore the Tank's health | Only shown while a Tank is alive. Lists the Tanks with their current and max health and sets the health back to the max (`m_iMaxHealth`) |
+
+The first three options are for survivors only (bots included). When nobody fits an option, it is shown disabled with *"(nobody right now)"*. After the choice, a confirmation menu shows the request (*"!fix: give pills to Feeh?"*).
+
+- **Players** start a Yes/No game vote (F1/F2) that **only the other team sees and votes on**: the infected vote on requests for survivors, and the survivors vote on the Tank health request. A requester who is on the voting team votes Yes automatically. The vote passes with more Yes than No among that team's votes; with no votes it does not pass. Before applying it, the plugin checks again that the request still makes sense (the round is still live and not paused, and the player is still alive, down, without pills and so on). If it does not, it says the situation changed and applies nothing.
+- **Admins** (override `sm_fix_admin`, kick flag by default) apply it right away, with no vote, from any team (spectators included) and at any time, ready-up included.
+
+The chat tells everyone, in each player's language, when a request starts, passes, is refused or is applied by an admin, and every action goes to the SourceMod log (`LogAction`). The vote title on screen uses the server language.
+
+A player cannot ask: as a spectator, during the ready-up, with the round over, with the game paused, with another vote in progress or during the server's wait between votes, before their own wait is over (`l4d2_fix_cooldown`), when the benefited team already got `l4d2_fix_round_limit` approved requests this round, and when there is no human player on the voting team. The vote is cancelled if the round or the map ends.
+
+**Objective** — Let players fix, by themselves and with the other team's approval, situations where someone was harmed during the game, without depending on an admin being online, and bring these actions together in a single command for the admins.
+
+**ConVars**
+
+| ConVar | Default | Description |
+|--------|---------|-------------|
+| `l4d2_fix_enabled` | `1` | `1` = players ask through a vote; `0` = only admins use `!fix` |
+| `l4d2_fix_vote_duration` | `15` | Vote duration, in seconds (5 to 60) |
+| `l4d2_fix_cooldown` | `60` | Seconds a player waits after starting a vote before starting another |
+| `l4d2_fix_round_limit` | `3` | Requests approved by vote that each team can get per round (`0` = no limit). What an admin applies does not count |
+
+**Commands**
+
+| Command | Access | Description |
+|---------|--------|-------------|
+| `sm_fix` | all (survivors and infected) | Opens the menu. For whoever has the `sm_fix_admin` override, applies with no vote |
+
+**How to configure** — Set the ConVars in `shared_cvars.cfg`. To change who applies without a vote, set the `sm_fix_admin` override in `admin_overrides.cfg`. Requires `left4dhooks` and the `builtinvotes` extension; uses `readyup` and `pause` when they are loaded. The texts are in [`addons/sourcemod/translations/l4d2_fix.phrases.txt`](../../addons/sourcemod/translations/l4d2_fix.phrases.txt) (English, Portuguese and Spanish).
 
 ---
 

@@ -53,6 +53,7 @@ Los mensajes de chat que ven los jugadores están en [`addons/sourcemod/translat
 | [l4d2_forced_names](#l4d2_forced_names) | Fija un nombre para SteamIDs específicos |
 | [l4d2_campaign_vote](#l4d2_campaign_vote) | Permite que cualquier jugador vote para cambiar a cualquier campaña instalada |
 | [l4d2_lerp_advisor](#l4d2_lerp_advisor) | Indica a los jugadores con un lerp inválido qué comandos de red ejecutar |
+| [l4d2_fix](#l4d2_fix) | Deja que los jugadores ajusten la vida de un superviviente, den pills, levanten a un caído o restauren la vida del Tank por votación del equipo contrario |
 
 **Plugins de estadísticas (mantenidos en l4d2-playstats-hub)**
 
@@ -378,6 +379,49 @@ Los comandos sugeridos (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate
 **Comandos** — Ninguno.
 
 **Cómo configurar** — Define `l4d2_lerp_advisor_enabled` en `shared_cvars.cfg`. Requiere que `lerpmonitor` esté cargado (proporciona el valor del lerp y el rango `sm_min_lerp` / `sm_max_lerp`). Los textos que ven los jugadores están en [`addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt`](../../addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt) (inglés, portugués y español).
+
+---
+
+## l4d2_fix
+
+**Fuente:** [`scripting/l4d2_fix.sp`](../../addons/sourcemod/scripting/l4d2_fix.sp) · **Versión:** 1.0.0
+
+**Qué hace** — `!fix` abre un menú para que los propios jugadores resuelvan, durante el juego, problemas que antes solo un admin resolvía: la vida de un superviviente, unas pills, un superviviente caído o la vida del Tank. El menú tiene cuatro opciones:
+
+| Opción | Qué hace |
+|---|---|
+| Vida de un superviviente | Lista los supervivientes de pie con su vida actual (*"Feeh - 37 + 20 temp"*) y ofrece: dejar todo permanente (permanente + temporal, hasta la vida máxima), definir la vida permanente o definir la vida temporal. Las dos últimas abren un submenú con 100, 90, 80, 70, 60 y 50; en la temporal queda 1 de vida permanente y el resto temporal (100 = 1 + 99). Un valor que no cambiaría nada aparece desactivado. Para quien no es admin, el submenú solo muestra los valores que no bajan la vida: ni la vida permanente ni el total (permanente + temporal) pueden quedar más bajos, para que el equipo que vota no pueda quitarle vida a nadie |
+| Dar pills a un superviviente | Lista solo los supervivientes sin pills ni adrenalina y da unas `weapon_pain_pills` |
+| Levantar a un superviviente caído | Lista los supervivientes incapacitados o colgando de un borde y los levanta con el revive del propio juego (`L4D_ReviveSurvivor`), que cuenta como una caída (puede dejar al jugador en blanco y negro). No aparecen los que están atrapados por un infectado, siendo levantados por un compañero o cayendo del borde |
+| Restaurar la vida del Tank | Solo aparece con un Tank vivo. Lista los Tanks con su vida actual y máxima y devuelve la vida al máximo (`m_iMaxHealth`) |
+
+Las tres primeras opciones valen solo para supervivientes (bots incluidos). Cuando no hay nadie para una opción, aparece desactivada con *"(nadie por ahora)"*. Después de elegir, un menú de confirmación muestra el pedido (*"!fix: ¿dar pills a Feeh?"*).
+
+- **Los jugadores** empiezan una votación de Sí/No del juego (F1/F2) que **solo el equipo contrario ve y vota**: los infectados votan los pedidos para supervivientes, y los supervivientes votan el pedido de vida del Tank. Quien pide y está en el equipo que vota ya entra con Sí. La votación pasa con más Sí que No entre los votos de ese equipo; sin votos, no pasa. Antes de aplicarla, el plugin comprueba de nuevo que el pedido todavía tiene sentido (la ronda sigue en juego y sin pausa, y el jugador sigue vivo, caído, sin pills, etc.). Si no, avisa que la situación cambió y no aplica nada.
+- **Los admins** (override `sm_fix_admin`, flag kick por defecto) lo aplican en el acto, sin votación, desde cualquier equipo (espectador incluido) y en cualquier momento, ready-up incluido.
+
+El chat avisa a todos, en el idioma de cada uno, cuando un pedido empieza, pasa, es rechazado o lo aplica un admin, y cada acción queda en el log de SourceMod (`LogAction`). El título de la votación en pantalla usa el idioma del servidor.
+
+Un jugador no puede pedir: como espectador, en el ready-up, con la ronda terminada, con el juego en pausa, con otra votación en curso o durante la espera entre votaciones del servidor, antes de que termine su propio tiempo de espera (`l4d2_fix_cooldown`), cuando el equipo beneficiado ya recibió `l4d2_fix_round_limit` pedidos aprobados en la ronda y cuando no hay ningún jugador humano en el equipo que vota. La votación se cancela si la ronda o el mapa terminan.
+
+**Objetivo** — Dejar que los jugadores corrijan por su cuenta, con el visto bueno del equipo contrario, situaciones en las que alguien salió perjudicado durante el juego, sin depender de un admin conectado, y reunir esas acciones en un solo comando para los admins.
+
+**ConVars**
+
+| ConVar | Por defecto | Descripción |
+|--------|---------|-------------|
+| `l4d2_fix_enabled` | `1` | `1` = los jugadores piden por votación; `0` = solo los admins usan el `!fix` |
+| `l4d2_fix_vote_duration` | `15` | Duración de la votación, en segundos (5 a 60) |
+| `l4d2_fix_cooldown` | `60` | Segundos que un jugador espera después de empezar una votación para empezar otra |
+| `l4d2_fix_round_limit` | `3` | Pedidos aprobados por votación que cada equipo puede recibir por ronda (`0` = sin límite). Lo que aplica un admin no cuenta |
+
+**Comandos**
+
+| Comando | Acceso | Descripción |
+|---------|--------|-------------|
+| `sm_fix` | todos (supervivientes e infectados) | Abre el menú. Para quien tiene el override `sm_fix_admin`, aplica sin votación |
+
+**Cómo configurar** — Define las ConVars en `shared_cvars.cfg`. Para cambiar quién aplica sin votación, ajusta el override `sm_fix_admin` en `admin_overrides.cfg`. Requiere `left4dhooks` y la extensión `builtinvotes`; usa `readyup` y `pause` cuando están cargados. Los textos están en [`addons/sourcemod/translations/l4d2_fix.phrases.txt`](../../addons/sourcemod/translations/l4d2_fix.phrases.txt) (inglés, portugués y español).
 
 ---
 

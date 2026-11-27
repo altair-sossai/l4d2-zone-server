@@ -209,6 +209,7 @@ Exemplos:
 
 | Comando | O que faz |
 |---|---|
+| `!fix` | Abre um menu para ajustar a vida de um survivor (tudo permanente, ou de 100 a 50, permanente ou temporária), dar pills, levantar um survivor caído ou restaurar a vida do Tank. Para admin, aplica **na hora**, sem votação, em qualquer momento (até no ready-up e de spectator). Os jogadores usam o mesmo comando, mas com votação do time adversário |
 | `!hp [quantidade]` | Soma a quantidade (de 1 a 100, padrão: 100) à vida de todos os survivors vivos, sem passar de 100, e levanta quem estiver caído |
 
 ## Spectators e casters
@@ -364,3 +365,7 @@ Estes comandos existem, mas servem para **testes, debug ou diversão**. Usar em 
 1. `!gag` / `!mute` / `!silence` para parar na hora
 2. Se continuar: `!kick <alvo> <motivo>`
 3. Se for grave ou reincidente: `!ban <alvo> <minutos> <motivo>`
+
+**Jogador prejudicado por um bug (perdeu vida, ficou sem pills, caiu sem motivo)**
+1. `!fix`, escolha o que ajustar e o jogador, e confirme com **Aplicar agora (admin)**
+2. Se não tiver admin no servidor, os próprios jogadores pedem com `!fix` e o time adversário vota

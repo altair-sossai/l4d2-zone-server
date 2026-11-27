@@ -53,6 +53,7 @@ As mensagens de chat mostradas aos jogadores ficam em [`addons/sourcemod/transla
 | [l4d2_forced_names](#l4d2_forced_names) | Fixa um nome para SteamIDs específicos |
 | [l4d2_campaign_vote](#l4d2_campaign_vote) | Permite que qualquer jogador vote para trocar para qualquer campanha instalada |
 | [l4d2_lerp_advisor](#l4d2_lerp_advisor) | Diz aos jogadores com lerp inválido quais comandos de rede executar |
+| [l4d2_fix](#l4d2_fix) | Deixa os jogadores ajustarem a vida de um sobrevivente, darem pills, levantarem um caído ou restaurarem a vida do Tank por votação do time adversário |
 
 **Plugins de estatísticas (mantidos no l4d2-playstats-hub)**
 
@@ -378,6 +379,49 @@ Os comandos sugeridos (`cl_interp 0; cl_interp_ratio 0; rate 100000; cl_cmdrate 
 **Comandos** — Nenhum.
 
 **Como configurar** — Defina `l4d2_lerp_advisor_enabled` no `shared_cvars.cfg`. Requer o `lerpmonitor` carregado (ele fornece o valor do lerp e a faixa `sm_min_lerp` / `sm_max_lerp`). Os textos mostrados aos jogadores ficam em [`addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt`](../../addons/sourcemod/translations/l4d2_lerp_advisor.phrases.txt) (inglês, português e espanhol).
+
+---
+
+## l4d2_fix
+
+**Fonte:** [`scripting/l4d2_fix.sp`](../../addons/sourcemod/scripting/l4d2_fix.sp) · **Versão:** 1.0.0
+
+**O que faz** — `!fix` abre um menu para os próprios jogadores resolverem, durante o jogo, problemas que antes só um admin resolvia: a vida de um sobrevivente, uma pills, um sobrevivente caído ou a vida do Tank. O menu tem quatro opções:
+
+| Opção | O que faz |
+|---|---|
+| Vida de um sobrevivente | Lista os sobreviventes de pé com a vida atual (*"Feeh - 37 + 20 temp"*) e oferece: deixar tudo permanente (permanente + temporária, até a vida máxima), definir a vida permanente ou definir a vida temporária. As duas últimas abrem um submenu com 100, 90, 80, 70, 60 e 50; na temporária fica 1 de vida permanente e o resto temporária (100 = 1 + 99). Um valor que não mudaria nada aparece desativado. Para quem não é admin, o submenu só mostra os valores que não baixam a vida: a vida permanente e o total (permanente + temporária) não podem ficar menores, para o time que vota não conseguir tirar vida de ninguém |
+| Dar pills para um sobrevivente | Lista só os sobreviventes sem pills nem adrenalina e dá uma `weapon_pain_pills` |
+| Levantar um sobrevivente caído | Lista os sobreviventes incapacitados ou pendurados na borda e levanta com o revive do próprio jogo (`L4D_ReviveSurvivor`), que conta como uma queda (pode deixar o jogador no preto e branco). Não aparecem os que estão presos por um infectado, sendo levantados por um colega ou caindo da borda |
+| Restaurar a vida do Tank | Só aparece com um Tank vivo. Lista os Tanks com a vida atual e a máxima e volta a vida para o máximo (`m_iMaxHealth`) |
+
+As três primeiras opções valem só para sobreviventes (bots incluídos). Quando não há ninguém para uma opção, ela aparece desativada com *"(ninguém no momento)"*. Depois de escolher, um menu de confirmação mostra o pedido (*"!fix: dar pills para Feeh?"*).
+
+- **Jogadores** começam uma votação de Sim/Não do jogo (F1/F2) que **só o time adversário vê e vota**: os infectados votam os pedidos para sobreviventes, e os sobreviventes votam o pedido de vida do Tank. Quem pede e está no time que vota já entra com Sim. A votação passa com mais Sim do que Não entre os votos desse time; sem votos, não passa. Antes de aplicar, o plugin confere de novo se o pedido ainda faz sentido (o round continua valendo, sem pausa, e o jogador continua vivo, caído, sem pills etc.). Se não fizer, avisa que a situação mudou e não aplica.
+- **Admins** (override `sm_fix_admin`, padrão flag kick) aplicam na hora, sem votação, de qualquer time (inclusive espectador) e a qualquer momento, inclusive no ready-up.
+
+O chat avisa todo mundo, no idioma de cada um, quando um pedido começa, passa, é recusado ou é aplicado por um admin, e cada ação fica no log do SourceMod (`LogAction`). O título da votação na tela usa o idioma do servidor.
+
+Um jogador não consegue pedir: como espectador, no ready-up, com o round encerrado, com o jogo pausado, com outra votação em andamento ou durante a espera entre votações do servidor, antes de terminar o seu próprio tempo de espera (`l4d2_fix_cooldown`), quando o time beneficiado já recebeu `l4d2_fix_round_limit` pedidos aprovados no round e quando não há nenhum jogador humano no time que vota. A votação é cancelada se o round ou o mapa acabar.
+
+**Objetivo** — Deixar os jogadores corrigirem sozinhos, com o aval do time adversário, situações em que alguém foi prejudicado durante o jogo, sem depender de um admin online, e centralizar essas ações num comando só para os admins.
+
+**ConVars**
+
+| ConVar | Padrão | Descrição |
+|--------|---------|-------------|
+| `l4d2_fix_enabled` | `1` | `1` = os jogadores pedem por votação; `0` = só os admins usam o `!fix` |
+| `l4d2_fix_vote_duration` | `15` | Duração da votação, em segundos (5 a 60) |
+| `l4d2_fix_cooldown` | `60` | Segundos que um jogador espera depois de começar uma votação para começar outra |
+| `l4d2_fix_round_limit` | `3` | Pedidos aprovados por votação que cada time pode receber por round (`0` = sem limite). O que um admin aplica não conta |
+
+**Comandos**
+
+| Comando | Acesso | Descrição |
+|---------|--------|-------------|
+| `sm_fix` | todos (sobreviventes e infectados) | Abre o menu. Para quem tem o override `sm_fix_admin`, aplica sem votação |
+
+**Como configurar** — Defina as ConVars no `shared_cvars.cfg`. Para mudar quem aplica sem votação, ajuste o override `sm_fix_admin` no `admin_overrides.cfg`. Precisa do `left4dhooks` e da extensão `builtinvotes`; usa o `readyup` e o `pause` quando eles estão carregados. Os textos ficam em [`addons/sourcemod/translations/l4d2_fix.phrases.txt`](../../addons/sourcemod/translations/l4d2_fix.phrases.txt) (inglês, português e espanhol).
 
 ---
 

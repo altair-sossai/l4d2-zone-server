@@ -1,0 +1,228 @@
+"Phrases"
+{
+    "InGameOnly"
+    {
+        "en"    "This command only works in game."
+    }
+    "AdminsOnly"
+    {
+        "en"    "!fix is only for admins right now."
+    }
+    "TeamsOnly"
+    {
+        "en"    "Only survivors and infected can use !fix."
+    }
+    "NotLive"
+    {
+        "en"    "!fix only works with the round live, after the ready-up."
+    }
+    "Paused"
+    {
+        "en"    "!fix does not work while the game is paused."
+    }
+    "VoteBusy"
+    {
+        "en"    "There is a vote in progress. Wait for it to end."
+    }
+    "Wait"
+    {
+        "#format"    "{1:d}"
+        "en"         "Wait {green}{1}s{default} to start a new vote."
+    }
+    "RoundLimit"
+    {
+        "#format"    "{1:s},{2:d}"
+        "en"         "The {1} team already reached the limit of approved fixes this round ({green}{2}{default})."
+    }
+    "NoVoters"
+    {
+        "#format"    "{1:s}"
+        "en"         "No player on the {1} team can vote."
+    }
+    "TargetGone"
+    {
+        "en"    "That choice is no longer valid. Choose again."
+    }
+    "MenuTitle"
+    {
+        "en"    "!fix - What do you want to fix?"
+    }
+    "MenuHealth"
+    {
+        "en"    "Health of a survivor"
+    }
+    "MenuPills"
+    {
+        "en"    "Give pills to a survivor"
+    }
+    "MenuRevive"
+    {
+        "en"    "Revive a downed survivor"
+    }
+    "MenuTank"
+    {
+        "en"    "Restore the Tank's health"
+    }
+    "NobodyNow"
+    {
+        "#format"    "{1:s}"
+        "en"         "{1} (nobody right now)"
+    }
+    "PickSurvivorTitle"
+    {
+        "en"    "Choose the survivor:"
+    }
+    "PickTankTitle"
+    {
+        "en"    "Choose the Tank:"
+    }
+    "HealthLine"
+    {
+        "#format"    "{1:s},{2:d},{3:d}"
+        "en"         "{1} - {2} + {3} temp"
+    }
+    "DownedLine"
+    {
+        "#format"    "{1:s}"
+        "en"         "{1} (down)"
+    }
+    "HangingLine"
+    {
+        "#format"    "{1:s}"
+        "en"         "{1} (hanging from a ledge)"
+    }
+    "TankLine"
+    {
+        "#format"    "{1:s},{2:d},{3:d}"
+        "en"         "{1} - {2} / {3}"
+    }
+    "HealthTitle"
+    {
+        "#format"    "{1:s},{2:d},{3:d}"
+        "en"         "Health of {1}: {2} + {3} temp"
+    }
+    "OptionPermanent"
+    {
+        "#format"    "{1:d}"
+        "en"         "Make it all permanent ({1})"
+    }
+    "OptionPermMenu"
+    {
+        "en"    "Set permanent health"
+    }
+    "OptionTempMenu"
+    {
+        "en"    "Set temporary health"
+    }
+    "AmountTitlePerm"
+    {
+        "#format"    "{1:s},{2:d},{3:d}"
+        "en"         "Permanent health for {1} (now {2} + {3} temp):"
+    }
+    "AmountTitleTemp"
+    {
+        "#format"    "{1:s},{2:d},{3:d}"
+        "en"         "Temporary health for {1} (now {2} + {3} temp):"
+    }
+    "OptionPerm"
+    {
+        "#format"    "{1:d}"
+        "en"         "{1} permanent"
+    }
+    "OptionTemp"
+    {
+        "#format"    "{1:d}"
+        "en"         "{1} temporary"
+    }
+    "ConfirmTitle"
+    {
+        "#format"    "{1:s}"
+        "en"         "!fix: {1}?"
+    }
+    "ConfirmVote"
+    {
+        "#format"    "{1:s}"
+        "en"         "Start the vote (the {1} decide)"
+    }
+    "ConfirmApply"
+    {
+        "en"    "Apply now (admin)"
+    }
+    "TeamSurvivors"
+    {
+        "en"    "survivors"
+    }
+    "TeamInfected"
+    {
+        "en"    "infected"
+    }
+    "DescPermanent"
+    {
+        "#format"    "{1:s}"
+        "en"         "make all of {1}'s health permanent"
+    }
+    "DescPerm"
+    {
+        "#format"    "{1:s},{2:d}"
+        "en"         "set {1}'s health to {2} permanent"
+    }
+    "DescTemp"
+    {
+        "#format"    "{1:s},{2:d}"
+        "en"         "set {1}'s health to {2} temporary"
+    }
+    "DescPills"
+    {
+        "#format"    "{1:s}"
+        "en"         "give pills to {1}"
+    }
+    "DescRevive"
+    {
+        "#format"    "{1:s}"
+        "en"         "revive {1}"
+    }
+    "DescTank"
+    {
+        "#format"    "{1:s}"
+        "en"         "restore the health of the Tank {1}"
+    }
+    "VoteTitle"
+    {
+        "#format"    "{1:s}"
+        "en"         "!fix: {1}?"
+    }
+    "VoteStarted"
+    {
+        "#format"    "{1:s},{2:s},{3:s}"
+        "en"         "{green}{1}{default} asked to {olive}{2}{default}. The {3} vote now (F1 yes, F2 no)."
+    }
+    "VotePassScreen"
+    {
+        "en"    "Approved"
+    }
+    "VotePassed"
+    {
+        "#format"    "{1:s}"
+        "en"         "Vote approved: {olive}{1}{default}."
+    }
+    "VoteFailed"
+    {
+        "#format"    "{1:s}"
+        "en"         "Vote failed: {1}."
+    }
+    "VoteCancelled"
+    {
+        "#format"    "{1:s}"
+        "en"         "Vote cancelled: {1}."
+    }
+    "NoLongerValid"
+    {
+        "#format"    "{1:s}"
+        "en"         "The vote passed, but it no longer applies because the situation changed: {1}."
+    }
+    "AdminApplied"
+    {
+        "#format"    "{1:s},{2:s}"
+        "en"         "{green}{1}{default} (admin) used !fix: {olive}{2}{default}."
+    }
+}
