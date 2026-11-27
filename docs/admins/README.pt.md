@@ -23,7 +23,7 @@ Nos comandos deste guia, `< >` e `[ ]` só indicam o que você deve escrever ali
 | No guia | Significa | Você digita |
 |---|---|---|
 | `!swapto <time> <jogador>` | `< >` = obrigatório | `!swapto 2 vorkyss` |
-| `!hp [quantidade]` | `[ ]` = opcional, pode deixar sem | `!hp` ou `!hp 50` |
+| `!fm <config> [mapa]` | `[ ]` = opcional, pode deixar sem | `!fm zonemod` ou `!fm zonemod c2m1_highway` |
 | `!ban <alvo> <minutos> [motivo]` | os dois juntos | `!ban #12 60` ou `!ban #12 60 flood no chat` |
 
 ❌ Errado: `!swapto <2> <vorkyss>`
@@ -210,7 +210,6 @@ Exemplos:
 | Comando | O que faz |
 |---|---|
 | `!fix` | Abre um menu para ajustar a vida de um survivor (tudo permanente, ou de 100 a 50, permanente ou temporária), dar pills, levantar um survivor caído ou restaurar a vida do Tank. Para admin, aplica **na hora**, sem votação, em qualquer momento (até no ready-up e de spectator). Os jogadores usam o mesmo comando, mas com votação do time adversário |
-| `!hp [quantidade]` | Soma a quantidade (de 1 a 100, padrão: 100) à vida de todos os survivors vivos, sem passar de 100, e levanta quem estiver caído |
 
 ## Spectators e casters
 

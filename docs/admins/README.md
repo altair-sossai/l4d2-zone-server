@@ -23,7 +23,7 @@ In this guide, `< >` and `[ ]` only show what you should type there. **Do not ty
 | In the guide | Means | You type |
 |---|---|---|
 | `!swapto <team> <player>` | `< >` = required | `!swapto 2 vorkyss` |
-| `!hp [amount]` | `[ ]` = optional, you can leave it out | `!hp` or `!hp 50` |
+| `!fm <config> [map]` | `[ ]` = optional, you can leave it out | `!fm zonemod` or `!fm zonemod c2m1_highway` |
 | `!ban <target> <minutes> [reason]` | both together | `!ban #12 60` or `!ban #12 60 chat flood` |
 
 ❌ Wrong: `!swapto <2> <vorkyss>`
@@ -210,7 +210,6 @@ Examples:
 | Command | What it does |
 |---|---|
 | `!fix` | Opens a menu to set a survivor's health (all permanent, or 100 down to 50, permanent or temporary), give pills, pick up a downed survivor or restore the Tank's health. For an admin it applies **right away**, with no vote, at any time (even in the ready-up and as a spectator). Players use the same command, but with a vote of the other team |
-| `!hp [amount]` | Adds the amount (1 to 100, default: 100) to the health of every living survivor, without going over 100, and picks up anyone who is incapacitated |
 
 ## Spectators and casters
 

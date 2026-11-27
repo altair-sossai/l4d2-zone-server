@@ -82,9 +82,6 @@ Pick a line below, copy it, and run it:
 # l4d2_no_skip_getup_animation
 ./ps/compile-custom-plugins.ps1 l4d2_no_skip_getup_animation
 
-# l4d2_admin_hp
-./ps/compile-custom-plugins.ps1 l4d2_admin_hp
-
 # l4d2_admin_spec_lock
 ./ps/compile-custom-plugins.ps1 l4d2_admin_spec_lock
 
@@ -151,7 +148,6 @@ Copy any name from this list to compile it individually.
 | `l4d2_tank_is_comming` | `optional/l4d2_tank_is_comming.smx` |
 | `l4d_death_item_glow` | `optional/l4d_death_item_glow.smx` |
 | `l4d2_no_skip_getup_animation` | `optional/l4d2_no_skip_getup_animation.smx` |
-| `l4d2_admin_hp` | `optional/l4d2_admin_hp.smx` |
 | `l4d2_admin_spec_lock` | `optional/l4d2_admin_spec_lock.smx` |
 | `map-decals` | `optional/map-decals.smx` |
 | `l4d2_early_victory` | `optional/l4d2_early_victory.smx` |
@@ -168,5 +164,5 @@ Copy any name from this list to compile it individually.
 ### All names on one line (for quick copy-paste)
 
 ```
-l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_no_skip_getup_animation l4d2_admin_hp l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands l4d2_campaign_vote l4d2_forced_names l4d2_lerp_advisor l4d2_fix slots_vote
+l4d2_alltalk_before_round_start l4d2_queue l4d2_friendly_fire_control l4d2_mix l4d2_spectating_cheat l4d2_connect_announce l4d2_tank_is_comming l4d_death_item_glow l4d2_no_skip_getup_animation l4d2_admin_spec_lock map-decals l4d2_early_victory l4d2_afk_to_spec l4d2_spec_lister l4d2_block_spec_during_tank l4d2_custom_commands l4d2_campaign_vote l4d2_forced_names l4d2_lerp_advisor l4d2_fix slots_vote
 ```

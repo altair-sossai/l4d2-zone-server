@@ -49,7 +49,6 @@ $targets = @(
     @{ src = "l4d2_tank_is_comming.sp";             out = "optional\l4d2_tank_is_comming.smx" },
     @{ src = "l4d_death_item_glow.sp";              out = "optional\l4d_death_item_glow.smx" },
     @{ src = "l4d2_no_skip_getup_animation.sp";     out = "optional\l4d2_no_skip_getup_animation.smx" },
-    @{ src = "l4d2_admin_hp.sp";                    out = "optional\l4d2_admin_hp.smx" },
     @{ src = "l4d2_admin_spec_lock.sp";             out = "optional\l4d2_admin_spec_lock.smx" },
     @{ src = "map-decals.sp";                       out = "optional\map-decals.smx" },
     @{ src = "l4d2_early_victory.sp";               out = "optional\l4d2_early_victory.smx" },
